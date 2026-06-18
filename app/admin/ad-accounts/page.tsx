@@ -82,7 +82,7 @@ export default function AdminAdAccountsPage() {
     try {
       const { error: updateErr } = await supabase
         .from('ad_accounts')
-        .update({ status: 'approval_requested' })
+        .update({ status: 'approval_requested' as string })
         .eq('id', acc.id)
       if (updateErr) throw updateErr
 
