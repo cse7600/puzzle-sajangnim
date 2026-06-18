@@ -79,33 +79,18 @@ export default function AdminAdAccountsPage() {
 
   async function requestApproval(acc: AdAccount) {
     setRequesting(acc.id)
+    const form = getForm(acc.id)
     try {
-      const { error: updateErr } = await supabase
-        .from('ad_accounts')
-        .update({ status: 'approval_requested' as string })
-        .eq('id', acc.id)
-      if (updateErr) throw updateErr
-
-      const form = getForm(acc.id)
-      await supabase.from('notifications').insert({
-        user_id: acc.user_id,
-        type: 'ad_account_approval',
-        title: '광고계정 영업권 등록 요청',
-        body: `${PLATFORM_NAME[acc.platform] ?? acc.platform} 광고계정 "${acc.account_name}"의 영업권이 등록되었습니다. 승인해 주세요.`,
-        metadata: JSON.stringify({ ad_account_id: acc.id, manager: form.manager }),
-        is_read: false,
-      }).then(() => undefined).catch(() => undefined)
-
-      setAccounts(prev => prev.map(a => a.id === acc.id ? { ...a, status: 'approval_requested' } : a))
-      setExpandedId(null)
-      showToast('등록 요청이 발송되었습니다')
-    } catch {
-      setAccounts(prev => prev.map(a => a.id === acc.id ? { ...a, status: 'approval_requested' } : a))
-      setExpandedId(null)
-      showToast('등록 요청이 발송되었습니다')
-    } finally {
-      setRequesting(null)
-    }
+      await fetch(`/api/ad-accounts/${acc.id}/request-approval`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ manager: form.manager, notes: form.notes }),
+      })
+    } catch { /* local fallback */ }
+    setAccounts(prev => prev.map(a => a.id === acc.id ? { ...a, status: 'approval_requested' } : a))
+    setExpandedId(null)
+    showToast('등록 요청이 발송되었습니다')
+    setRequesting(null)
   }
 
   async function updateStatus(id: string, status: 'active' | 'rejected') {
