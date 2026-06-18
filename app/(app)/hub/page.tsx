@@ -10,7 +10,7 @@ interface AdAccount {
   account_id: string
   monthly_spend: number
   payback_rate: number
-  status: 'pending' | 'active' | 'rejected'
+  status: 'pending' | 'approval_requested' | 'active' | 'rejected'
   verified_at: string | null
 }
 
@@ -37,9 +37,10 @@ const PLATFORM_INFO: Record<Platform, { name: string; color: string; payback: st
 }
 
 const PLATFORM_STATUS_LABEL = {
-  pending:  { text: '검토중', class: 'bg-amber-50 text-amber-700 border-amber-200' },
-  active:   { text: '활성',   class: 'bg-green-50 text-green-700 border-green-200' },
-  rejected: { text: '거절',   class: 'bg-red-50 text-red-700 border-red-200' },
+  pending:            { text: '검토중',    class: 'bg-amber-50 text-amber-700 border-amber-200' },
+  approval_requested: { text: '승인 대기', class: 'bg-blue-50 text-blue-700 border-blue-200' },
+  active:             { text: '활성',      class: 'bg-green-50 text-green-700 border-green-200' },
+  rejected:           { text: '거절',      class: 'bg-red-50 text-red-700 border-red-200' },
 }
 
 export default function HubPage() {
@@ -71,7 +72,7 @@ export default function HubPage() {
   async function handleSubmit() {
     setSubmitting(true)
     try {
-      await fetch('/api/ad-accounts', {
+      const res = await fetch('/api/ad-accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -81,6 +82,8 @@ export default function HubPage() {
           monthly_spend: Number(form.monthly_spend.replace(/,/g, '')),
         }),
       })
+      const newAccount = await res.json() as AdAccount
+      setAccounts(prev => [newAccount, ...prev])
       setSubmitted(true)
     } finally {
       setSubmitting(false)
@@ -91,7 +94,6 @@ export default function HubPage() {
     setShowModal(false)
     setSubmitted(false)
     setForm({ platform: 'naver', account_id: '', account_name: '', monthly_spend: '' })
-    fetch('/api/ad-accounts').then(r => r.json()).then(setAccounts).catch(() => {})
   }
 
   const selectedPlatformInfo = PLATFORM_INFO[form.platform]
@@ -174,7 +176,7 @@ export default function HubPage() {
                 <div className="space-y-3">
                   {accounts.map(acc => {
                     const info = PLATFORM_INFO[acc.platform as Platform] ?? { name: acc.platform, color: '#6e6e73', payback: '0%' }
-                    const status = PLATFORM_STATUS_LABEL[acc.status]
+                    const status = PLATFORM_STATUS_LABEL[acc.status] ?? PLATFORM_STATUS_LABEL.pending
                     const estimatedPayback = Math.round(acc.monthly_spend * acc.payback_rate / 100)
                     return (
                       <div key={acc.id} className="flex items-center justify-between rounded-[11px] border border-[#e0e0e0] p-4">

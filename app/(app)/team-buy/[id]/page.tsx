@@ -16,6 +16,7 @@ interface TeamDeal {
   current_count: number
   deadline: string
   status: string
+  content_html?: string
 }
 
 const PLACEHOLDER_THUMBNAILS: Record<string, string> = {
@@ -159,6 +160,12 @@ export default function TeamDealDetailPage() {
         <h1 className="text-[20px] font-semibold text-[#1d1d1f] mb-1">{deal.title}</h1>
         {deal.description && (
           <p className="text-[14px] text-[#6e6e73] mb-4">{deal.description}</p>
+        )}
+        {deal.content_html && (
+          <div
+            className="mt-4 pt-4 border-t border-gray-100 text-[14px] leading-relaxed text-gray-700"
+            dangerouslySetInnerHTML={{ __html: deal.content_html }}
+          />
         )}
 
         {/* 가격 */}

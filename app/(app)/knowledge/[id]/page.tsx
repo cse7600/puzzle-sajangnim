@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ThumbsUp, MessageCircle, Share2, ChevronLeft, CheckCircle2, Coins } from 'lucide-react'
+import { ThumbsUp, MessageCircle, Share2, ChevronLeft, CheckCircle2, Coins, Check } from 'lucide-react'
 import AppTopBar from '@/components/AppTopBar'
 
 const CATEGORY_STYLE: Record<string, string> = {
@@ -50,6 +50,7 @@ export default function KnowledgeDetailPage() {
   const [answerBody, setAnswerBody] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -61,6 +62,17 @@ export default function KnowledgeDetailPage() {
       setLoading(false)
     })
   }, [id])
+
+  function handleShare() {
+    const url = window.location.href
+    if (navigator.share) {
+      navigator.share({ title: question?.title ?? '지식 거래소', url })
+    } else {
+      navigator.clipboard?.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   async function submitAnswer() {
     if (!answerBody.trim()) return
@@ -155,9 +167,9 @@ export default function KnowledgeDetailPage() {
                   <ThumbsUp className="h-4 w-4" />
                   <span>도움돼요</span>
                 </button>
-                <button className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-[#0066cc] transition-colors">
-                  <Share2 className="h-4 w-4" />
-                  <span>공유</span>
+                <button onClick={handleShare} className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-[#0066cc] transition-colors">
+                  {copied ? <Check className="h-4 w-4 text-green-600" /> : <Share2 className="h-4 w-4" />}
+                  <span>{copied ? '복사됨' : '공유'}</span>
                 </button>
               </div>
             </div>
