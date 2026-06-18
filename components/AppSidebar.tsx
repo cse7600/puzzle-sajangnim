@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { getCurrentUser } from '@/lib/auth';
 
 type NavItem = { icon: string; label: string; href: string };
 type NavSection = { label: string; items: NavItem[] };
@@ -33,6 +34,7 @@ const NAV_SECTIONS: NavSection[] = [
 
 export default function AppSidebar() {
   const pathname = usePathname();
+  const user = getCurrentUser();
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-[240px] flex-col bg-[#111827]">
@@ -80,15 +82,15 @@ export default function AppSidebar() {
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 rounded-lg px-2 py-2">
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0066cc] text-[13px] font-semibold text-white">
-            김
+            {user.name[0]}
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#111827] bg-green-500" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-medium text-white">
-              김철수 사장님
+              {user.name} 사장님
             </p>
             <p className="truncate text-[11px] text-gray-500">
-              을지로 쌈밥 철수네
+              {user.business_name}
             </p>
           </div>
         </div>

@@ -139,7 +139,7 @@ export default function LandingPage() {
               무료로 시작하기
             </a>
             <a
-              href="/payback"
+              href="/hub"
               className="btn-pill border border-white/30 text-white hover:bg-white/10"
             >
               광고비 돌려받기
@@ -233,7 +233,7 @@ export default function LandingPage() {
               포인트로 돌려받으세요. 쓰던 광고 그대로, 페이백만 더해집니다.
             </p>
             <a
-              href="/payback"
+              href="/hub"
               className="btn-pill btn-primary mt-8 inline-flex"
             >
               페이백 받기

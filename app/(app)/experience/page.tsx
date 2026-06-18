@@ -107,6 +107,22 @@ export default function ExperiencePage() {
     creator: Creator | null;
   }>({ open: false, creator: null });
   const [showExchange, setShowExchange] = useState<boolean>(false);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [selectedItem, setSelectedItem] = useState<Creator | null>(null);
+  const [applied, setApplied] = useState<Set<string>>(new Set());
+
+  function openApplyModal(creator: Creator) {
+    setSelectedItem(creator);
+    setModalOpen(true);
+  }
+
+  function confirmApply() {
+    if (selectedItem) {
+      setApplied(prev => new Set(prev).add(selectedItem.id));
+    }
+    setModalOpen(false);
+    setSelectedItem(null);
+  }
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -182,6 +198,8 @@ export default function ExperiencePage() {
                   key={creator.id}
                   creator={creator}
                   onRecruit={() => setShowRecruit({ open: true, creator })}
+                  isApplied={applied.has(creator.id)}
+                  onApply={() => openApplyModal(creator)}
                 />
               ))}
             </div>
@@ -215,6 +233,8 @@ export default function ExperiencePage() {
               key={creator.id}
               creator={creator}
               onRecruit={() => setShowRecruit({ open: true, creator })}
+              isApplied={applied.has(creator.id)}
+              onApply={() => openApplyModal(creator)}
             />
           ))}
         </div>
@@ -239,6 +259,54 @@ export default function ExperiencePage() {
         isOpen={showExchange}
         onClose={() => setShowExchange(false)}
       />
+
+      {/* 신청하기 모달 */}
+      {modalOpen && selectedItem && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          onClick={() => setModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-[18px] p-6 w-[380px] max-w-[90vw]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-[16px] font-semibold text-[#1d1d1f] mb-1">체험단 신청</h3>
+            <p className="text-[13px] text-[#6e6e73] mb-5">
+              <span className="font-medium text-[#1d1d1f]">{selectedItem.nickname}</span> 크리에이터에게 체험단을 신청합니다.
+            </p>
+            <div className="rounded-[11px] bg-[#f5f5f7] p-4 mb-5 text-[13px] text-[#1d1d1f]">
+              <div className="flex justify-between mb-1.5">
+                <span className="text-[#6e6e73]">팔로워</span>
+                <span className="font-medium">{selectedItem.followers.toLocaleString()}명</span>
+              </div>
+              <div className="flex justify-between mb-1.5">
+                <span className="text-[#6e6e73]">카테고리</span>
+                <span className="font-medium">{selectedItem.category}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#6e6e73]">매칭 점수</span>
+                <span className="font-medium text-[#0066cc]">{selectedItem.matchScore}%</span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="flex-1 rounded-[9999px] border border-[#e0e0e0] py-2.5 text-[13px] font-medium text-[#6e6e73] hover:bg-[#f5f5f7] transition-colors"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={confirmApply}
+                className="flex-1 rounded-[9999px] bg-[#0066cc] py-2.5 text-[13px] font-medium text-white hover:bg-[#0055aa] transition-colors"
+              >
+                신청 완료
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -356,9 +424,13 @@ function CampaignCard({
 function CreatorCard({
   creator,
   onRecruit,
+  isApplied,
+  onApply,
 }: {
   creator: Creator;
   onRecruit: () => void;
+  isApplied?: boolean;
+  onApply?: () => void;
 }) {
   const initial = creator.nickname.charAt(0);
 
@@ -402,14 +474,24 @@ function CreatorCard({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onRecruit}
-        className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#0066cc] bg-white px-3 py-2 text-sm font-medium text-[#0066cc] transition-colors hover:bg-blue-50"
-      >
-        <UserPlus className="h-4 w-4" />
-        섭외하기
-      </button>
+      {isApplied ? (
+        <button
+          type="button"
+          disabled
+          className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed"
+        >
+          신청 완료
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onApply ?? onRecruit}
+          className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#0066cc] bg-white px-3 py-2 text-sm font-medium text-[#0066cc] transition-colors hover:bg-blue-50"
+        >
+          <UserPlus className="h-4 w-4" />
+          신청하기
+        </button>
+      )}
     </div>
   );
 }

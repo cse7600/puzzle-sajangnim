@@ -111,11 +111,18 @@ function TrendBadge({ trend, delta }: { trend: Trend; delta: number }) {
 }
 
 export default function PlacePage() {
-  const [refreshing, setRefreshing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updated, setUpdated] = useState(false);
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1200);
+    if (isUpdating) return;
+    setIsUpdating(true);
+    setUpdated(false);
+    setTimeout(() => {
+      setIsUpdating(false);
+      setUpdated(true);
+      setTimeout(() => setUpdated(false), 3000);
+    }, 2000);
   };
 
   // Chart geometry
@@ -147,11 +154,11 @@ export default function PlacePage() {
         </div>
         <button
           onClick={handleRefresh}
-          disabled={refreshing}
+          disabled={isUpdating}
           className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#0055aa] disabled:opacity-60"
         >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? '새로고침 중...' : '데이터 새로고침'}
+          <RefreshCw className={`h-4 w-4 ${isUpdating ? 'animate-spin' : ''}`} />
+          {isUpdating ? '업데이트 중...' : updated ? '업데이트 완료' : '순위 업데이트'}
         </button>
       </div>
 
