@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { Sparkles, FileImage, AlertCircle } from 'lucide-react'
 
 interface Receipt {
   id: string
@@ -8,6 +9,14 @@ interface Receipt {
   points_earned: number
   status: 'pending' | 'approved' | 'rejected'
   created_at: string
+}
+
+// 서버 lib/claude.ts ReceiptAnalysis 형태를 클라이언트에서 재선언 (서버 import 회피)
+type ReceiptAnalysis = {
+  store_name: string | null
+  total_amount: number | null
+  date: string | null
+  items: { name: string; price: number }[]
 }
 
 const STATUS_LABEL = {
@@ -24,6 +33,61 @@ export default function RewardsPage() {
   const [form, setForm] = useState({ store_name: '', amount: '' })
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [fileName, setFileName] = useState('')
+  const [previewUrl, setPreviewUrl] = useState('')
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analyzeError, setAnalyzeError] = useState('')
+  const [ocrData, setOcrData] = useState<ReceiptAnalysis | null>(null)
+
+  function resetModal() {
+    setForm({ store_name: '', amount: '' })
+    setFileName('')
+    setPreviewUrl('')
+    setAnalyzing(false)
+    setAnalyzeError('')
+    setOcrData(null)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const picked = event.target.files?.[0]
+    setAnalyzeError('')
+    setOcrData(null)
+    if (!picked) {
+      setFileName('')
+      setPreviewUrl('')
+      return
+    }
+    setFileName(picked.name)
+    setPreviewUrl(URL.createObjectURL(picked))
+  }
+
+  async function handleAnalyze() {
+    const picked = fileRef.current?.files?.[0]
+    if (!picked) {
+      setAnalyzeError('먼저 영수증 사진을 선택해주세요.')
+      return
+    }
+    setAnalyzing(true)
+    setAnalyzeError('')
+    try {
+      const fd = new FormData()
+      fd.append('image', picked)
+      const res = await fetch('/api/receipts/analyze', { method: 'POST', body: fd })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error || `분석 실패 (HTTP ${res.status})`)
+      const analysis = body as ReceiptAnalysis
+      setOcrData(analysis)
+      setForm({
+        store_name: analysis.store_name ?? '',
+        amount: analysis.total_amount != null ? analysis.total_amount.toLocaleString() : '',
+      })
+    } catch (error) {
+      setAnalyzeError(error instanceof Error ? error.message : '영수증 분석에 실패했습니다.')
+    } finally {
+      setAnalyzing(false)
+    }
+  }
 
   useEffect(() => {
     fetch('/api/receipts').then(r => r.json()).then(data => {
@@ -42,6 +106,8 @@ export default function RewardsPage() {
       fd.append('store_name', form.store_name)
       fd.append('amount', form.amount.replace(/,/g, ''))
       if (fileRef.current?.files?.[0]) fd.append('image', fileRef.current.files[0])
+      if (ocrData) fd.append('ocr_data', JSON.stringify(ocrData))
+      if (ocrData?.date) fd.append('receipt_date', ocrData.date)
 
       const res = await fetch('/api/receipts', { method: 'POST', body: fd })
       const newReceipt = await res.json()
@@ -50,7 +116,7 @@ export default function RewardsPage() {
       setTimeout(() => {
         setUploadSuccess(false)
         setShowUploadModal(false)
-        setForm({ store_name: '', amount: '' })
+        resetModal()
       }, 2000)
     } finally {
       setUploading(false)
@@ -145,7 +211,7 @@ export default function RewardsPage() {
 
       {/* 영수증 업로드 모달 */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowUploadModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setShowUploadModal(false); resetModal() }}>
           <div className="bg-white rounded-[18px] w-full max-w-[420px] mx-4 p-6" onClick={e => e.stopPropagation()}>
             {uploadSuccess ? (
               <div className="text-center py-6">
@@ -162,16 +228,59 @@ export default function RewardsPage() {
                 <h3 className="text-[18px] font-semibold text-[#1d1d1f] mb-5">영수증 등록</h3>
                 <div className="space-y-4">
                   <div
-                    className="border-2 border-dashed border-[#e0e0e0] rounded-[11px] p-8 text-center cursor-pointer hover:border-[#0066cc] transition-colors"
+                    className="border-2 border-dashed border-[#e0e0e0] rounded-[11px] p-4 text-center cursor-pointer hover:border-[#0066cc] transition-colors"
                     onClick={() => fileRef.current?.click()}
                   >
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden" />
-                    <svg className="mx-auto mb-2 text-[#6e6e73]" width="32" height="32" viewBox="0 0 32 32" fill="none">
-                      <path d="M16 4v16M8 12l8-8 8 8M6 24h20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <p className="text-[14px] text-[#6e6e73]">사진을 탭해 업로드</p>
-                    <p className="text-[12px] text-[#6e6e73] mt-0.5">JPG, PNG 지원</p>
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                    {previewUrl ? (
+                      <div className="flex items-center gap-3 text-left">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- 로컬 blob 미리보기라 next/image 부적합 */}
+                        <img src={previewUrl} alt="영수증 미리보기" className="h-16 w-16 rounded-[9px] object-cover border border-[#e0e0e0]" />
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-medium text-[#1d1d1f] truncate">{fileName}</p>
+                          <p className="text-[12px] text-[#6e6e73] mt-0.5">탭하면 다른 사진으로 변경</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <FileImage className="mx-auto mb-2 text-[#6e6e73]" size={32} strokeWidth={1.8} />
+                        <p className="text-[14px] text-[#6e6e73]">사진을 탭해 업로드</p>
+                        <p className="text-[12px] text-[#6e6e73] mt-0.5">JPG, PNG 지원</p>
+                      </>
+                    )}
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAnalyze}
+                    disabled={analyzing || !fileName}
+                    className="flex w-full items-center justify-center gap-2 rounded-[11px] border border-[#0066cc] py-2.5 text-[14px] font-medium text-[#0066cc] hover:bg-[#0066cc]/5 disabled:opacity-40 transition-colors"
+                  >
+                    <Sparkles size={16} strokeWidth={2} />
+                    {analyzing ? '분석 중...' : '자동 분석으로 채우기'}
+                  </button>
+
+                  {analyzeError && (
+                    <div className="flex items-start gap-2 rounded-[9px] bg-red-50 px-3 py-2.5">
+                      <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={15} />
+                      <p className="text-[12px] text-red-700">{analyzeError}</p>
+                    </div>
+                  )}
+
+                  {ocrData && !analyzeError && (
+                    <div className="rounded-[9px] bg-[#f5f5f7] px-3 py-2.5">
+                      <p className="text-[12px] text-[#1d1d1f]">
+                        분석 완료{ocrData.date ? ` · ${ocrData.date}` : ''}
+                        {ocrData.items.length ? ` · 품목 ${ocrData.items.length}개` : ''}
+                      </p>
+                      {ocrData.items.length > 0 && (
+                        <p className="text-[11px] text-[#6e6e73] mt-0.5 truncate">
+                          {ocrData.items.slice(0, 3).map(it => it.name).join(', ')}
+                          {ocrData.items.length > 3 ? ' 외' : ''}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">가게명</label>
                     <input
@@ -202,7 +311,7 @@ export default function RewardsPage() {
                   </div>
                 </div>
                 <div className="flex gap-3 mt-6">
-                  <button onClick={() => setShowUploadModal(false)} className="flex-1 rounded-[9999px] border border-[#e0e0e0] py-3 text-[14px] text-[#6e6e73] hover:bg-[#f5f5f7] transition-colors">취소</button>
+                  <button onClick={() => { setShowUploadModal(false); resetModal() }} className="flex-1 rounded-[9999px] border border-[#e0e0e0] py-3 text-[14px] text-[#6e6e73] hover:bg-[#f5f5f7] transition-colors">취소</button>
                   <button
                     onClick={handleUpload}
                     disabled={uploading || !form.store_name}

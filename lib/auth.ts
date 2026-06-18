@@ -1,8 +1,11 @@
 // 카카오 로그인 구현 전 더미 세션
 // 실제 구현 시 Supabase Auth + NextAuth로 교체
 
+// Supabase public.users / auth.users 에 실제 시드된 UUID
+export const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+
 export const DEMO_USER = {
-  id: 'demo-user-001',
+  id: DEMO_USER_ID,
   kakao_id: '12345678',
   name: '김철수',
   phone: '010-1234-5678',

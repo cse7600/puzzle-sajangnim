@@ -109,11 +109,11 @@ export default function HubPage() {
         </div>
         <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-5">
           <p className="text-[13px] text-[#6e6e73] mb-1">이번 달 페이백 예정</p>
-          <p className="text-[28px] font-semibold text-[#0066cc]">{totalPayback.toLocaleString()}원</p>
+          <p className="text-[28px] font-semibold text-[#0066cc]">{totalPayback.toLocaleString()}P</p>
         </div>
         <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-5">
           <p className="text-[13px] text-[#6e6e73] mb-1">확정 페이백</p>
-          <p className="text-[28px] font-semibold text-green-600">{confirmedPayback.toLocaleString()}원</p>
+          <p className="text-[28px] font-semibold text-green-600">{confirmedPayback.toLocaleString()}P</p>
         </div>
       </div>
 
@@ -192,7 +192,7 @@ export default function HubPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <p className="text-[13px] font-semibold text-[#0066cc]">월 {estimatedPayback.toLocaleString()}원</p>
+                            <p className="text-[13px] font-semibold text-[#0066cc]">월 {estimatedPayback.toLocaleString()}P</p>
                             <p className="text-[11px] text-[#6e6e73]">예상 페이백</p>
                           </div>
                           <span className={`rounded-[9999px] border px-2.5 py-1 text-[11px] font-medium ${status.class}`}>
@@ -225,7 +225,7 @@ export default function HubPage() {
                         <p className="text-[12px] text-[#6e6e73]">{pb.period} · {pb.ad_accounts.payback_rate}% 페이백</p>
                       </div>
                       <div className="flex items-center gap-3">
-                        <p className="text-[16px] font-semibold text-[#0066cc]">+{pb.amount.toLocaleString()}원</p>
+                        <p className="text-[16px] font-semibold text-[#0066cc]">+{pb.amount.toLocaleString()}P</p>
                         <span className={`rounded-[9999px] border px-2.5 py-1 text-[11px] font-medium ${s.class}`}>{s.text}</span>
                       </div>
                     </div>
@@ -317,7 +317,7 @@ export default function HubPage() {
                     </div>
                     {form.monthly_spend && (
                       <p className="mt-1.5 text-[12px] text-[#0066cc]">
-                        예상 월 페이백: {estimatedModalPayback.toLocaleString()}원
+                        예상 월 페이백: +{estimatedModalPayback.toLocaleString()}P
                       </p>
                     )}
                   </div>

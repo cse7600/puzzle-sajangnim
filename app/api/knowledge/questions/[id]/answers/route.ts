@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+export const dynamic = 'force-dynamic'
 
-const DEMO_USER_ID = 'demo-user-001'
+import { NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { DEMO_USER_ID } from '@/lib/auth'
+import { awardPoints } from '@/lib/points'
+
 const ANSWER_DAILY_LIMIT = 1000
-const db = supabase as any
+const db = supabaseAdmin as any
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const { data, error } = await db
@@ -28,28 +31,32 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  const pointsEarned = await grantAnswerPoints(answer.id)
+  return NextResponse.json({ ...(answer as object), points_earned: pointsEarned }, { status: 201 })
+}
+
+// 하루 1회 1000P (knowledge_daily_points 1일 제한 + 통합 point_transactions 기록)
+async function grantAnswerPoints(answerId: string): Promise<number> {
   const today = new Date().toISOString().split('T')[0]
   const { data: daily } = await db
     .from('knowledge_daily_points')
     .select('answer_points_earned')
     .eq('user_id', DEMO_USER_ID)
     .eq('date', today)
-    .single()
+    .maybeSingle()
 
-  let pointsEarned = 0
-  if (!daily || daily.answer_points_earned < ANSWER_DAILY_LIMIT) {
-    pointsEarned = ANSWER_DAILY_LIMIT
-    await db.from('knowledge_daily_points').upsert(
-      { user_id: DEMO_USER_ID, date: today, answer_points_earned: ANSWER_DAILY_LIMIT },
-      { onConflict: 'user_id,date' }
-    )
-    await db.from('points').insert({
-      user_id: DEMO_USER_ID,
-      amount: pointsEarned,
-      source_type: 'bonus',
-      description: '지식 거래소 답변 작성 포인트',
-    })
-  }
+  if (daily && daily.answer_points_earned >= ANSWER_DAILY_LIMIT) return 0
 
-  return NextResponse.json({ ...(answer as object), points_earned: pointsEarned }, { status: 201 })
+  await db.from('knowledge_daily_points').upsert(
+    { user_id: DEMO_USER_ID, date: today, answer_points_earned: ANSWER_DAILY_LIMIT },
+    { onConflict: 'user_id,date' }
+  )
+  const { awarded } = await awardPoints({
+    userId: DEMO_USER_ID,
+    requestedAmount: ANSWER_DAILY_LIMIT,
+    type: 'knowledge_answer',
+    description: '지식 거래소 답변 작성 포인트',
+    referenceId: answerId,
+  })
+  return awarded
 }

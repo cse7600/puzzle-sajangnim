@@ -1,77 +1,101 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Share2,
   Copy,
   Check,
   QrCode,
-  TrendingUp,
-  Users,
   Wallet,
   MessageCircle,
   Link2,
-  ArrowUpRight,
+  Users,
+  TrendingUp,
+  HandCoins,
   Info,
 } from 'lucide-react';
 
-const earningLogs = [
-  { name: '김**', service: 'AI 블로그 서비스', amount: 2400, time: '6시간 전' },
-  { name: '박**', service: '플레이스 분석', amount: 1800, time: '1일 전' },
-  { name: '이**', service: 'AI 블로그 서비스', amount: 2400, time: '1일 전' },
-  { name: '최**', service: '리뷰 관리 자동화', amount: 1500, time: '2일 전' },
-  { name: '정**', service: '플레이스 분석', amount: 1800, time: '3일 전' },
-  { name: '강**', service: 'AI 블로그 서비스', amount: 2400, time: '4일 전' },
-  { name: '윤**', service: '키워드 추적', amount: 1200, time: '5일 전' },
-  { name: '임**', service: '리뷰 관리 자동화', amount: 1500, time: '6일 전' },
-];
+type ReferralFriend = {
+  id: string;
+  name: string;
+  business_name: string;
+  joined_at: string;
+};
 
-const monthlyRows = [
-  { month: '6월 (현재)', friends: 7, count: 23, amount: 128000, current: true },
-  { month: '5월', friends: 6, count: 18, amount: 94000, current: false },
-  { month: '4월', friends: 5, count: 14, amount: 67000, current: false },
-  { month: '3월', friends: 4, count: 9, amount: 42000, current: false },
-  { month: '2월', friends: 3, count: 6, amount: 28000, current: false },
-];
+type ReferralStats = {
+  referral_code: string;
+  referral_link: string;
+  friends: ReferralFriend[];
+  friend_count: number;
+  total_earned: number;
+  unpaid_earned: number;
+  paid_earned: number;
+};
 
-const summaryCards = [
-  {
-    label: '이번 달 수익',
-    value: '128,000원',
-    sub: '+36% 지난달 대비',
-    icon: TrendingUp,
-    accent: true,
-  },
-  {
-    label: '누적 수익',
-    value: '2,340,000원',
-    sub: '가입 후 전체 합계',
-    icon: Wallet,
-    accent: false,
-  },
-  {
-    label: '연 환산',
-    value: '~1,536,000원',
-    sub: '최근 추세 기준 / 년',
-    icon: ArrowUpRight,
-    accent: false,
-  },
-];
+type ReferralEarning = {
+  id: string;
+  referee_name: string;
+  source_label: string;
+  source_amount: number;
+  earned_amount: number;
+  earning_rate: number;
+  is_paid: boolean;
+  created_at: string;
+};
 
 function formatWon(n: number) {
   return n.toLocaleString('ko-KR') + '원';
 }
 
+function relativeTime(iso: string) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return '방금 전';
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}일 전`;
+  return new Date(iso).toLocaleDateString('ko-KR');
+}
+
+async function fetchJson<T>(url: string): Promise<T | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 export default function ReferralPage() {
+  const [stats, setStats] = useState<ReferralStats | null>(null);
+  const [earnings, setEarnings] = useState<ReferralEarning[]>([]);
+  const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const referralCode = 'CHULSOO23';
-  const referralLink = 'https://puzzle.kr/r/CHULSOO23';
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      fetchJson<ReferralStats>('/api/referral/stats'),
+      fetchJson<ReferralEarning[]>('/api/referral/earnings'),
+    ]).then(([statsData, earningsData]) => {
+      if (!active) return;
+      setStats(statsData);
+      setEarnings(earningsData ?? []);
+      setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  const handleCopy = (text: string, type: 'code' | 'link') => {
+  const handleCopy = (text: string, target: 'code' | 'link') => {
+    if (!text) return;
     navigator.clipboard?.writeText(text);
-    if (type === 'code') {
+    if (target === 'code') {
       setCopiedCode(true);
       setTimeout(() => setCopiedCode(false), 1500);
     } else {
@@ -79,6 +103,39 @@ export default function ReferralPage() {
       setTimeout(() => setCopiedLink(false), 1500);
     }
   };
+
+  if (loading) return <ReferralSkeleton />;
+
+  const referralCode = stats?.referral_code ?? '';
+  const referralLink = stats?.referral_link ?? '';
+  const friends = stats?.friends ?? [];
+  const totalEarned = stats?.total_earned ?? 0;
+  const unpaidEarned = stats?.unpaid_earned ?? 0;
+  const friendCount = stats?.friend_count ?? 0;
+
+  const summaryCards = [
+    {
+      label: '누적 수익',
+      value: formatWon(totalEarned),
+      sub: '가입 후 전체 합계',
+      icon: TrendingUp,
+      accent: true,
+    },
+    {
+      label: '미정산 수익',
+      value: formatWon(unpaidEarned),
+      sub: '출금 대기 중',
+      icon: HandCoins,
+      accent: false,
+    },
+    {
+      label: '추천 친구',
+      value: `${friendCount}명`,
+      sub: '내 코드로 가입한 친구',
+      icon: Users,
+      accent: false,
+    },
+  ];
 
   return (
     <div className="px-8 py-6 max-w-[1280px] mx-auto">
@@ -92,7 +149,8 @@ export default function ReferralPage() {
         </div>
         <button
           onClick={() => handleCopy(referralLink, 'link')}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0058b0]"
+          disabled={!referralLink}
+          className="inline-flex items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0058b0] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Share2 className="h-4 w-4" />
           추천 링크 공유
@@ -148,12 +206,13 @@ export default function ReferralPage() {
             <div className="flex items-center gap-3">
               <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3.5">
                 <span className="font-mono text-2xl font-bold tracking-widest text-gray-900">
-                  {referralCode}
+                  {referralCode || '코드 없음'}
                 </span>
               </div>
               <button
                 onClick={() => handleCopy(referralCode, 'code')}
-                className="inline-flex h-[52px] w-[52px] items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-[#0066cc]"
+                disabled={!referralCode}
+                className="inline-flex h-[52px] w-[52px] items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-[#0066cc] disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="코드 복사"
               >
                 {copiedCode ? (
@@ -171,7 +230,8 @@ export default function ReferralPage() {
               </button>
               <button
                 onClick={() => handleCopy(referralLink, 'link')}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                disabled={!referralLink}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {copiedLink ? (
                   <Check className="h-4 w-4 text-[#0066cc]" />
@@ -181,7 +241,9 @@ export default function ReferralPage() {
                 {copiedLink ? '복사됨' : '링크 복사'}
               </button>
             </div>
-            <p className="mt-3 text-xs text-gray-400">{referralLink}</p>
+            {referralLink && (
+              <p className="mt-3 text-xs text-gray-400">{referralLink}</p>
+            )}
           </div>
 
           {/* QR placeholder */}
@@ -196,180 +258,127 @@ export default function ReferralPage() {
 
       {/* 2-COLUMN */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
-        {/* LEFT */}
-        <div className="flex flex-col gap-6">
-          {/* 추천 네트워크 */}
-          <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-900">
-                내 추천 네트워크
-              </h2>
-              <Users className="h-4 w-4 text-gray-400" />
-            </div>
+        {/* LEFT — 추천 네트워크 */}
+        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-900">
+              내 추천 네트워크
+            </h2>
+            <Users className="h-4 w-4 text-gray-400" />
+          </div>
 
-            {/* Visual tree */}
+          {friends.length === 0 ? (
+            <div className="mt-8 flex flex-col items-center gap-2 py-6 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                <Users className="h-6 w-6" />
+              </div>
+              <p className="text-sm font-medium text-gray-600">
+                아직 추천한 친구가 없습니다
+              </p>
+              <p className="text-xs text-gray-400">
+                추천 코드를 공유하고 첫 친구를 초대해보세요
+              </p>
+            </div>
+          ) : (
             <div className="mt-6 flex flex-col items-center">
-              {/* 나 */}
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0066cc] text-sm font-bold text-white shadow-md ring-4 ring-[#0066cc]/10">
                 나
               </div>
-              {/* connector */}
               <div className="h-5 w-px bg-gray-200" />
               <div className="h-px w-3/4 bg-gray-200" />
 
-              {/* 1단계 7명 */}
-              <div className="mt-4 flex flex-wrap justify-center gap-3">
-                {Array.from({ length: 7 }).map((_, i) => {
-                  const hasSub = i === 1 || i === 3 || i === 5;
-                  return (
-                    <div key={i} className="flex flex-col items-center">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#0066cc]/40 bg-[#0066cc]/10 text-[11px] font-semibold text-[#0066cc]">
-                        {i + 1}
-                      </div>
-                      {hasSub && (
-                        <>
-                          <div className="h-3 w-px bg-gray-200" />
-                          <div className="flex gap-1.5">
-                            {Array.from({
-                              length: i === 1 ? 3 : i === 3 ? 2 : 2,
-                            }).map((_, j) => (
-                              <div
-                                key={j}
-                                className="h-5 w-5 rounded-full border border-gray-300 bg-gray-100"
-                              />
-                            ))}
-                          </div>
-                        </>
-                      )}
+              <div className="mt-4 flex flex-wrap justify-center gap-4">
+                {friends.map((friend) => (
+                  <div
+                    key={friend.id}
+                    className="flex flex-col items-center gap-1.5"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0066cc]/40 bg-[#0066cc]/10 text-sm font-semibold text-[#0066cc]">
+                      {friend.name.charAt(0)}
                     </div>
-                  );
-                })}
+                    <span className="max-w-[72px] truncate text-xs font-medium text-gray-700">
+                      {friend.name}
+                    </span>
+                    {friend.business_name && (
+                      <span className="max-w-[80px] truncate text-[11px] text-gray-400">
+                        {friend.business_name}
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
 
-              {/* stats */}
-              <div className="mt-6 flex w-full items-center justify-center gap-6 rounded-lg bg-gray-50 py-3 text-center">
+              <div className="mt-6 flex w-full items-center justify-center rounded-lg bg-gray-50 py-3 text-center">
                 <div>
-                  <div className="text-lg font-bold text-gray-900">7명</div>
-                  <div className="text-xs text-gray-400">1단계</div>
-                </div>
-                <div className="h-8 w-px bg-gray-200" />
-                <div>
-                  <div className="text-lg font-bold text-gray-900">12명</div>
-                  <div className="text-xs text-gray-400">2단계</div>
-                </div>
-                <div className="h-8 w-px bg-gray-200" />
-                <div>
-                  <div className="text-lg font-bold text-[#0066cc]">19명</div>
-                  <div className="text-xs text-gray-400">활성</div>
+                  <div className="text-lg font-bold text-[#0066cc]">
+                    {friendCount}명
+                  </div>
+                  <div className="text-xs text-gray-400">직접 추천한 친구</div>
                 </div>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* RIGHT — 수익 발생 로그 */}
+        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-900">
+              수익 발생 로그
+            </h2>
+            <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-600">
+              실시간
+            </span>
           </div>
 
-          {/* 수익 발생 로그 */}
-          <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-900">
-                수익 발생 로그
-              </h2>
-              <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-600">
-                실시간
-              </span>
+          {earnings.length === 0 ? (
+            <div className="mt-8 flex flex-col items-center gap-2 py-6 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                <HandCoins className="h-6 w-6" />
+              </div>
+              <p className="text-sm font-medium text-gray-600">
+                아직 발생한 수익이 없습니다
+              </p>
+              <p className="text-xs text-gray-400">
+                추천한 친구가 결제하면 여기에 표시됩니다
+              </p>
             </div>
+          ) : (
             <ul className="mt-4 divide-y divide-gray-100">
-              {earningLogs.map((log, i) => (
+              {earnings.map((earning) => (
                 <li
-                  key={i}
+                  key={earning.id}
                   className="flex items-center justify-between gap-3 py-2.5"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm text-gray-700">
                       <span className="font-medium text-gray-900">
-                        {log.name}님
+                        {earning.referee_name}님
                       </span>{' '}
-                      {log.service}
+                      {earning.source_label}
                     </p>
-                    <p className="text-xs text-gray-400">{log.time}</p>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <span className="text-xs text-gray-400">
+                        {relativeTime(earning.created_at)}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          earning.is_paid
+                            ? 'bg-gray-100 text-gray-500'
+                            : 'bg-amber-50 text-amber-600'
+                        }`}
+                      >
+                        {earning.is_paid ? '정산완료' : '미정산'}
+                      </span>
+                    </div>
                   </div>
                   <span className="whitespace-nowrap text-sm font-semibold text-green-600">
-                    +{formatWon(log.amount)}
+                    +{formatWon(earning.earned_amount)}
                   </span>
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
-
-        {/* RIGHT — 월별 수익 내역 */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-gray-900">
-            월별 수익 내역
-          </h2>
-          <p className="mt-0.5 text-sm text-gray-500">
-            월별 추천 친구 수와 발생한 수익을 확인하세요
-          </p>
-
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wide text-gray-400">
-                  <th className="pb-3 pr-3 font-medium">월</th>
-                  <th className="pb-3 pr-3 text-right font-medium">추천 친구</th>
-                  <th className="pb-3 pr-3 text-right font-medium">수익 건수</th>
-                  <th className="pb-3 text-right font-medium">금액</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {monthlyRows.map((row) => (
-                  <tr
-                    key={row.month}
-                    className={row.current ? 'bg-[#0066cc]/[0.03]' : ''}
-                  >
-                    <td className="py-3 pr-3">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`font-medium ${
-                            row.current ? 'text-[#0066cc]' : 'text-gray-900'
-                          }`}
-                        >
-                          {row.month}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 pr-3 text-right text-gray-600">
-                      {row.friends}명
-                    </td>
-                    <td className="py-3 pr-3 text-right text-gray-600">
-                      {row.count}건
-                    </td>
-                    <td
-                      className={`py-3 text-right font-semibold ${
-                        row.current ? 'text-[#0066cc]' : 'text-gray-900'
-                      }`}
-                    >
-                      {formatWon(row.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-gray-200">
-                  <td className="pt-3 font-semibold text-gray-900">합계</td>
-                  <td className="pt-3 text-right text-sm text-gray-500">—</td>
-                  <td className="pt-3 text-right font-medium text-gray-700">
-                    70건
-                  </td>
-                  <td className="pt-3 text-right font-bold text-gray-900">
-                    359,000원
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          <p className="mt-4 text-xs text-gray-400">
-            * 최근 5개월 기준. 전체 누적 수익은 상단 요약 카드를 참고하세요.
-          </p>
+          )}
         </div>
       </div>
 
@@ -382,7 +391,9 @@ export default function ReferralPage() {
             </span>
             <div>
               <p className="text-sm text-gray-500">출금 가능 잔액</p>
-              <p className="text-2xl font-bold text-gray-900">2,340,000원</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formatWon(totalEarned)}
+              </p>
             </div>
           </div>
 
@@ -408,6 +419,30 @@ export default function ReferralPage() {
             수익은 모두 누적되어 안전하게 보관됩니다.
           </p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ReferralSkeleton() {
+  return (
+    <div className="px-8 py-6 max-w-[1280px] mx-auto animate-pulse">
+      <div className="mb-6 h-12 w-64 rounded-lg bg-gray-100" />
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-32 rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
+          >
+            <div className="h-4 w-20 rounded bg-gray-100" />
+            <div className="mt-4 h-8 w-32 rounded bg-gray-100" />
+          </div>
+        ))}
+      </div>
+      <div className="mb-6 h-44 rounded-xl border border-gray-100 bg-white shadow-sm" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="h-72 rounded-xl border border-gray-100 bg-white shadow-sm" />
+        <div className="h-72 rounded-xl border border-gray-100 bg-white shadow-sm" />
       </div>
     </div>
   );
