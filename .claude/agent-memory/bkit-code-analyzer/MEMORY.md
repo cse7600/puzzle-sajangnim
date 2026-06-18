@@ -1,0 +1,1 @@
+- [Project Demo-Mode Architecture](project-demo-mode.md) — app runs in demo mode: hardcoded DEMO_USER_ID, mock fallbacks, no real auth

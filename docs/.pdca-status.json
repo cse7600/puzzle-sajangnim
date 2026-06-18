@@ -1,9 +1,249 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-06-18T07:25:20.070Z",
-  "activeFeatures": [],
-  "primaryFeature": null,
-  "features": {},
+  "lastUpdated": "2026-06-18T15:02:26.357Z",
+  "activeFeatures": [
+    "puzzle-sajangnim",
+    "login",
+    "(auth)",
+    "signup",
+    "ad-accounts",
+    "paybacks",
+    "hub",
+    "receipts",
+    "team-deals",
+    "join",
+    "rewards",
+    "team-buy",
+    "admin",
+    "users",
+    "points",
+    "place",
+    "experience"
+  ],
+  "primaryFeature": "puzzle-sajangnim",
+  "features": {
+    "puzzle-sajangnim": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:32:00.677Z",
+        "lastUpdated": "2026-06-18T14:43:29.248Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/types/database.ts"
+    },
+    "login": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:38:47.282Z",
+        "lastUpdated": "2026-06-18T14:38:47.282Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(auth)/login/page.tsx"
+    },
+    "(auth)": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:38:47.749Z",
+        "lastUpdated": "2026-06-18T14:38:47.749Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(auth)/layout.tsx"
+    },
+    "signup": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:39:15.683Z",
+        "lastUpdated": "2026-06-18T14:39:15.683Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(auth)/signup/page.tsx"
+    },
+    "ad-accounts": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:39:57.215Z",
+        "lastUpdated": "2026-06-18T15:02:26.357Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/ad-accounts/route.ts"
+    },
+    "paybacks": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:40:02.570Z",
+        "lastUpdated": "2026-06-18T14:40:09.261Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/paybacks/route.ts"
+    },
+    "hub": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:41:03.269Z",
+        "lastUpdated": "2026-06-18T14:41:03.269Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/hub/page.tsx"
+    },
+    "receipts": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:42:05.265Z",
+        "lastUpdated": "2026-06-18T14:45:12.101Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/receipts/page.tsx"
+    },
+    "team-deals": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:42:20.210Z",
+        "lastUpdated": "2026-06-18T14:45:48.616Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/team-deals/page.tsx"
+    },
+    "join": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:42:26.814Z",
+        "lastUpdated": "2026-06-18T15:02:18.723Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/team-deals/[id]/join/route.ts"
+    },
+    "rewards": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:43:11.356Z",
+        "lastUpdated": "2026-06-18T14:43:11.356Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/rewards/page.tsx"
+    },
+    "team-buy": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:43:57.100Z",
+        "lastUpdated": "2026-06-18T15:02:11.132Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/team-buy/page.tsx"
+    },
+    "admin": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:44:37.187Z",
+        "lastUpdated": "2026-06-18T14:44:37.187Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/layout.tsx"
+    },
+    "users": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:45:37.046Z",
+        "lastUpdated": "2026-06-18T14:45:37.046Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/users/page.tsx"
+    },
+    "points": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:45:58.970Z",
+        "lastUpdated": "2026-06-18T14:45:58.970Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/points/page.tsx"
+    },
+    "place": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:46:07.448Z",
+        "lastUpdated": "2026-06-18T14:47:04.419Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/place/page.tsx"
+    },
+    "experience": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T14:47:29.267Z",
+        "lastUpdated": "2026-06-18T14:48:15.244Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/experience/page.tsx"
+    }
+  },
   "pipeline": {
     "currentPhase": 1,
     "level": "Dynamic",
@@ -12,7 +252,344 @@
   "session": {
     "startedAt": "2026-06-18T07:25:20.070Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-06-18T07:25:20.070Z"
+    "lastActivity": "2026-06-18T15:02:26.357Z"
   },
-  "history": []
+  "history": [
+    {
+      "timestamp": "2026-06-18T14:32:00.677Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:32:08.186Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:32:13.747Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:33:04.452Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:33:05.661Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:33:20.629Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:33:42.431Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:38:47.282Z",
+      "feature": "login",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:38:47.749Z",
+      "feature": "(auth)",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:38:52.417Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:39:15.683Z",
+      "feature": "signup",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:39:19.411Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:39:22.209Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:39:30.954Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:39:34.179Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:39:57.215Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:40:02.570Z",
+      "feature": "paybacks",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:40:09.261Z",
+      "feature": "paybacks",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:40:51.345Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:41:03.269Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:41:12.780Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:41:29.287Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:41:33.706Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:42:01.761Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:42:05.265Z",
+      "feature": "receipts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:42:13.453Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:42:20.210Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:42:26.814Z",
+      "feature": "join",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:42:45.076Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:43:11.356Z",
+      "feature": "rewards",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:43:29.248Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:43:47.298Z",
+      "feature": "receipts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:43:57.100Z",
+      "feature": "team-buy",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:44:00.659Z",
+      "feature": "receipts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:44:15.630Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:44:19.253Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:44:37.187Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:45:12.101Z",
+      "feature": "receipts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:45:28.642Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:45:37.046Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:45:48.616Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:45:58.970Z",
+      "feature": "points",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:46:07.448Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:46:42.378Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:46:47.954Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:47:04.419Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:47:29.267Z",
+      "feature": "experience",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:47:45.577Z",
+      "feature": "experience",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:47:50.384Z",
+      "feature": "experience",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:48:02.648Z",
+      "feature": "experience",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:48:08.074Z",
+      "feature": "experience",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:48:15.244Z",
+      "feature": "experience",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T14:49:26.050Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T15:02:11.132Z",
+      "feature": "team-buy",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T15:02:18.723Z",
+      "feature": "join",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T15:02:26.357Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    }
+  ]
 }

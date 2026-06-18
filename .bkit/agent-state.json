@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "enabled": true,
+  "teamName": "",
+  "feature": "puzzle-sajangnim",
+  "pdcaPhase": "do",
+  "orchestrationPattern": "leader",
+  "ctoAgent": "opus",
+  "startedAt": "2026-06-18T14:59:49.124Z",
+  "lastUpdated": "2026-06-18T15:01:34.107Z",
+  "teammates": [
+    {
+      "name": "ac45e821965373074",
+      "role": "bkit:code-analyzer",
+      "model": "sonnet",
+      "status": "completed",
+      "currentTask": null,
+      "taskId": null,
+      "startedAt": "2026-06-18T14:59:49.124Z",
+      "lastActivityAt": "2026-06-18T15:01:34.106Z"
+    }
+  ],
+  "progress": {
+    "totalTasks": 0,
+    "completedTasks": 0,
+    "inProgressTasks": 0,
+    "failedTasks": 0,
+    "pendingTasks": 0
+  },
+  "recentMessages": [],
+  "sessionId": "ec5120a3-8171-4cc2-a4ff-7a1d7bcf219c"
+}

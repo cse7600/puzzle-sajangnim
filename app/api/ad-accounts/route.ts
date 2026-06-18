@@ -35,7 +35,21 @@ export async function GET() {
 
     return NextResponse.json(data)
   } catch {
-    return NextResponse.json([], { status: 200 }) // 에러 시 빈 배열
+    // DB 미연결 — 목 데이터 반환
+    return NextResponse.json([
+      {
+        id: 'mock-1',
+        user_id: DEMO_USER_ID,
+        platform: 'naver',
+        account_id: '1234567890',
+        account_name: '을지로 쌈밥 철수네 - 검색광고',
+        monthly_spend: 380000,
+        payback_rate: 5.00,
+        status: 'active',
+        verified_at: '2024-03-15T00:00:00Z',
+        created_at: '2024-03-15T00:00:00Z',
+      },
+    ])
   }
 }
 
