@@ -378,17 +378,18 @@ interface Applicant {
   followers: number;
   category: string;
   color: string;
+  channelUrl: string;
 }
 
 const MOCK_APPLICANTS: Applicant[] = [
-  { id: 'a1', nickname: '맛집헌터지수', followers: 13200, category: '맛집탐방', color: '#0066cc' },
-  { id: 'a2', nickname: '서울푸드로그', followers: 8700, category: '한식', color: '#16a34a' },
-  { id: 'a3', nickname: '데일리먹부림', followers: 21500, category: '외식업', color: '#9333ea' },
-  { id: 'a4', nickname: '동네맛집기록', followers: 5400, category: '로컬맛집', color: '#ea580c' },
-  { id: 'a5', nickname: '미식가의하루', followers: 16800, category: '푸드포토', color: '#dc2626' },
+  { id: 'a1', nickname: '맛집헌터지수', followers: 13200, category: '맛집탐방', color: '#0066cc', channelUrl: 'https://blog.naver.com/foodnhunter' },
+  { id: 'a2', nickname: '서울푸드로그', followers: 8700, category: '한식', color: '#16a34a', channelUrl: 'https://www.instagram.com/seoul_foodlog' },
+  { id: 'a3', nickname: '데일리먹부림', followers: 21500, category: '외식업', color: '#9333ea', channelUrl: 'https://blog.naver.com/dailymukbang' },
+  { id: 'a4', nickname: '동네맛집기록', followers: 5400, category: '로컬맛집', color: '#ea580c', channelUrl: 'https://www.instagram.com/dongne_taste' },
+  { id: 'a5', nickname: '미식가의하루', followers: 16800, category: '푸드포토', color: '#dc2626', channelUrl: 'https://blog.naver.com/gourmet_daily' },
 ];
 
-type ApplicantState = 'pending' | 'approved' | 'rejected';
+type ApplicantState = 'pending' | 'approved' | 'rejecting' | 'rejected';
 
 export function ApplicantsDrawer({
   isOpen,
@@ -400,14 +401,26 @@ export function ApplicantsDrawer({
   campaign: Campaign | null;
 }) {
   const [states, setStates] = useState<Record<string, ApplicantState>>({});
-
-  const setState = (id: string, next: ApplicantState) =>
-    setStates((prev) => ({ ...prev, [id]: next }));
+  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
 
   const handleClose = () => {
     setStates({});
+    setRejectReasons({});
     onClose();
   };
+
+  function startReject(id: string) {
+    setStates(prev => ({ ...prev, [id]: 'rejecting' }));
+    setRejectReasons(prev => ({ ...prev, [id]: '' }));
+  }
+
+  function confirmReject(id: string) {
+    setStates(prev => ({ ...prev, [id]: 'rejected' }));
+  }
+
+  function cancelReject(id: string) {
+    setStates(prev => ({ ...prev, [id]: 'pending' }));
+  }
 
   return (
     <>
@@ -450,19 +463,12 @@ export function ApplicantsDrawer({
           <ul className="space-y-3">
             {MOCK_APPLICANTS.map((ap) => {
               const state = states[ap.id] ?? 'pending';
-              if (state === 'rejected') {
-                return (
-                  <li
-                    key={ap.id}
-                    className="pointer-events-none rounded-xl border border-gray-100 p-4 opacity-0 transition-opacity duration-300"
-                    aria-hidden="true"
-                  />
-                );
-              }
+              if (state === 'rejected') return null;
+
               return (
                 <li
                   key={ap.id}
-                  className="rounded-xl border border-gray-100 p-4 transition-opacity duration-300"
+                  className="rounded-xl border border-gray-100 p-4"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -478,6 +484,15 @@ export function ApplicantsDrawer({
                       <p className="text-xs text-gray-500">
                         팔로워 {formatFollowers(ap.followers)} · {ap.category}
                       </p>
+                      <a
+                        href={ap.channelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 block truncate text-xs text-[#0066cc] hover:underline"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {ap.channelUrl}
+                      </a>
                     </div>
                     {state === 'approved' && (
                       <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
@@ -486,22 +501,51 @@ export function ApplicantsDrawer({
                       </span>
                     )}
                   </div>
+
                   {state === 'pending' && (
                     <div className="mt-3 flex gap-2">
                       <button
                         type="button"
-                        onClick={() => setState(ap.id, 'approved')}
+                        onClick={() => setStates(prev => ({ ...prev, [ap.id]: 'approved' }))}
                         className="inline-flex flex-1 items-center justify-center rounded-lg bg-[#0066cc] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0058b0]"
                       >
                         승인
                       </button>
                       <button
                         type="button"
-                        onClick={() => setState(ap.id, 'rejected')}
+                        onClick={() => startReject(ap.id)}
                         className="inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
                       >
                         거절
                       </button>
+                    </div>
+                  )}
+
+                  {state === 'rejecting' && (
+                    <div className="mt-3 space-y-2">
+                      <textarea
+                        value={rejectReasons[ap.id] ?? ''}
+                        onChange={e => setRejectReasons(prev => ({ ...prev, [ap.id]: e.target.value }))}
+                        placeholder="거절 사유를 입력해주세요 (선택)"
+                        rows={2}
+                        className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-700 outline-none focus:border-red-400"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => cancelReject(ap.id)}
+                          className="flex-1 rounded-lg border border-gray-200 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        >
+                          취소
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => confirmReject(ap.id)}
+                          className="flex-1 rounded-lg bg-red-500 py-2 text-xs font-medium text-white hover:bg-red-600"
+                        >
+                          거절 확정
+                        </button>
+                      </div>
                     </div>
                   )}
                 </li>

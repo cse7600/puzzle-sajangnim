@@ -21,7 +21,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: '성장 도구',
     items: [
       { icon: '🛒', label: '팀 구매', href: '/team-buy' },
-      { icon: '🎁', label: '리워드', href: '/rewards' },
+      { icon: '🧾', label: '영수증 환급', href: '/rewards' },
       { icon: '💡', label: '지식 거래소', href: '/knowledge' },
       { icon: '🤝', label: '추천인', href: '/referral' },
     ],

@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-06-18T15:02:26.357Z",
+  "lastUpdated": "2026-06-18T15:30:44.852Z",
   "activeFeatures": [
     "puzzle-sajangnim",
     "login",
@@ -18,7 +18,9 @@
     "users",
     "points",
     "place",
-    "experience"
+    "experience",
+    "modals",
+    "[id]"
   ],
   "primaryFeature": "puzzle-sajangnim",
   "features": {
@@ -31,9 +33,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:32:00.677Z",
-        "lastUpdated": "2026-06-18T14:43:29.248Z"
+        "lastUpdated": "2026-06-18T15:26:34.041Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/types/database.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/components/AppSidebar.tsx"
     },
     "login": {
       "phase": "do",
@@ -109,7 +111,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:41:03.269Z",
-        "lastUpdated": "2026-06-18T14:41:03.269Z"
+        "lastUpdated": "2026-06-18T15:28:07.522Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/hub/page.tsx"
     },
@@ -174,7 +176,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:43:57.100Z",
-        "lastUpdated": "2026-06-18T15:02:11.132Z"
+        "lastUpdated": "2026-06-18T15:29:48.696Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/team-buy/page.tsx"
     },
@@ -242,6 +244,32 @@
         "lastUpdated": "2026-06-18T14:48:15.244Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/experience/page.tsx"
+    },
+    "modals": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T15:28:50.309Z",
+        "lastUpdated": "2026-06-18T15:28:50.309Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/components/modals/ExperienceModals.tsx"
+    },
+    "[id]": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T15:30:44.852Z",
+        "lastUpdated": "2026-06-18T15:30:44.852Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/team-buy/[id]/page.tsx"
     }
   },
   "pipeline": {
@@ -252,7 +280,7 @@
   "session": {
     "startedAt": "2026-06-18T07:25:20.070Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-06-18T15:02:26.357Z"
+    "lastActivity": "2026-06-18T15:30:44.852Z"
   },
   "history": [
     {
@@ -588,6 +616,36 @@
     {
       "timestamp": "2026-06-18T15:02:26.357Z",
       "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T15:26:34.041Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T15:28:07.522Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T15:28:50.309Z",
+      "feature": "modals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T15:29:48.696Z",
+      "feature": "team-buy",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T15:30:44.852Z",
+      "feature": "[id]",
       "phase": "do",
       "action": "updated"
     }
