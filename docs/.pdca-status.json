@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-06-18T16:37:40.190Z",
+  "lastUpdated": "2026-06-18T17:31:52.684Z",
   "activeFeatures": [
     "puzzle-sajangnim",
     "login",
@@ -35,7 +35,8 @@
     "summary",
     "community",
     "(app)",
-    "ask"
+    "ask",
+    "request-approval"
   ],
   "primaryFeature": "puzzle-sajangnim",
   "features": {
@@ -100,9 +101,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:39:57.215Z",
-        "lastUpdated": "2026-06-18T15:02:26.357Z"
+        "lastUpdated": "2026-06-18T17:31:04.543Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/ad-accounts/route.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/ad-accounts/page.tsx"
     },
     "paybacks": {
       "phase": "do",
@@ -126,7 +127,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:41:03.269Z",
-        "lastUpdated": "2026-06-18T16:05:13.243Z"
+        "lastUpdated": "2026-06-18T16:51:42.810Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/hub/page.tsx"
     },
@@ -152,9 +153,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:42:20.210Z",
-        "lastUpdated": "2026-06-18T14:45:48.616Z"
+        "lastUpdated": "2026-06-18T16:51:58.468Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/team-deals/page.tsx"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/team-deals/route.ts"
     },
     "join": {
       "phase": "do",
@@ -282,9 +283,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:30:44.852Z",
-        "lastUpdated": "2026-06-18T16:36:57.494Z"
+        "lastUpdated": "2026-06-18T16:51:28.386Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/knowledge/[id]/page.tsx"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/team-buy/[id]/page.tsx"
     },
     "questions": {
       "phase": "do",
@@ -347,7 +348,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:33:33.034Z",
-        "lastUpdated": "2026-06-18T16:37:40.190Z"
+        "lastUpdated": "2026-06-18T16:50:57.792Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/knowledge/page.tsx"
     },
@@ -480,6 +481,19 @@
         "lastUpdated": "2026-06-18T16:33:37.980Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/knowledge/ask/page.tsx"
+    },
+    "request-approval": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-18T16:53:10.196Z",
+        "lastUpdated": "2026-06-18T17:31:52.684Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/ad-accounts/[id]/request-approval/route.ts"
     }
   },
   "pipeline": {
@@ -490,7 +504,7 @@
   "session": {
     "startedAt": "2026-06-18T07:25:20.070Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-06-18T16:37:40.190Z"
+    "lastActivity": "2026-06-18T17:31:52.684Z"
   },
   "history": [
     {
@@ -1216,6 +1230,120 @@
     {
       "timestamp": "2026-06-18T16:37:40.190Z",
       "feature": "knowledge",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:49:23.803Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:49:27.276Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:49:31.695Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:49:36.364Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:50:57.792Z",
+      "feature": "knowledge",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:51:18.280Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:51:22.044Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:51:23.083Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:51:27.364Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:51:28.386Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:51:34.763Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:51:42.810Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:51:58.468Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:52:28.844Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T16:53:10.196Z",
+      "feature": "request-approval",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T17:29:46.939Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T17:31:04.543Z",
+      "feature": "ad-accounts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T17:31:30.078Z",
+      "feature": "request-approval",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-18T17:31:52.684Z",
+      "feature": "request-approval",
       "phase": "do",
       "action": "updated"
     }
