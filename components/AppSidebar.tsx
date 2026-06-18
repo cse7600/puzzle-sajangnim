@@ -28,7 +28,10 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: '설정',
-    items: [{ icon: '🔗', label: '연동 허브', href: '/hub' }],
+    items: [
+      { icon: '🔗', label: '연동 허브', href: '/hub' },
+      { icon: '⚙️', label: '개인 설정', href: '/settings' },
+    ],
   },
 ];
 

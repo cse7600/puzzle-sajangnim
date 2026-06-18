@@ -1,471 +1,322 @@
-'use client';
+'use client'
+import { useState, useEffect } from 'react'
+import { Plus, MessageSquare, Flame, CheckCircle2, Trophy, Crown, Coins, ChevronRight, PenSquare, X } from 'lucide-react'
 
-import { useState } from 'react';
-import {
-  Plus,
-  MessageSquare,
-  Flame,
-  CheckCircle2,
-  Trophy,
-  Crown,
-  Coins,
-  ChevronRight,
-  PenSquare,
-  Inbox,
-  CheckCheck,
-} from 'lucide-react';
+const CATEGORIES = ['전체', '네이버SEO', '광고', 'SNS', '체험단', '블로그', '플레이스'] as const
+type Category = (typeof CATEGORIES)[number]
 
-type FeedTab = 'all' | 'mine' | 'answered' | 'popular';
-
-const FEED_TABS: { key: FeedTab; label: string }[] = [
-  { key: 'all', label: '전체' },
-  { key: 'mine', label: '내 질문' },
-  { key: 'answered', label: '내가 답한 것' },
-  { key: 'popular', label: '인기' },
-];
-
-const CATEGORIES = [
-  '전체',
-  '네이버SEO',
-  '광고',
-  'SNS',
-  '체험단',
-  '블로그',
-  '플레이스',
-] as const;
-
-type Category = (typeof CATEGORIES)[number];
-
-interface Question {
-  id: string;
-  category: Exclude<Category, '전체'>;
-  title: string;
-  author: string;
-  date: string;
-  answers: number;
-  reward?: number;
-  adopted?: boolean;
-  hot?: boolean;
-}
-
-const QUESTIONS: Question[] = [
-  {
-    id: 'q1',
-    category: '네이버SEO',
-    title: '블로그 저품질 판정받으면 탈출 방법 있나요?',
-    author: '박*수',
-    date: '3일 전',
-    answers: 8,
-    reward: 5000,
-    adopted: true,
-  },
-  {
-    id: 'q2',
-    category: '플레이스',
-    title: '악성 리뷰 어떻게 관리하나요?',
-    author: '이*영',
-    date: '5시간 전',
-    answers: 12,
-    hot: true,
-  },
-  {
-    id: 'q3',
-    category: '광고',
-    title: '네이버 키워드 광고 입찰가 설정법',
-    author: '최*철',
-    date: '1일 전',
-    answers: 5,
-    reward: 3000,
-  },
-  {
-    id: 'q4',
-    category: 'SNS',
-    title: '인스타 릴스 vs 유튜브 쇼츠, 음식점에 뭐가 낫나요?',
-    author: '정*민',
-    date: '2일 전',
-    answers: 7,
-  },
-  {
-    id: 'q5',
-    category: '체험단',
-    title: '체험단 사진 컷수 적정량?',
-    author: '한*수',
-    date: '4일 전',
-    answers: 6,
-    reward: 2000,
-    adopted: true,
-  },
-  {
-    id: 'q6',
-    category: '블로그',
-    title: '상위노출 글, 제목에 키워드 몇 번까지 넣어도 되나요?',
-    author: '김*은',
-    date: '6일 전',
-    answers: 9,
-    reward: 4000,
-  },
-  {
-    id: 'q7',
-    category: '플레이스',
-    title: '플레이스 순위가 갑자기 떨어졌는데 원인이 뭘까요?',
-    author: '오*진',
-    date: '2일 전',
-    answers: 11,
-    hot: true,
-  },
-  {
-    id: 'q8',
-    category: '광고',
-    title: '소상공인 광고 예산 월 30만원이면 어디에 쓰는 게 좋나요?',
-    author: '서*호',
-    date: '3일 전',
-    answers: 4,
-    reward: 3000,
-  },
-  {
-    id: 'q9',
-    category: 'SNS',
-    title: '인스타 팔로워 늘리는데 해시태그 몇 개가 적당한가요?',
-    author: '윤*아',
-    date: '7일 전',
-    answers: 6,
-    adopted: true,
-  },
-  {
-    id: 'q10',
-    category: '블로그',
-    title: '체험단 원고 받았는데 그대로 올리면 저품질 위험할까요?',
-    author: '강*석',
-    date: '1주 전',
-    answers: 10,
-    reward: 5000,
-  },
-];
-
-const CATEGORY_STYLE: Record<Exclude<Category, '전체'>, string> = {
+const CATEGORY_STYLE: Record<string, string> = {
   네이버SEO: 'bg-green-50 text-green-700',
   광고: 'bg-orange-50 text-orange-700',
   SNS: 'bg-purple-50 text-purple-700',
   체험단: 'bg-cyan-50 text-cyan-700',
   블로그: 'bg-blue-50 text-blue-700',
   플레이스: 'bg-rose-50 text-rose-700',
-};
-
-interface Answerer {
-  rank: number;
-  name: string;
-  answers: number;
-  adoptRate: number;
-  weeklyPoints: number;
 }
 
-const TOP_ANSWERERS: Answerer[] = [
-  { rank: 1, name: '마케터 김**', answers: 34, adoptRate: 78, weeklyPoints: 45000 },
-  { rank: 2, name: '마케터 이**', answers: 28, adoptRate: 82, weeklyPoints: 38000 },
-  { rank: 3, name: '마케터 박**', answers: 21, adoptRate: 71, weeklyPoints: 29000 },
-];
+interface Question {
+  id: string
+  category: string
+  title: string
+  body: string
+  reward_points: number
+  is_adopted: boolean
+  created_at: string
+  knowledge_answers: { count: number }[]
+}
 
-const RANK_COLOR: Record<number, string> = {
-  1: 'bg-amber-400 text-white',
-  2: 'bg-gray-300 text-white',
-  3: 'bg-orange-300 text-white',
-};
-
-function formatPoints(n: number): string {
-  return n.toLocaleString('ko-KR') + 'P';
+interface Answer {
+  id: string
+  body: string
+  is_adopted: boolean
+  created_at: string
+  points_earned?: number
 }
 
 export default function KnowledgePage() {
-  const [activeTab, setActiveTab] = useState<FeedTab>('all');
-  const [activeCategory, setActiveCategory] = useState<Category>('전체');
+  const [activeCategory, setActiveCategory] = useState<Category>('전체')
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAskModal, setShowAskModal] = useState(false)
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null)
+  const [answers, setAnswers] = useState<Answer[]>([])
+  const [answerBody, setAnswerBody] = useState('')
+  const [submittingAnswer, setSubmittingAnswer] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [askForm, setAskForm] = useState({ category: '네이버SEO', title: '', body: '', reward_points: '0' })
+  const [submittingAsk, setSubmittingAsk] = useState(false)
+
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  async function fetchQuestions() {
+    setLoading(true)
+    const cat = activeCategory !== '전체' ? `&category=${encodeURIComponent(activeCategory)}` : ''
+    const res = await fetch(`/api/knowledge/questions?${cat}`).catch(() => null)
+    const data = res ? await res.json() : []
+    setQuestions(Array.isArray(data) ? data : [])
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchQuestions() }, [activeCategory])
+
+  async function openQuestion(q: Question) {
+    setSelectedQuestion(q)
+    const res = await fetch(`/api/knowledge/questions/${q.id}/answers`).catch(() => null)
+    const data = res ? await res.json() : []
+    setAnswers(Array.isArray(data) ? data : [])
+  }
+
+  async function submitAnswer() {
+    if (!selectedQuestion || !answerBody.trim()) return
+    setSubmittingAnswer(true)
+    const res = await fetch(`/api/knowledge/questions/${selectedQuestion.id}/answers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body: answerBody }),
+    })
+    const data = await res.json()
+    setAnswers(prev => [...prev, data])
+    setAnswerBody('')
+    setSubmittingAnswer(false)
+    if (data.points_earned) showToast(`+${data.points_earned.toLocaleString()}P 적립!`)
+  }
+
+  async function submitQuestion() {
+    if (!askForm.title.trim() || !askForm.body.trim()) return
+    setSubmittingAsk(true)
+    const res = await fetch('/api/knowledge/questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...askForm, reward_points: Number(askForm.reward_points) }),
+    })
+    const data = await res.json()
+    setShowAskModal(false)
+    setAskForm({ category: '네이버SEO', title: '', body: '', reward_points: '0' })
+    setSubmittingAsk(false)
+    if (data.points_earned) showToast(`+${data.points_earned.toLocaleString()}P 적립!`)
+    fetchQuestions()
+  }
+
+  const answerCount = (q: Question) => q.knowledge_answers?.[0]?.count ?? 0
 
   return (
     <div className="mx-auto max-w-7xl">
-      {/* PAGE HEADER */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 rounded-[11px] bg-[#0066cc] px-5 py-3 text-[14px] font-medium text-white shadow-lg">
+          {toast}
+        </div>
+      )}
+
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">지식 거래소</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            마케팅 고민을 전문가에게 물어보고 리워드를 받으세요
-          </p>
+          <p className="mt-1 text-sm text-gray-500">마케팅 고민을 전문가에게 물어보고 리워드를 받으세요</p>
         </div>
         <button
-          type="button"
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0058b0]"
+          onClick={() => setShowAskModal(true)}
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-[#0058b0] transition-colors"
         >
           <Plus className="h-4 w-4" />
           질문하기
         </button>
       </div>
 
-      {/* STATS BAR */}
-      <div className="mb-6 rounded-xl border border-gray-100 bg-white px-6 py-4 shadow-sm">
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-          <Stat label="누적 질문" value="12,840건" />
-          <span className="hidden h-8 w-px bg-gray-100 sm:block" />
-          <Stat label="평균 채택률" value="94%" accent />
-          <span className="hidden h-8 w-px bg-gray-100 sm:block" />
-          <Stat label="평균 답변 시간" value="3.2시간" />
-        </div>
+      {/* 포인트 안내 */}
+      <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/60 px-5 py-3 flex items-center gap-3">
+        <Coins className="h-5 w-5 text-[#0066cc] shrink-0" />
+        <p className="text-[13px] text-[#0066cc]">
+          질문 작성 <strong>+1,000P</strong> · 답변 작성 <strong>+1,000P</strong> (하루 각 1회 적립)
+        </p>
       </div>
 
-      {/* 2-COLUMN LAYOUT */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* LEFT — QUESTION FEED */}
+        {/* 질문 피드 */}
         <div className="lg:col-span-2">
-          {/* Filter bar */}
-          <div className="mb-4 border-b border-gray-200">
-            <nav className="-mb-px flex gap-6">
-              {FEED_TABS.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
-                    activeTab === tab.key
-                      ? 'border-[#0066cc] text-[#0066cc]'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          {/* Category chips */}
           <div className="mb-5 flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => (
+            {CATEGORIES.map(cat => (
               <button
                 key={cat}
-                type="button"
                 onClick={() => setActiveCategory(cat)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeCategory === cat
-                    ? 'bg-[#0066cc] text-white'
-                    : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                }`}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${activeCategory === cat ? 'bg-[#0066cc] text-white' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
               >
                 {cat}
               </button>
             ))}
           </div>
 
-          {/* Question list */}
-          <div className="space-y-3">
-            {QUESTIONS.map((q) => (
-              <QuestionRow key={q.id} question={q} />
-            ))}
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => <div key={i} className="h-24 rounded-xl bg-gray-100 animate-pulse" />)}
+            </div>
+          ) : questions.length === 0 ? (
+            <div className="rounded-xl border border-gray-100 bg-white p-12 text-center">
+              <p className="text-gray-500 text-sm">아직 질문이 없습니다. 첫 질문을 올려보세요!</p>
+              <button onClick={() => setShowAskModal(true)} className="mt-4 text-[#0066cc] text-sm font-medium hover:underline">
+                질문하기 +1,000P
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {questions.map(q => (
+                <button
+                  key={q.id}
+                  onClick={() => openQuestion(q)}
+                  className="group w-full text-left flex items-start justify-between gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm hover:border-gray-200 hover:bg-gray-50/50 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                      <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${CATEGORY_STYLE[q.category] ?? 'bg-gray-50 text-gray-600'}`}>
+                        {q.category}
+                      </span>
+                      {q.is_adopted && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-[#0066cc]">
+                          <CheckCircle2 className="h-3 w-3" /> 채택됨
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-[15px] font-semibold leading-snug text-gray-900 group-hover:text-[#0066cc]">{q.title}</h3>
+                    <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+                      <span className="inline-flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {answerCount(q)}개</span>
+                      <span>{new Date(q.created_at).toLocaleDateString('ko-KR')}</span>
+                    </div>
+                  </div>
+                  {q.reward_points > 0 && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-700">
+                      <Coins className="h-3.5 w-3.5" />{q.reward_points.toLocaleString()}P
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 사이드바 */}
+        <div className="space-y-5">
+          <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
+            <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-4">
+              <Trophy className="h-4 w-4 text-amber-500" />
+              <h2 className="text-base font-semibold text-gray-900">이번 주 인기 답변자</h2>
+            </div>
+            <div className="divide-y divide-gray-50 px-5">
+              {[{ name: '마케터 김**', answers: 34, pts: 45000 }, { name: '마케터 이**', answers: 28, pts: 38000 }, { name: '마케터 박**', answers: 21, pts: 29000 }].map((a, i) => (
+                <div key={i} className="flex items-center gap-3 py-4">
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${i === 0 ? 'bg-amber-400 text-white' : i === 1 ? 'bg-gray-300 text-white' : 'bg-orange-300 text-white'}`}>
+                    {i === 0 ? <Crown className="h-3.5 w-3.5" /> : i + 1}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-gray-900">{a.name}</p>
+                    <p className="text-xs text-gray-500">답변 {a.answers}개</p>
+                  </div>
+                  <span className="shrink-0 text-sm font-semibold text-[#0066cc]">{a.pts.toLocaleString()}P</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Load more */}
-          <div className="mt-6 flex justify-center">
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              더 많은 질문 보기
-              <ChevronRight className="h-4 w-4" />
+          <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0066cc]">
+              <Coins className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="mt-3 text-base font-semibold text-gray-900">마케팅 지식으로 수익 내기</h2>
+            <p className="mt-2 text-sm leading-relaxed text-gray-600">답변하고 채택되면 리워드 전액 지급.</p>
+            <button onClick={() => setShowAskModal(true)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0058b0] transition-colors">
+              <PenSquare className="h-4 w-4" />질문하기 +1,000P
             </button>
           </div>
         </div>
-
-        {/* RIGHT — SIDEBAR */}
-        <div className="space-y-6">
-          <TopAnswerersCard />
-          <EarnCard />
-          <HowItWorksCard />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
-  return (
-    <div className="flex items-baseline gap-2">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span
-        className={`text-lg font-semibold ${
-          accent ? 'text-[#0066cc]' : 'text-gray-900'
-        }`}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function QuestionRow({ question }: { question: Question }) {
-  return (
-    <div className="group flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-colors hover:border-gray-200 hover:bg-gray-50/50">
-      <div className="min-w-0 flex-1">
-        {/* Badges */}
-        <div className="mb-2 flex flex-wrap items-center gap-1.5">
-          <span
-            className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${CATEGORY_STYLE[question.category]}`}
-          >
-            {question.category}
-          </span>
-          {question.adopted && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-[#0066cc]">
-              <CheckCircle2 className="h-3 w-3" />
-              채택됨
-            </span>
-          )}
-          {question.hot && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-              <Flame className="h-3 w-3" />
-              인기
-            </span>
-          )}
-        </div>
-
-        {/* Title */}
-        <h3 className="text-[17px] font-semibold leading-snug text-gray-900 group-hover:text-[#0066cc]">
-          {question.title}
-        </h3>
-
-        {/* Meta */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
-          <span className="font-medium text-gray-600">{question.author}</span>
-          <span className="text-gray-300">·</span>
-          <span>{question.date}</span>
-          <span className="text-gray-300">·</span>
-          <span className="inline-flex items-center gap-1">
-            <MessageSquare className="h-3.5 w-3.5" />
-            답변 {question.answers}개
-          </span>
-        </div>
       </div>
 
-      {/* Reward badge */}
-      {question.reward && (
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-700">
-          <Coins className="h-3.5 w-3.5" />리 {question.reward.toLocaleString('ko-KR')}P
-        </span>
+      {/* 질문 상세 모달 */}
+      {selectedQuestion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setSelectedQuestion(null)}>
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between p-6 border-b border-gray-100">
+              <div>
+                <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium mb-2 ${CATEGORY_STYLE[selectedQuestion.category] ?? 'bg-gray-50 text-gray-600'}`}>
+                  {selectedQuestion.category}
+                </span>
+                <h2 className="text-lg font-semibold text-gray-900">{selectedQuestion.title}</h2>
+              </div>
+              <button onClick={() => setSelectedQuestion(null)} className="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-gray-100">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-700 leading-relaxed mb-6">{selectedQuestion.body}</p>
+
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">답변 {answers.length}개</h3>
+              <div className="space-y-4 mb-6">
+                {answers.map(a => (
+                  <div key={a.id} className="rounded-lg bg-gray-50 p-4">
+                    <p className="text-sm text-gray-700 leading-relaxed">{a.body}</p>
+                    <p className="mt-2 text-xs text-gray-400">{new Date(a.created_at).toLocaleDateString('ko-KR')}</p>
+                  </div>
+                ))}
+                {answers.length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-4">첫 번째 답변을 달아보세요 (+1,000P)</p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <textarea
+                  value={answerBody}
+                  onChange={e => setAnswerBody(e.target.value)}
+                  placeholder="마케팅 노하우를 공유해보세요..."
+                  rows={3}
+                  className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-[#0066cc]"
+                />
+                <button
+                  onClick={submitAnswer}
+                  disabled={submittingAnswer || !answerBody.trim()}
+                  className="w-full rounded-lg bg-[#0066cc] py-2.5 text-sm font-medium text-white hover:bg-[#0058b0] disabled:opacity-40 transition-colors"
+                >
+                  {submittingAnswer ? '등록 중...' : '답변 등록 (+1,000P)'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 질문 작성 모달 */}
+      {showAskModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setShowAskModal(false)}>
+          <div className="bg-white rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-base font-semibold text-gray-900">질문 작성 (+1,000P)</h2>
+              <button onClick={() => setShowAskModal(false)} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[13px] font-medium text-gray-700 mb-1.5">카테고리</label>
+                <select value={askForm.category} onChange={e => setAskForm(f => ({ ...f, category: e.target.value }))} className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm bg-white outline-none focus:border-[#0066cc]">
+                  {CATEGORIES.filter(c => c !== '전체').map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-gray-700 mb-1.5">제목</label>
+                <input type="text" placeholder="마케팅 고민을 한 줄로 요약해주세요" value={askForm.title} onChange={e => setAskForm(f => ({ ...f, title: e.target.value }))} className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#0066cc]" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-gray-700 mb-1.5">내용</label>
+                <textarea rows={4} placeholder="구체적인 상황과 고민을 적어주세요" value={askForm.body} onChange={e => setAskForm(f => ({ ...f, body: e.target.value }))} className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#0066cc]" />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setShowAskModal(false)} className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm text-gray-600">취소</button>
+                <button onClick={submitQuestion} disabled={submittingAsk || !askForm.title.trim() || !askForm.body.trim()} className="flex-1 rounded-lg bg-[#0066cc] py-2.5 text-sm font-medium text-white hover:bg-[#0058b0] disabled:opacity-40">
+                  {submittingAsk ? '등록 중...' : '질문 등록'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
-  );
-}
-
-function TopAnswerersCard() {
-  return (
-    <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-4">
-        <Trophy className="h-4.5 w-4.5 text-amber-500" />
-        <h2 className="text-base font-semibold text-gray-900">
-          이번 주 인기 답변자
-        </h2>
-      </div>
-
-      <div className="divide-y divide-gray-50 px-5">
-        {TOP_ANSWERERS.map((a) => (
-          <div key={a.rank} className="flex items-center gap-3 py-4">
-            <div
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${RANK_COLOR[a.rank]}`}
-            >
-              {a.rank === 1 ? <Crown className="h-3.5 w-3.5" /> : a.rank}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-gray-900">
-                {a.name}
-              </p>
-              <p className="text-xs text-gray-500">
-                답변 {a.answers}개 · 채택률 {a.adoptRate}%
-              </p>
-            </div>
-            <span className="shrink-0 text-sm font-semibold text-[#0066cc]">
-              {formatPoints(a.weeklyPoints)}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="border-t border-gray-100 px-5 py-3">
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 text-sm font-medium text-[#0066cc] hover:underline"
-        >
-          전체 랭킹 보기
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function EarnCard() {
-  return (
-    <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-6 shadow-sm">
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0066cc]">
-        <Coins className="h-5 w-5 text-white" />
-      </div>
-      <h2 className="mt-4 text-base font-semibold text-gray-900">
-        마케팅 지식으로 수익 내기
-      </h2>
-      <p className="mt-2 text-sm leading-relaxed text-gray-600">
-        답변하고 채택되면 리워드 전액 지급. 현재 대기 중인{' '}
-        <span className="font-semibold text-[#0066cc]">미채택 질문 37개</span>가
-        답변을 기다리고 있어요.
-      </p>
-      <button
-        type="button"
-        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0058b0]"
-      >
-        <PenSquare className="h-4 w-4" />
-        답변자로 시작하기
-      </button>
-    </div>
-  );
-}
-
-function HowItWorksCard() {
-  const steps = [
-    {
-      icon: <PenSquare className="h-4 w-4 text-[#0066cc]" />,
-      title: '질문 등록',
-      desc: '고민을 올리고 리워드를 걸어요',
-    },
-    {
-      icon: <Inbox className="h-4 w-4 text-[#0066cc]" />,
-      title: '답변 받기',
-      desc: '전문가들이 답변을 달아줘요',
-    },
-    {
-      icon: <CheckCheck className="h-4 w-4 text-[#0066cc]" />,
-      title: '채택 & 지급',
-      desc: '베스트 답변 채택 시 리워드 지급',
-    },
-  ];
-
-  return (
-    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-      <h2 className="text-base font-semibold text-gray-900">이용 방법</h2>
-      <ol className="mt-4 space-y-4">
-        {steps.map((s, i) => (
-          <li key={s.title} className="flex items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-              {s.icon}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900">
-                <span className="mr-1.5 text-gray-400">{i + 1}.</span>
-                {s.title}
-              </p>
-              <p className="mt-0.5 text-xs text-gray-500">{s.desc}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
+  )
 }

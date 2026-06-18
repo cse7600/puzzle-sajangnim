@@ -288,10 +288,9 @@ export default function PlacePage() {
             })}
           </ul>
 
-          <button className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0066cc] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0055aa]">
-            <Sparkles className="h-4 w-4" />
-            자동 최적화 시작
-          </button>
+          <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700 leading-relaxed">
+            플레이스 모니터링은 1일 1회 자동 수집됩니다. 순위·리뷰 수·별점 변화를 매일 추적해 드립니다.
+          </div>
         </div>
 
         {/* RIGHT — 경쟁자 분석 */}
