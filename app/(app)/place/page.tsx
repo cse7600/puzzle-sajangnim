@@ -1,35 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw,
   Store,
   MapPin,
   Tag,
   CheckCircle2,
-  ArrowUp,
-  ArrowDown,
-  Minus,
   Check,
   AlertTriangle,
   X,
   ChevronRight,
-  Sparkles,
   Star,
   Image as ImageIcon,
   MessageSquare,
+  Plus,
 } from 'lucide-react';
-
-type Signal = 'green' | 'yellow' | 'red';
-type Trend = 'up' | 'down' | 'flat';
-
-interface KeywordRank {
-  keyword: string;
-  signal: Signal;
-  rank: number;
-  trend: Trend;
-  delta: number;
-}
+import type {
+  PlaceRegistration,
+  KeywordWithRank,
+  RankingTrendResponse,
+  RegisterResponse,
+  KeywordCard,
+  ChartLine,
+} from './types';
+import { toKeywordCards, toChartLabels, toChartLines } from './lib';
+import {
+  SIGNAL_STYLES,
+  TrendBadge,
+  SkeletonCard,
+  RegisterModal,
+  RankChart,
+} from './components';
 
 interface ChecklistItem {
   status: 'done' | 'warn' | 'fail';
@@ -47,12 +49,7 @@ interface Competitor {
   isMine?: boolean;
 }
 
-const KEYWORDS: KeywordRank[] = [
-  { keyword: '을지로 쌈밥', signal: 'green', rank: 3, trend: 'up', delta: 2 },
-  { keyword: '중구 점심 한식', signal: 'yellow', rank: 11, trend: 'flat', delta: 0 },
-  { keyword: '을지로 맛집', signal: 'red', rank: 28, trend: 'down', delta: 3 },
-];
-
+// 후속 페이즈: 진단 로직 별도 — 현재 목업
 const CHECKLIST: ChecklistItem[] = [
   { status: 'done', label: '사진 20장 이상 등록', detail: '완료' },
   { status: 'done', label: '영업시간 최신화', detail: '완료' },
@@ -61,6 +58,7 @@ const CHECKLIST: ChecklistItem[] = [
   { status: 'fail', label: '예약 기능 미사용', action: '설정하기' },
 ];
 
+// 후속 페이즈: 경쟁자 데이터 모델 별도 — 현재 목업
 const COMPETITORS: Competitor[] = [
   { rank: 1, name: '을지면옥 본점', reviews: 4820, photos: 312, rating: 4.6 },
   { rank: 2, name: '충무로 한정식', reviews: 2104, photos: 198, rating: 4.5 },
@@ -69,82 +67,168 @@ const COMPETITORS: Competitor[] = [
   { rank: 5, name: '명동 손칼국수', reviews: 967, photos: 88, rating: 4.4 },
 ];
 
-// 30-day rank trend per keyword (rank 1 = best). Lower is better.
-const TREND_DATA = {
-  labels: ['5/20', '5/25', '5/30', '6/4', '6/9', '6/14', '6/18'],
-  series: [
-    { name: '을지로 쌈밥', color: '#0066cc', ranks: [7, 6, 5, 4, 5, 4, 3] },
-    { name: '중구 점심 한식', color: '#f59e0b', ranks: [9, 10, 12, 11, 13, 12, 11] },
-    { name: '을지로 맛집', color: '#ef4444', ranks: [22, 24, 23, 26, 25, 27, 28] },
-  ],
-};
-
-const SIGNAL_STYLES: Record<Signal, { dot: string; ring: string; text: string }> = {
-  green: { dot: 'bg-emerald-500', ring: 'ring-emerald-100', text: 'text-emerald-600' },
-  yellow: { dot: 'bg-amber-400', ring: 'ring-amber-100', text: 'text-amber-500' },
-  red: { dot: 'bg-red-500', ring: 'ring-red-100', text: 'text-red-600' },
-};
-
-function TrendBadge({ trend, delta }: { trend: Trend; delta: number }) {
-  if (trend === 'up') {
-    return (
-      <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-semibold text-emerald-600">
-        <ArrowUp className="h-3 w-3" />
-        {delta}
-      </span>
-    );
-  }
-  if (trend === 'down') {
-    return (
-      <span className="inline-flex items-center gap-0.5 rounded-md bg-red-50 px-1.5 py-0.5 text-xs font-semibold text-red-600">
-        <ArrowDown className="h-3 w-3" />
-        {delta}
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-0.5 rounded-md bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-500">
-      <Minus className="h-3 w-3" />
-      {delta}
-    </span>
-  );
-}
-
 export default function PlacePage() {
+  const [loading, setLoading] = useState(true);
+  const [registration, setRegistration] = useState<PlaceRegistration | null>(null);
+  const [keywordCards, setKeywordCards] = useState<KeywordCard[]>([]);
+  const [chartLabels, setChartLabels] = useState<string[]>([]);
+  const [chartLines, setChartLines] = useState<ChartLine[]>([]);
+
   const [isUpdating, setIsUpdating] = useState(false);
   const [updated, setUpdated] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [registerUrl, setRegisterUrl] = useState('');
+  const [registerError, setRegisterError] = useState<string | null>(null);
+  const [registerNotice, setRegisterNotice] = useState<string | null>(null);
+  const [registerSubmitting, setRegisterSubmitting] = useState(false);
 
-  const handleRefresh = () => {
-    if (isUpdating) return;
+  const [newKeyword, setNewKeyword] = useState('');
+  const [keywordError, setKeywordError] = useState<string | null>(null);
+
+  // registration 의 키워드 + 순위 시계열을 불러와 카드/차트 state 갱신.
+  const loadKeywordData = useCallback(async (registrationId: string) => {
+    const keywordRes = await fetch(
+      `/api/place/keywords?registration_id=${registrationId}`
+    ).catch(() => null);
+    const rankingRes = await fetch(
+      `/api/place/rankings?registration_id=${registrationId}&days=30`
+    ).catch(() => null);
+
+    const keywords: KeywordWithRank[] = keywordRes ? await keywordRes.json() : [];
+    const rankings: RankingTrendResponse | null = rankingRes ? await rankingRes.json() : null;
+    const series = rankings?.series ?? [];
+
+    setKeywordCards(toKeywordCards(Array.isArray(keywords) ? keywords : [], series));
+    setChartLabels(toChartLabels(series));
+    setChartLines(toChartLines(series));
+  }, []);
+
+  // 등록 플레이스 목록 → 첫 항목을 활성 registration 으로. 이후 키워드 데이터 로드.
+  const loadRegistrations = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch('/api/place/register').catch(() => null);
+    const registrations: PlaceRegistration[] = res ? await res.json() : [];
+    const active = Array.isArray(registrations) ? registrations[0] ?? null : null;
+    setRegistration(active);
+    if (active) await loadKeywordData(active.id);
+    setLoading(false);
+  }, [loadKeywordData]);
+
+  useEffect(() => {
+    loadRegistrations();
+  }, [loadRegistrations]);
+
+  async function submitRegister() {
+    if (!registerUrl.trim()) {
+      setRegisterError('플레이스 URL을 입력해주세요.');
+      return;
+    }
+    setRegisterSubmitting(true);
+    setRegisterError(null);
+    setRegisterNotice(null);
+    const res = await fetch('/api/place/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ place_url: registerUrl.trim() }),
+    }).catch(() => null);
+    setRegisterSubmitting(false);
+
+    if (!res) {
+      setRegisterError('네트워크 오류로 등록에 실패했습니다.');
+      return;
+    }
+    const payload: RegisterResponse & { error?: string } = await res.json();
+    if (!res.ok) {
+      setRegisterError(payload.error ?? '등록에 실패했습니다.');
+      return;
+    }
+    if (payload.fetch_failed) {
+      setRegisterNotice('기본정보 수집 대기중입니다. 등록은 완료되었습니다.');
+    }
+    setRegisterUrl('');
+    setShowRegisterModal(false);
+    loadRegistrations();
+  }
+
+  async function addKeyword() {
+    if (!registration || !newKeyword.trim()) {
+      setKeywordError('키워드를 입력해주세요.');
+      return;
+    }
+    setKeywordError(null);
+    const res = await fetch('/api/place/keywords', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ registration_id: registration.id, keyword: newKeyword.trim() }),
+    }).catch(() => null);
+
+    if (!res) {
+      setKeywordError('네트워크 오류로 키워드 추가에 실패했습니다.');
+      return;
+    }
+    if (res.status === 409) {
+      setKeywordError('이미 등록된 키워드입니다');
+      return;
+    }
+    if (!res.ok) {
+      const payload = await res.json();
+      setKeywordError(payload.error ?? '키워드 추가에 실패했습니다.');
+      return;
+    }
+    setNewKeyword('');
+    loadKeywordData(registration.id);
+  }
+
+  async function removeKeyword(keywordId: string) {
+    if (!registration) return;
+    const res = await fetch(`/api/place/keywords?id=${keywordId}`, {
+      method: 'DELETE',
+    }).catch(() => null);
+    if (res?.ok) loadKeywordData(registration.id);
+    else setKeywordError('키워드 삭제에 실패했습니다.');
+  }
+
+  // 등록된 placeId 로 register 재호출(upsert) → 순위·기본정보 재수집.
+  async function handleRefresh() {
+    if (isUpdating || !registration) return;
     setIsUpdating(true);
     setUpdated(false);
-    setTimeout(() => {
-      setIsUpdating(false);
+    const res = await fetch('/api/place/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ place_url: registration.place_url }),
+    }).catch(() => null);
+    setIsUpdating(false);
+    if (res?.ok) {
       setUpdated(true);
       setTimeout(() => setUpdated(false), 3000);
-    }, 2000);
-  };
+      loadRegistrations();
+    }
+  }
 
-  // Chart geometry
-  const allRanks = TREND_DATA.series.flatMap((s) => s.ranks);
-  const minRank = Math.min(...allRanks);
-  const maxRank = Math.max(...allRanks);
-  const chartH = 180;
-  const padTop = 12;
-  const padBottom = 12;
-  const usableH = chartH - padTop - padBottom;
-  const colCount = TREND_DATA.labels.length;
+  if (loading) return <PlaceSkeleton />;
 
-  const yFor = (rank: number) => {
-    // rank 1 (best) near top -> small y. Higher rank number -> lower position.
-    const ratio = (rank - minRank) / (maxRank - minRank || 1);
-    return padTop + ratio * usableH;
-  };
-  const xFor = (i: number) => (i / (colCount - 1)) * 100;
+  if (!registration) {
+    return (
+      <>
+        <EmptyState onRegister={() => setShowRegisterModal(true)} />
+        {showRegisterModal && (
+          <RegisterModal
+            url={registerUrl}
+            setUrl={setRegisterUrl}
+            error={registerError}
+            notice={registerNotice}
+            submitting={registerSubmitting}
+            onClose={() => setShowRegisterModal(false)}
+            onSubmit={submitRegister}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1280px] space-y-6">
-      {/* PAGE HEADER */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">플레이스 최적화</h1>
@@ -166,65 +250,125 @@ export default function PlacePage() {
       <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2">
           <Store className="h-4 w-4 text-gray-400" />
-          <span className="text-base font-bold text-gray-900">을지로 쌈밥 철수네</span>
+          <span className="text-base font-bold text-gray-900">{registration.name}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <MapPin className="h-4 w-4 text-gray-400" />
-          서울 중구 을지로 123
-        </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Tag className="h-4 w-4 text-gray-400" />
-          한식 / 쌈밥
-        </div>
-        <div className="flex items-center gap-2 text-sm font-medium text-emerald-600">
-          <CheckCircle2 className="h-4 w-4" />
-          네이버 연동 완료
-        </div>
-        <button className="ml-auto text-sm font-medium text-[#0066cc] hover:underline">
+        {registration.address && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <MapPin className="h-4 w-4 text-gray-400" />
+            {registration.address}
+          </div>
+        )}
+        {registration.category && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Tag className="h-4 w-4 text-gray-400" />
+            {registration.category}
+          </div>
+        )}
+        {registration.latest_snapshot ? (
+          <div className="flex items-center gap-2 text-sm font-medium text-emerald-600">
+            <CheckCircle2 className="h-4 w-4" />
+            네이버 연동 완료
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-sm font-medium text-amber-600">
+            <AlertTriangle className="h-4 w-4" />
+            기본정보 수집 대기중
+          </div>
+        )}
+        <button
+          onClick={() => {
+            setRegisterUrl(registration.place_url);
+            setRegisterError(null);
+            setRegisterNotice(null);
+            setShowRegisterModal(true);
+          }}
+          className="ml-auto text-sm font-medium text-[#0066cc] hover:underline"
+        >
           가게 정보 수정
         </button>
       </div>
 
       {/* 키워드 순위 PANEL */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {KEYWORDS.map((k) => {
-          const s = SIGNAL_STYLES[k.signal];
-          return (
-            <div
-              key={k.keyword}
-              className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-600">{k.keyword}</span>
-                <span
-                  className={`h-4 w-4 rounded-full ${s.dot} ring-4 ${s.ring}`}
-                  aria-label={`신호 ${k.signal}`}
-                />
-              </div>
-              <div className="mt-4 flex items-end gap-2">
-                <span className="text-[48px] font-bold leading-none text-gray-900">
-                  {k.rank}
-                </span>
-                <span className="pb-1 text-lg font-semibold text-gray-400">위</span>
-                <div className="ml-auto pb-1">
-                  <TrendBadge trend={k.trend} delta={k.delta} />
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            value={newKeyword}
+            onChange={(event) => {
+              setNewKeyword(event.target.value);
+              setKeywordError(null);
+            }}
+            onKeyDown={(event) => event.key === 'Enter' && addKeyword()}
+            placeholder="모니터링할 키워드 추가 (예: 을지로 쌈밥)"
+            className="min-w-[240px] flex-1 rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:outline-none"
+          />
+          <button
+            onClick={addKeyword}
+            disabled={!newKeyword.trim()}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0055aa] disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" />
+            키워드 추가
+          </button>
+        </div>
+        {keywordError && <p className="text-sm font-medium text-red-600">{keywordError}</p>}
+
+        {keywordCards.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-gray-400">
+            모니터링할 키워드를 추가하면 순위 추이가 표시됩니다.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {keywordCards.map((card) => {
+              const style = SIGNAL_STYLES[card.signal];
+              return (
+                <div
+                  key={card.id}
+                  className="group relative rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">{card.keyword}</span>
+                    <span
+                      className={`h-4 w-4 rounded-full ${style.dot} ring-4 ${style.ring}`}
+                      aria-label={`신호 ${card.signal}`}
+                    />
+                  </div>
+                  <div className="mt-4 flex items-end gap-2">
+                    <span className="text-[48px] font-bold leading-none text-gray-900">
+                      {card.rank ?? '—'}
+                    </span>
+                    <span className="pb-1 text-lg font-semibold text-gray-400">
+                      {card.rank === null ? '권 밖' : '위'}
+                    </span>
+                    <div className="ml-auto pb-1">
+                      <TrendBadge trend={card.trend} delta={card.delta} />
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-gray-400">
+                    {card.rank === null
+                      ? '순위권 밖 — 노출 개선이 필요해요'
+                      : card.trend === 'up'
+                        ? '지난 수집 대비 순위 상승 중'
+                        : card.trend === 'down'
+                          ? '순위 하락 — 개선이 필요해요'
+                          : '순위 변동 없음'}
+                  </p>
+                  <button
+                    onClick={() => removeKeyword(card.id)}
+                    aria-label="키워드 삭제"
+                    className="absolute right-3 top-3 rounded-md p-1 text-gray-300 opacity-0 transition hover:bg-gray-100 hover:text-gray-500 group-hover:opacity-100"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-              </div>
-              <p className="mt-3 text-xs text-gray-400">
-                {k.trend === 'up'
-                  ? '지난주 대비 순위 상승 중'
-                  : k.trend === 'down'
-                    ? '순위 하락 — 개선이 필요해요'
-                    : '순위 변동 없음'}
-              </p>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* 2-COLUMN: 개선 진단 + 경쟁자 분석 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* LEFT — 개선 진단 */}
+        {/* 후속 페이즈: 진단 로직 별도 — 현재 목업 */}
         <div className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-gray-900">개선 진단 체크리스트</h2>
@@ -234,18 +378,17 @@ export default function PlacePage() {
             </div>
           </div>
 
-          {/* score bar */}
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
             <div className="h-full rounded-full bg-[#0066cc]" style={{ width: '62%' }} />
           </div>
 
           <ul className="mt-5 flex-1 space-y-2.5">
-            {CHECKLIST.map((item, i) => {
-              const isDone = item.status === 'done';
-              const isWarn = item.status === 'warn';
+            {CHECKLIST.map((checkItem, index) => {
+              const isDone = checkItem.status === 'done';
+              const isWarn = checkItem.status === 'warn';
               return (
                 <li
-                  key={i}
+                  key={index}
                   className="flex items-center gap-3 rounded-lg border border-gray-100 px-3 py-2.5"
                 >
                   <span
@@ -271,15 +414,15 @@ export default function PlacePage() {
                         isDone ? 'text-gray-500' : 'text-gray-900'
                       }`}
                     >
-                      {item.label}
+                      {checkItem.label}
                     </p>
-                    {item.detail && (
-                      <p className="text-xs text-gray-400">{item.detail}</p>
+                    {checkItem.detail && (
+                      <p className="text-xs text-gray-400">{checkItem.detail}</p>
                     )}
                   </div>
-                  {item.action && (
+                  {checkItem.action && (
                     <button className="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[#0066cc] hover:underline">
-                      {item.action}
+                      {checkItem.action}
                       <ChevronRight className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -288,12 +431,12 @@ export default function PlacePage() {
             })}
           </ul>
 
-          <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700 leading-relaxed">
+          <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-700">
             플레이스 모니터링은 1일 1회 자동 수집됩니다. 순위·리뷰 수·별점 변화를 매일 추적해 드립니다.
           </div>
         </div>
 
-        {/* RIGHT — 경쟁자 분석 */}
+        {/* 후속 페이즈: 경쟁자 데이터 모델 별도 — 현재 목업 */}
         <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-gray-900">내 가게 vs 경쟁자</h2>
@@ -314,30 +457,34 @@ export default function PlacePage() {
                 </tr>
               </thead>
               <tbody>
-                {COMPETITORS.map((c) => (
+                {COMPETITORS.map((competitor) => (
                   <tr
-                    key={c.rank}
+                    key={competitor.rank}
                     className={`border-b border-gray-50 last:border-0 ${
-                      c.isMine ? 'bg-blue-50/50' : ''
+                      competitor.isMine ? 'bg-blue-50/50' : ''
                     }`}
                   >
                     <td
                       className={`py-3 pl-3 ${
-                        c.isMine ? 'border-l-2 border-[#0066cc]' : 'border-l-2 border-transparent'
+                        competitor.isMine
+                          ? 'border-l-2 border-[#0066cc]'
+                          : 'border-l-2 border-transparent'
                       }`}
                     >
-                      <span className="font-semibold text-gray-700">{c.rank}</span>
+                      <span className="font-semibold text-gray-700">{competitor.rank}</span>
                     </td>
                     <td className="py-3 pr-2">
                       <div className="flex items-center gap-1.5">
                         <span
                           className={`truncate ${
-                            c.isMine ? 'font-bold text-[#0066cc]' : 'font-medium text-gray-800'
+                            competitor.isMine
+                              ? 'font-bold text-[#0066cc]'
+                              : 'font-medium text-gray-800'
                           }`}
                         >
-                          {c.name}
+                          {competitor.name}
                         </span>
-                        {c.isMine && (
+                        {competitor.isMine && (
                           <span className="shrink-0 rounded bg-[#0066cc] px-1.5 py-0.5 text-[10px] font-semibold text-white">
                             내 가게
                           </span>
@@ -345,13 +492,15 @@ export default function PlacePage() {
                       </div>
                     </td>
                     <td className="py-3 text-right tabular-nums text-gray-600">
-                      {c.reviews.toLocaleString()}
+                      {competitor.reviews.toLocaleString()}
                     </td>
-                    <td className="py-3 text-right tabular-nums text-gray-600">{c.photos}</td>
+                    <td className="py-3 text-right tabular-nums text-gray-600">
+                      {competitor.photos}
+                    </td>
                     <td className="py-3 pr-1 text-right">
-                      <span className="inline-flex items-center gap-0.5 tabular-nums font-medium text-gray-800">
+                      <span className="inline-flex items-center gap-0.5 font-medium tabular-nums text-gray-800">
                         <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                        {c.rating}
+                        {competitor.rating}
                       </span>
                     </td>
                   </tr>
@@ -378,93 +527,85 @@ export default function PlacePage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-gray-900">순위 변동 추이</h2>
-            <p className="mt-0.5 text-xs text-gray-400">최근 30일 키워드별 노출 순위 (낮을수록 상위)</p>
+            <p className="mt-0.5 text-xs text-gray-400">
+              최근 30일 키워드별 노출 순위 (낮을수록 상위)
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
-            {TREND_DATA.series.map((s) => (
-              <div key={s.name} className="flex items-center gap-1.5">
+            {chartLines.map((line) => (
+              <div key={line.name} className="flex items-center gap-1.5">
                 <span
                   className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: s.color }}
+                  style={{ backgroundColor: line.color }}
                 />
-                <span className="text-xs font-medium text-gray-600">{s.name}</span>
+                <span className="text-xs font-medium text-gray-600">{line.name}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Chart */}
-        <div className="mt-6 flex gap-3">
-          {/* Y axis labels */}
-          <div
-            className="flex w-8 flex-col justify-between text-right text-[10px] text-gray-400"
-            style={{ height: chartH }}
-          >
-            <span>{minRank}위</span>
-            <span>{Math.round((minRank + maxRank) / 2)}위</span>
-            <span>{maxRank}위</span>
-          </div>
-
-          {/* Plot area */}
-          <div className="relative flex-1" style={{ height: chartH }}>
-            {/* gridlines */}
-            {[0, 0.5, 1].map((g) => (
-              <div
-                key={g}
-                className="absolute left-0 right-0 border-t border-dashed border-gray-100"
-                style={{ top: padTop + g * usableH }}
-              />
-            ))}
-
-            {/* lines + points via SVG overlay */}
-            <svg
-              className="absolute inset-0 h-full w-full overflow-visible"
-              viewBox="0 0 100 180"
-              preserveAspectRatio="none"
-            >
-              {TREND_DATA.series.map((s) => {
-                const points = s.ranks
-                  .map((r, i) => `${xFor(i)},${yFor(r)}`)
-                  .join(' ');
-                return (
-                  <polyline
-                    key={s.name}
-                    points={points}
-                    fill="none"
-                    stroke={s.color}
-                    strokeWidth={0.8}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                );
-              })}
-            </svg>
-
-            {/* point dots (non-stretched) */}
-            {TREND_DATA.series.map((s) =>
-              s.ranks.map((r, i) => (
-                <span
-                  key={`${s.name}-${i}`}
-                  className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white"
-                  style={{
-                    left: `${xFor(i)}%`,
-                    top: yFor(r),
-                    backgroundColor: s.color,
-                  }}
-                />
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* X axis labels */}
-        <div className="ml-11 mt-2 flex justify-between text-[10px] text-gray-400">
-          {TREND_DATA.labels.map((l) => (
-            <span key={l}>{l}</span>
-          ))}
-        </div>
+        {chartLabels.length === 0 ? (
+          <p className="mt-6 rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-gray-400">
+            순위 수집 이력이 쌓이면 추이 그래프가 표시됩니다.
+          </p>
+        ) : (
+          <>
+            <RankChart labels={chartLabels} lines={chartLines} />
+            <div className="ml-11 mt-2 flex justify-between text-[10px] text-gray-400">
+              {chartLabels.map((label, index) => (
+                <span key={`${label}-${index}`}>{label}</span>
+              ))}
+            </div>
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function EmptyState({ onRegister }: { onRegister: () => void }) {
+  return (
+    <div className="mx-auto max-w-[1280px] space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-900">플레이스 최적화</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          내 가게의 네이버 노출 순위를 실시간으로 관리하세요
+        </p>
+      </div>
+      <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-gray-200 bg-white p-16 text-center shadow-sm">
+        <Store className="h-10 w-10 text-gray-300" />
+        <div>
+          <p className="text-base font-semibold text-gray-900">등록된 플레이스가 없습니다</p>
+          <p className="mt-1 text-sm text-gray-500">
+            네이버 플레이스 URL을 등록하면 순위·기본정보 추적이 시작됩니다.
+          </p>
+        </div>
+        <button
+          onClick={onRegister}
+          className="inline-flex items-center gap-2 rounded-lg bg-[#0066cc] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#0055aa]"
+        >
+          <Plus className="h-4 w-4" />
+          플레이스 등록
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PlaceSkeleton() {
+  return (
+    <div className="mx-auto max-w-[1280px] space-y-6">
+      <div className="h-16 animate-pulse rounded-xl border border-gray-100 bg-white shadow-sm" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <SkeletonCard className="h-72" />
+        <SkeletonCard className="h-72" />
+      </div>
+      <SkeletonCard className="h-64" />
     </div>
   );
 }
