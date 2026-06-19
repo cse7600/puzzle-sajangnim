@@ -32,6 +32,18 @@ export interface KeywordRankResult {
   raw: unknown;
 }
 
+/** allSearch searchCoord 용 좌표(경도 x, 위도 y). */
+export interface SearchCoord {
+  x: string;
+  y: string;
+}
+
+// 좌표 미지정 시 기본값(서울시청). allSearch 는 searchCoord 없으면 400 을 반환한다.
+const DEFAULT_SEARCH_COORD: SearchCoord = {
+  x: '126.9783882',
+  y: '37.5666103',
+};
+
 const MOBILE_USER_AGENT =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ' +
   '(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
@@ -185,69 +197,115 @@ function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value : null;
 }
 
-// 추정 GraphQL operation — 구현 시점 네트워크 탭으로 재확인 필요(LOW 신뢰도).
-const PLACE_INFO_QUERY = `
-  query getPlaceMain($id: String!) {
-    place(id: $id) {
-      id
-      name
-      category
-      address
-      roadAddress
-      reviewCount
-      visitorReviewCount
-      visitorReviewScore
-      blogCafeReviewCount
-      photoCount
-    }
-  }
-`;
+// 네이버 GraphQL 엔드포인트는 스키마 변경으로 동작 불가
+// ("Cannot query field 'place' on type 'Query'"). 대신 플레이스 home 페이지
+// HTML 의 window.__APOLLO_STATE__ 를 파싱한다(실테스트 검증).
+
+// [\s\S] 는 dotAll(s 플래그) 대용 — tsconfig target ES2017 에서 s 플래그 미지원.
+const APOLLO_STATE_PATTERN =
+  /window\.__APOLLO_STATE__\s*=\s*(\{[\s\S]+?\});\s*<\/script>/;
+const APOLLO_STATE_FALLBACK = /window\.__APOLLO_STATE__\s*=\s*([\s\S]+?);\s*\n/;
+const PHOTO_ITEM_PREFIX = 'PlaceDetailTopPhotoItem:';
 
 /**
- * 네이버 내부 GraphQL 응답을 PlaceBasicInfo 로 매핑한다.
- * 응답 루트가 data.place 인지 place 인지 불확실하므로 둘 다 시도한다.
+ * 타임아웃 + 1회 재시도가 붙은 HTML(text) fetch.
+ * @throws 두 번 모두 실패하면 마지막 에러를 cause 로 감싸 throw
  */
-function mapPlaceBasicInfo(payload: unknown, placeId: string): PlaceBasicInfo {
-  const place = readPath(payload, 'data.place') ?? readPath(payload, 'place');
+async function fetchHtmlWithRetry(
+  url: string,
+  init: RequestInit,
+): Promise<string> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(url, init);
+      if (!response.ok) {
+        throw new Error(`네이버 응답 오류 status=${response.status}`);
+      }
+      return await response.text();
+    } catch (cause) {
+      lastError = cause;
+    }
+  }
+  throw new Error(`네이버 HTML 요청 실패: ${url}`, { cause: lastError });
+}
+
+/**
+ * home HTML 에서 window.__APOLLO_STATE__ 객체를 추출해 파싱한다.
+ * 기본 정규식 실패 시 폴백 정규식으로 한 번 더 시도한다.
+ * @throws 두 정규식 모두 매칭 실패 시 Error
+ */
+function extractApolloState(html: string): Record<string, unknown> {
+  const matched =
+    html.match(APOLLO_STATE_PATTERN) ?? html.match(APOLLO_STATE_FALLBACK);
+  if (!matched) {
+    throw new Error('window.__APOLLO_STATE__ 를 HTML 에서 찾을 수 없습니다');
+  }
+  return JSON.parse(matched[1]) as Record<string, unknown>;
+}
+
+/**
+ * Apollo State 전체 키 중 PlaceDetailTopPhotoItem: 접두사 키 개수를 센다.
+ * 키가 하나도 없으면(섹션 미렌더) null 로 둔다.
+ */
+function countPhotoItems(apolloState: Record<string, unknown>): number | null {
+  const count = Object.keys(apolloState).filter((key) =>
+    key.startsWith(PHOTO_ITEM_PREFIX),
+  ).length;
+  return count > 0 ? count : null;
+}
+
+/**
+ * 네이버 평점은 미공개 업종에서 0 으로 내려온다(실제 평점 최소 단위는 0 아님).
+ * 0 은 "평점 없음"으로 보고 null 처리한다.
+ */
+function normalizeRating(score: unknown): number | null {
+  const parsed = asNumber(score);
+  return parsed === 0 ? null : parsed;
+}
+
+/**
+ * Apollo State 의 PlaceDetailBase:{placeId} 노드를 PlaceBasicInfo 로 매핑한다.
+ */
+function mapPlaceBasicInfo(
+  apolloState: Record<string, unknown>,
+  placeId: string,
+): PlaceBasicInfo {
+  const base = apolloState[`PlaceDetailBase:${placeId}`];
   return {
-    name: asString(readPath(place, 'name')) ?? `플레이스 ${placeId}`,
+    name: asString(readPath(base, 'name')) ?? `플레이스 ${placeId}`,
     address:
-      asString(readPath(place, 'roadAddress')) ??
-      asString(readPath(place, 'address')),
-    category: asString(readPath(place, 'category')),
-    reviewCount: asNumber(readPath(place, 'reviewCount')),
-    visitorReviewCount: asNumber(readPath(place, 'visitorReviewCount')),
-    blogReviewCount: asNumber(readPath(place, 'blogCafeReviewCount')),
-    rating: asNumber(readPath(place, 'visitorReviewScore')),
-    photoCount: asNumber(readPath(place, 'photoCount')),
-    raw: payload,
+      asString(readPath(base, 'roadAddress')) ??
+      asString(readPath(base, 'address')),
+    category: asString(readPath(base, 'category')),
+    reviewCount: asNumber(readPath(base, 'visitorReviewsTotal')),
+    visitorReviewCount: asNumber(readPath(base, 'visitorReviewsTotal')),
+    blogReviewCount: asNumber(readPath(base, 'cafeBlogReviewsTotal')),
+    rating: normalizeRating(readPath(base, 'visitorReviewsScore')),
+    photoCount: countPhotoItems(apolloState),
+    raw: base,
   };
 }
 
 /**
- * placeId 로 기본정보 조회 (네이버 내부 GraphQL).
+ * placeId 로 기본정보 조회. home 페이지 HTML 의 window.__APOLLO_STATE__ 파싱.
  * @throws 네트워크/파싱 실패 시 Error — 호출부에서 catch
  */
 export async function fetchPlaceInfo(placeId: string): Promise<PlaceBasicInfo> {
-  const payload = await fetchJsonWithRetry(
-    'https://pcmap-api.place.naver.com/graphql',
+  const html = await fetchHtmlWithRetry(
+    `https://pcmap.place.naver.com/place/${placeId}/home`,
     {
-      method: 'POST',
+      method: 'GET',
       headers: {
         'User-Agent': MOBILE_USER_AGENT,
         Referer: 'https://m.place.naver.com/',
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Origin: 'https://map.naver.com',
+        Accept: 'text/html,application/xhtml+xml',
+        'Accept-Language': 'ko-KR,ko;q=0.9',
       },
-      body: JSON.stringify({
-        operationName: 'getPlaceMain',
-        variables: { id: placeId },
-        query: PLACE_INFO_QUERY,
-      }),
     },
   );
-  return mapPlaceBasicInfo(payload, placeId);
+  const apolloState = extractApolloState(html);
+  return mapPlaceBasicInfo(apolloState, placeId);
 }
 
 /**
@@ -270,15 +328,24 @@ function isAdEntry(entry: unknown): boolean {
 
 /**
  * 키워드 검색 결과에서 내 placeId 의 오가닉 순위를 탐색한다.
+ *
+ * 주의: 서버(Vercel/데이터센터) IP 에서 allSearch 호출 시 ncaptcha 로 차단된다
+ * (searchCoord 를 붙여도 봇으로 탐지됨). 실운영 순위 수집은 Railway Playwright
+ * 크론잡(.planning/RAILWAY_PLAYWRIGHT_DESIGN.md)이 담당한다. 이 함수는 로컬 개발
+ * 환경 또는 residential IP 에서만 동작하는 폴백이다.
+ *
+ * @param coord allSearch 가 요구하는 검색 좌표. 미지정 시 서울시청 기본값.
  * @returns 미노출이면 rank=null. @throws 수집 실패 시 Error
  */
 export async function fetchKeywordRank(
   keyword: string,
   myPlaceId: string,
+  coord: SearchCoord = DEFAULT_SEARCH_COORD,
 ): Promise<KeywordRankResult> {
   const endpoint = new URL('https://map.naver.com/p/api/search/allSearch');
   endpoint.searchParams.set('query', keyword);
   endpoint.searchParams.set('type', 'all');
+  endpoint.searchParams.set('searchCoord', `${coord.x};${coord.y}`);
 
   const payload = await fetchJsonWithRetry(endpoint.toString(), {
     method: 'GET',
