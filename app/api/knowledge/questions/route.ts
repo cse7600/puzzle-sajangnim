@@ -1,19 +1,20 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { supabaseAdmin, supabaseAdminCached } from '@/lib/supabase-admin'
 import { DEMO_USER_ID } from '@/lib/auth'
 import { awardPoints } from '@/lib/points'
 
 const QUESTION_DAILY_LIMIT = 1000
 const db = supabaseAdmin as any
+const dbRead = supabaseAdminCached as any
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const category = searchParams.get('category')
   const tab = searchParams.get('tab') ?? 'all'
 
-  let query = db
+  let query = dbRead
     .from('knowledge_questions')
     .select('*, knowledge_answers(count)')
     .order('created_at', { ascending: false })
@@ -24,7 +25,9 @@ export async function GET(req: Request) {
 
   const { data, error } = await query
   if (error) return NextResponse.json([], { status: 200 })
-  return NextResponse.json(data ?? [])
+  return NextResponse.json(data ?? [], {
+    headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
+  })
 }
 
 export async function POST(req: Request) {

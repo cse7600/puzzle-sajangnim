@@ -56,5 +56,7 @@ export async function GET() {
     amount: group.types.reduce((acc, t) => acc + (sumByType.get(t) ?? 0), 0),
   })).filter((entry) => entry.amount !== 0)
 
-  return NextResponse.json({ total, breakdown, redeemable: total, usable: total })
+  return NextResponse.json({ total, breakdown, redeemable: total, usable: total }, {
+    headers: { 'Cache-Control': 'private, max-age=10, stale-while-revalidate=20' },
+  })
 }

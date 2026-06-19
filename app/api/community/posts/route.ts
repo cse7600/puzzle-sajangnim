@@ -1,40 +1,53 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
+import { supabaseAdmin, supabaseAdminCached } from '@/lib/supabase-admin'
 import { DEMO_USER_ID } from '@/lib/auth'
 import { awardPoints } from '@/lib/points'
 
 const db = supabaseAdmin as any
+const dbRead = supabaseAdminCached as any
 const POST_POINTS = 500
 const VALID_CATEGORIES = ['general', 'business', 'success', 'question']
 
-async function findBannedWord(text: string): Promise<string | null> {
+// 금지어 모듈 캐시 — DB 쿼리를 매 POST마다 날리지 않음
+let bannedWordsCache: string[] = []
+let bannedWordsCacheAt = 0
+const BANNED_WORDS_TTL = 5 * 60 * 1000
+
+async function getBannedWords(): Promise<string[]> {
+  if (Date.now() - bannedWordsCacheAt < BANNED_WORDS_TTL) return bannedWordsCache
   const { data } = await db.from('puzl_banned_words').select('word')
-  const words: string[] = (data ?? []).map((row: { word: string }) => row.word)
+  bannedWordsCache = (data ?? []).map((row: { word: string }) => row.word)
+  bannedWordsCacheAt = Date.now()
+  return bannedWordsCache
+}
+
+async function findBannedWord(text: string): Promise<string | null> {
+  const words = await getBannedWords()
   return words.find(word => text.includes(word)) ?? null
 }
 
 export async function GET(req: Request) {
   const category = new URL(req.url).searchParams.get('category')
-  let query = db
+
+  let query = dbRead
     .from('puzl_community_posts')
-    .select('id,title,body,category,likes,user_id,created_at')
+    .select('id,title,body,category,likes,user_id,created_at, puzl_community_comments(count)')
     .eq('is_filtered', false)
     .order('created_at', { ascending: false })
     .limit(30)
+
   if (category && VALID_CATEGORIES.includes(category)) query = query.eq('category', category)
 
   const { data: posts, error } = await query
   if (error || !posts) return NextResponse.json([])
 
-  const postIds = posts.map((post: { id: string }) => post.id)
-  const userIds = [...new Set(posts.map((post: { user_id: string }) => post.user_id))]
-
-  const [{ data: authors }, { data: comments }] = await Promise.all([
-    db.from('users').select('id,profile_data').in('id', userIds),
-    db.from('puzl_community_comments').select('post_id').in('post_id', postIds),
-  ])
+  const userIds = [...new Set(posts.map((p: { user_id: string }) => p.user_id))]
+  const { data: authors } = await dbRead
+    .from('users')
+    .select('id,profile_data')
+    .in('id', userIds)
 
   const nameById = new Map<string, string>(
     (authors ?? []).map((u: { id: string; profile_data: { name?: string } | null }) => [
@@ -42,17 +55,17 @@ export async function GET(req: Request) {
       u.profile_data?.name ?? '익명 사장님',
     ])
   )
-  const commentCount = new Map<string, number>()
-  for (const { post_id } of comments ?? []) {
-    commentCount.set(post_id, (commentCount.get(post_id) ?? 0) + 1)
-  }
 
   return NextResponse.json(
-    posts.map((post: { id: string; user_id: string }) => ({
+    posts.map((post: { id: string; user_id: string; puzl_community_comments?: { count: number }[] }) => ({
       ...post,
       author_name: nameById.get(post.user_id) ?? '익명 사장님',
-      comment_count: commentCount.get(post.id) ?? 0,
-    }))
+      comment_count: post.puzl_community_comments?.[0]?.count ?? 0,
+      puzl_community_comments: undefined,
+    })),
+    {
+      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
+    }
   )
 }
 

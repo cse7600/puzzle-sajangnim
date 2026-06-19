@@ -110,7 +110,10 @@ export async function GET() {
       .eq('status', 'active')
       .order('created_at', { ascending: false })
     if (error) throw error
-    return NextResponse.json(data?.length ? data : MOCK_DEALS)
+    const result = data?.length ? data : MOCK_DEALS
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' },
+    })
   } catch {
     return NextResponse.json(MOCK_DEALS)
   }

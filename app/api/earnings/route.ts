@@ -135,7 +135,9 @@ export async function GET(req: Request) {
 
     const total = sections.reduce((sum, section) => sum + section.amount, 0)
     const body: EarningsResponse = { tab, total, sections }
-    return NextResponse.json(body)
+    return NextResponse.json(body, {
+      headers: { 'Cache-Control': 'private, max-age=10, stale-while-revalidate=20' },
+    })
   } catch {
     return NextResponse.json(EMPTY(tab))
   }
