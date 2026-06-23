@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>퍼즐 사장님 — 비즈니스 모델 & 전략 (팀 미팅용)</title>
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+/>
+<style>
+  :root {
+    --bg: #f4f5f3;
+    --surface: #ffffff;
+    --surface-sunken: #ebece8;
+    --ink: #1c1f1a;
+    --ink-soft: #4a4f47;
+    --ink-faint: #7b8076;
+    --line: #dcdfd6;
+    --line-strong: #c4c8bc;
+
+    --brand: #2f7d4f;
+    --brand-soft: #e3f1e7;
+    --brand-ink: #1e5536;
+
+    --accent: #c4622d;
+    --accent-soft: #f7e6dc;
+    --accent-ink: #8f4419;
+
+    --gov: #2e5f9e;
+    --gov-soft: #e0e8f5;
+    --gov-ink: #1f4577;
+
+    --done: #2f7d4f;
+    --done-bg: #e3f1e7;
+    --partial: #b8821a;
+    --partial-bg: #fbf0d6;
+    --uionly: #2e6f9e;
+    --uionly-bg: #dde9f1;
+    --todo: #8a8f84;
+    --todo-bg: #ececea;
+
+    --radius-card: 14px;
+    --radius-chip: 999px;
+    --shadow-soft: 0 1px 2px rgba(28, 31, 26, 0.06);
+    --shadow-raised: 0 6px 20px -8px rgba(28, 31, 26, 0.22);
+    --maxw: 1120px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+      "Malgun Gothic", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+
+  /* ---------- 헤더 ---------- */
+  header.masthead {
+    background: var(--brand);
+    color: #fff;
+    padding: 40px 0 32px;
+  }
+  .masthead .wrap { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px 28px; }
+  .masthead-main { flex: 1 1 340px; }
+  .eyebrow {
+    font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72); margin: 0 0 6px;
+  }
+  .masthead h1 { font-size: clamp(27px, 4vw, 40px); margin: 0; font-weight: 800; letter-spacing: -0.01em; }
+  .masthead .tagline { margin: 12px 0 0; font-size: clamp(15px, 2vw, 18px); color: rgba(255, 255, 255, 0.92); max-width: 50ch; }
+  .masthead-meta { display: flex; flex-direction: column; gap: 6px; text-align: right; }
+  .masthead-meta .pill {
+    align-self: flex-end; background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.28); border-radius: var(--radius-chip);
+    padding: 3px 12px; font-size: 13px; font-weight: 600;
+  }
+  .masthead-meta .date { font-size: 13px; color: rgba(255, 255, 255, 0.78); }
+
+  /* ---------- 섹션 ---------- */
+  main { padding: 8px 0 64px; }
+  section { margin-top: 44px; }
+  .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .section-head h2 {
+    font-size: 22px; margin: 0; font-weight: 800; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .section-head .num {
+    display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px;
+    background: var(--brand-soft); color: var(--brand-ink); font-size: 13px; font-weight: 700;
+  }
+  .section-head .hint { font-size: 13px; color: var(--ink-faint); }
+
+  /* ---------- 한 줄 요약 배너 ---------- */
+  .tldr {
+    margin-top: 26px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--brand);
+    border-radius: var(--radius-card);
+    padding: 18px 22px;
+    box-shadow: var(--shadow-soft);
+  }
+  .tldr p { margin: 0; font-size: 15.5px; color: var(--ink-soft); }
+  .tldr strong { color: var(--brand-ink); }
+  .tldr .accent { color: var(--accent-ink); font-weight: 700; }
+
+  /* ---------- 플라이휠 ---------- */
+  .flywheel-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card);
+    padding: 26px 24px; box-shadow: var(--shadow-raised);
+  }
+  .flywheel {
+    display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 0;
+  }
+  .fw-node {
+    flex: 1 1 150px; min-width: 130px; text-align: center;
+    background: var(--brand-soft); border: 1.5px solid #bcdcc6; border-radius: 12px;
+    padding: 16px 12px; display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  }
+  .fw-node .fw-step { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--brand); text-transform: uppercase; }
+  .fw-node .fw-label { font-size: 14.5px; font-weight: 800; color: var(--brand-ink); line-height: 1.3; }
+  .fw-node .fw-sub { font-size: 11.5px; color: var(--ink-soft); }
+  .fw-node.is-core { background: var(--accent-soft); border-color: #e9c0a4; }
+  .fw-node.is-core .fw-step { color: var(--accent); }
+  .fw-node.is-core .fw-label { color: var(--accent-ink); }
+  .fw-arrow {
+    flex: 0 0 34px; display: grid; place-items: center; color: var(--line-strong);
+    font-size: 20px; font-weight: 700;
+  }
+  .fw-arrow.loopback {
+    flex-basis: 100%; margin-top: 12px; padding-top: 12px;
+    border-top: 1.5px dashed var(--line-strong); color: var(--brand);
+    font-size: 13px; font-weight: 700; gap: 8px;
+  }
+  .fw-caption { margin: 18px 0 0; font-size: 13px; color: var(--ink-faint); text-align: center; }
+
+  /* ---------- 수익 3레이어 ---------- */
+  .revenue-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .rev {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card);
+    box-shadow: var(--shadow-soft); overflow: hidden; display: flex; flex-direction: column;
+  }
+  .rev .rev-top { padding: 16px 18px 14px; border-bottom: 1px solid var(--line); }
+  .rev .rev-tag { font-size: 11px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
+  .rev .rev-title { font-size: 17px; font-weight: 800; margin: 6px 0 2px; letter-spacing: -0.01em; }
+  .rev .rev-take { font-size: 13px; color: var(--ink-faint); }
+  .rev .rev-body { padding: 14px 18px 18px; font-size: 13.5px; color: var(--ink-soft); flex: 1; }
+  .rev .rev-body ul { margin: 0; padding-left: 18px; }
+  .rev .rev-body li { margin: 4px 0; }
+  .rev.core { border-top: 4px solid var(--accent); }
+  .rev.core .rev-tag { color: var(--accent); }
+  .rev.backend { border-top: 4px solid var(--brand); }
+  .rev.backend .rev-tag { color: var(--brand); }
+  .rev.zero { border-top: 4px solid var(--gov); }
+  .rev.zero .rev-tag { color: var(--gov); }
+
+  /* ---------- Two-Track ---------- */
+  .track-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .track {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card);
+    padding: 18px 20px; box-shadow: var(--shadow-soft);
+  }
+  .track .track-tag { display: inline-block; font-size: 12px; font-weight: 800; padding: 2px 10px; border-radius: var(--radius-chip); margin-bottom: 8px; }
+  .track.a { border-left: 4px solid var(--brand); }
+  .track.a .track-tag { background: var(--brand-soft); color: var(--brand-ink); }
+  .track.b { border-left: 4px solid var(--accent); }
+  .track.b .track-tag { background: var(--accent-soft); color: var(--accent-ink); }
+  .track h3 { margin: 0 0 6px; font-size: 16px; font-weight: 800; }
+  .track p { margin: 0; font-size: 13.5px; color: var(--ink-soft); }
+  .track .track-hook { display: block; margin-top: 8px; font-size: 13px; font-weight: 700; color: var(--ink); }
+
+  /* ---------- 정부지원 강조 섹션 ---------- */
+  .gov-section {
+    background: var(--gov-soft);
+    border: 1px solid #c4d4ec;
+    border-radius: var(--radius-card);
+    padding: 24px 24px 26px;
+  }
+  .gov-section .section-head h2 { color: var(--gov-ink); }
+  .gov-section .section-head .num { background: #fff; color: var(--gov-ink); }
+  .gov-lead { margin: 0 0 18px; font-size: 14.5px; color: var(--gov-ink); max-width: 70ch; }
+  .gov-lead strong { color: var(--gov); }
+  .gov-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .gov-step {
+    background: var(--surface); border: 1px solid #c4d4ec; border-radius: 12px;
+    padding: 16px 16px 18px; position: relative;
+  }
+  .gov-step .gov-no {
+    display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px;
+    background: var(--gov-soft); color: var(--gov-ink); font-size: 13px; font-weight: 800; margin-bottom: 8px;
+  }
+  .gov-step h4 { margin: 0 0 6px; font-size: 15px; font-weight: 800; color: var(--gov-ink); }
+  .gov-step p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+  .gov-leverage {
+    margin-top: 16px; background: var(--surface); border: 1px dashed var(--gov);
+    border-radius: 12px; padding: 14px 18px; font-size: 13.5px; color: var(--gov-ink);
+  }
+  .gov-leverage strong { color: var(--gov); }
+
+  /* ---------- 배지 ---------- */
+  .badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: var(--radius-chip); white-space: nowrap; }
+  .badge.done { background: var(--done-bg); color: var(--done); }
+  .badge.partial { background: var(--partial-bg); color: var(--partial); }
+  .badge.uionly { background: var(--uionly-bg); color: var(--uionly); }
+  .badge.todo { background: var(--todo-bg); color: var(--todo); }
+
+  /* BM 기여도 태그 */
+  .bm-tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+  .bm-tag.core { background: var(--accent-soft); color: var(--accent-ink); }
+  .bm-tag.acq { background: var(--brand-soft); color: var(--brand-ink); }
+  .bm-tag.upsell { background: var(--partial-bg); color: var(--partial); }
+  .bm-tag.gov { background: var(--gov-soft); color: var(--gov-ink); }
+  .bm-tag.b2b { background: var(--surface-sunken); color: var(--ink-soft); }
+
+  /* ---------- 테이블 ---------- */
+  .table-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); overflow: hidden; box-shadow: var(--shadow-soft); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    text-align: left; font-size: 12px; letter-spacing: 0.03em; text-transform: uppercase;
+    color: var(--ink-faint); background: var(--surface-sunken);
+    padding: 11px 16px; font-weight: 700; border-bottom: 1px solid var(--line);
+  }
+  tbody td { padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #fafbf8; }
+  td.feat { font-weight: 600; }
+  td.note { color: var(--ink-soft); font-size: 13px; }
+
+  /* ---------- 로드맵 Phase ---------- */
+  .phase-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .phase {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card);
+    box-shadow: var(--shadow-soft); overflow: hidden; display: flex; flex-direction: column;
+  }
+  .phase .phase-top { padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .phase .phase-no { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+  .phase .phase-name { font-size: 16px; font-weight: 800; margin: 3px 0 0; }
+  .phase .phase-goal { font-size: 12.5px; color: var(--ink-faint); margin-top: 2px; }
+  .phase ul { margin: 0; padding: 14px 18px 18px 34px; font-size: 13.5px; color: var(--ink-soft); }
+  .phase li { margin: 5px 0; }
+  .phase.now { border-top: 4px solid var(--brand); }
+  .phase.now .phase-no { color: var(--brand); }
+  .phase.now .phase-top { background: var(--brand-soft); }
+  .phase.next { border-top: 4px solid var(--accent); }
+  .phase.next .phase-no { color: var(--accent); }
+  .phase.future { border-top: 4px solid var(--gov); }
+  .phase.future .phase-no { color: var(--gov); }
+
+  /* ---------- 우선순위 ---------- */
+  .priority-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .pcol { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-soft); overflow: hidden; }
+  .pcol header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .pcol .tier { font-size: 13px; font-weight: 800; padding: 2px 9px; border-radius: 7px; }
+  .pcol.p0 header { background: var(--accent-soft); }
+  .pcol.p0 .tier { background: var(--accent); color: #fff; }
+  .pcol.p1 header { background: var(--partial-bg); }
+  .pcol.p1 .tier { background: var(--partial); color: #fff; }
+  .pcol.p2 header { background: var(--brand-soft); }
+  .pcol.p2 .tier { background: var(--brand); color: #fff; }
+  .pcol header .cap { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+  .pcol ol { margin: 0; padding: 12px 16px 16px 16px; list-style: none; counter-reset: step; }
+  .pcol li { position: relative; padding: 9px 0 9px 30px; border-bottom: 1px dashed var(--line); font-size: 14px; }
+  .pcol li:last-child { border-bottom: none; }
+  .pcol li::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: 0; top: 9px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--surface-sunken); color: var(--ink-soft); font-size: 11px; font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .pcol li .desc { display: block; font-size: 12px; color: var(--ink-faint); margin-top: 3px; }
+  .pcol li .newtag { display: inline-block; font-size: 10px; font-weight: 800; color: var(--accent); border: 1px solid var(--accent); border-radius: 5px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
+
+  /* ---------- 논의 포인트 ---------- */
+  .discuss { background: var(--accent-soft); border: 1px solid #e9cdba; border-radius: var(--radius-card); padding: 22px 24px; }
+  .discuss .section-head h2 { color: var(--accent); }
+  .discuss .section-head .num { background: #fff; color: var(--accent-ink); }
+  .discuss .lead { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 16px; }
+  .checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .checklist li { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid #ead7c8; border-radius: 10px; padding: 13px 15px; }
+  .checklist input[type="checkbox"] { width: 19px; height: 19px; margin: 2px 0 0; accent-color: var(--accent); flex: 0 0 auto; cursor: pointer; }
+  .checklist label { cursor: pointer; }
+  .checklist .q { font-weight: 700; font-size: 14px; display: block; }
+  .checklist .why { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; display: block; }
+
+  /* ---------- 푸터 ---------- */
+  footer.colophon { border-top: 1px solid var(--line); margin-top: 52px; padding: 22px 0; color: var(--ink-faint); font-size: 12.5px; }
+  footer.colophon .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+  /* ---------- 반응형 ---------- */
+  @media (max-width: 880px) {
+    .revenue-grid, .gov-flow, .phase-grid, .priority-grid { grid-template-columns: 1fr; }
+    .track-grid { grid-template-columns: 1fr; }
+    .masthead .wrap { flex-direction: column; align-items: flex-start; }
+    .masthead-meta { text-align: left; align-items: flex-start; }
+    .masthead-meta .pill { align-self: flex-start; }
+    .fw-node { flex-basis: 100%; }
+    .fw-arrow { flex-basis: 100%; transform: rotate(90deg); height: 28px; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 640px; }
+  }
+
+  /* ---------- 인쇄 ---------- */
+  /* ---- 티어 카드 ---- */
+  .tier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .tier-card {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 14px;
+    position: relative;
+  }
+  .tier-t6 { border-color: var(--brand); background: var(--brand-soft); }
+  .tier-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--ink-faint); margin-bottom: 4px; }
+  .tier-range { font-size: 12px; color: var(--ink-soft); margin-bottom: 8px; }
+  .tier-payback { font-size: 13px; margin-bottom: 4px; }
+  .tier-margin { font-size: 13px; margin-bottom: 8px; }
+  .margin-val { color: var(--brand); font-size: 18px; }
+  .tier-target { font-size: 11px; color: var(--ink-faint); }
+  .tier-note { font-size: 10px; color: var(--accent-ink); margin-top: 6px; line-height: 1.4; }
+  .highlight-row { background: var(--accent-soft); }
+  .accent { color: var(--accent); }
+  .note-text { font-size: 13px; color: var(--ink-soft); margin-top: 12px; padding: 10px 14px; background: var(--surface-sunken); border-radius: 8px; }
+
+  /* ---- 시뮬레이션 ---- */
+  .sim-assumption { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .sim-box { padding: 18px 20px; border-radius: 12px; }
+  .sim-box h3 { margin: 0 0 10px; font-size: 15px; }
+  .sim-box ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 2; }
+  .sim-box.conservative { background: var(--surface); border: 1.5px solid var(--line-strong); }
+  .sim-box.aggressive { background: var(--brand-soft); border: 1.5px solid var(--brand); }
+  .sim-table td, .sim-table th { font-size: 12px; }
+  .pre-launch { opacity: .7; }
+  .launch-row td { font-weight: 600; }
+  .bep-row td:nth-child(7) { background: var(--brand-soft); color: var(--brand-ink); font-weight: 700; }
+  .cumulative-bep td:nth-child(8) { background: var(--brand-soft); color: var(--brand-ink); font-weight: 700; }
+  .pos { color: var(--brand-ink); font-weight: 600; }
+  .neg { color: var(--accent-ink); }
+  .sim-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; }
+  .leg { padding: 3px 10px; border-radius: 99px; }
+  .leg.launch { background: var(--surface-sunken); color: var(--ink-soft); }
+  .leg.bep { background: var(--brand-soft); color: var(--brand-ink); }
+  .leg.cbep { background: var(--brand); color: #fff; }
+  .kpi-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .kpi-c-card { background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: 12px; padding: 18px 20px; }
+  .kpi-c-card.aggressive { border-color: var(--brand); background: var(--brand-soft); }
+  .kpi-c-label { font-size: 13px; font-weight: 700; color: var(--ink-faint); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .kpi-c-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .kpi-c-row:last-child { border-bottom: none; }
+  .kpi-c-row strong { font-size: 14px; color: var(--brand-ink); }
+
+  @media (max-width: 680px) {
+    .tier-grid { grid-template-columns: 1fr 1fr; }
+    .sim-assumption { grid-template-columns: 1fr; }
+    .kpi-compare { grid-template-columns: 1fr; }
+  }
+
+  @media print {
+    :root { --bg: #fff; }
+    body { background: #fff; }
+    header.masthead { background: #fff; color: var(--ink); border-bottom: 3px solid var(--brand); }
+    .eyebrow { color: var(--brand-ink); }
+    .masthead .tagline, .masthead-meta .date { color: var(--ink-soft); }
+    .masthead-meta .pill { background: var(--brand-soft); color: var(--brand-ink); border-color: var(--line); }
+    section, .flywheel-card, .gov-section, .discuss { break-inside: avoid; }
+    .flywheel-card, .rev, .track, .phase, .pcol, .table-card, .gov-step, .checklist li { box-shadow: none; }
+    tbody tr:hover { background: transparent; }
+    .checklist input[type="checkbox"] { -webkit-appearance: none; appearance: none; border: 1.5px solid var(--ink-soft); border-radius: 4px; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap">
+      <div class="masthead-main">
+        <p class="eyebrow">Business Model &amp; Strategy · 팀 미팅용</p>
+        <h1>퍼즐 사장님</h1>
+        <p class="tagline">
+          영업권 이관 기반 SMB 마케팅 슈퍼앱 — 사장님은 무료로 쓰고,
+          플랫폼은 매체 대행 수수료로 번다.
+        </p>
+      </div>
+      <div class="masthead-meta">
+        <span class="pill">v1.0.0</span>
+        <span class="date">기준일 2026-06-23</span>
+        <span class="date">스택 · Next.js 14 / TypeScript / Supabase</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- 0. 한 줄 요약 -->
+    <div class="tldr">
+      <p>
+        우리가 돈을 버는 방식은 단 하나로 압축된다 —
+        <strong>사장님이 네이버 광고 영업권을 플랫폼에 이관</strong>하면,
+        플랫폼은 공식 대행사로서 <span class="accent">매체사로부터 대행 수수료</span>를 받는다.
+        사장님은 모든 기능을 <strong>무료</strong>로 쓴다.
+        무료 SaaS와 페이백이 유저를 끌어오고, 그 유저가 영업권을 넘기면서 수수료가 돈다.
+      </p>
+    </div>
+
+    <!-- 1. BM 플라이휠 -->
+    <section id="flywheel">
+      <div class="section-head">
+        <h2><span class="num">1</span> BM 한눈에 보기 — 영업권 플라이휠</h2>
+        <span class="hint">돌수록 커지는 구조</span>
+      </div>
+      <div class="flywheel-card">
+        <div class="flywheel">
+          <div class="fw-node">
+            <span class="fw-step">Step 1</span>
+            <span class="fw-label">무료 SaaS + 페이백</span>
+            <span class="fw-sub">진입 장벽 0원</span>
+          </div>
+          <div class="fw-arrow">→</div>
+          <div class="fw-node">
+            <span class="fw-step">Step 2</span>
+            <span class="fw-label">유저 유입</span>
+            <span class="fw-sub">소상공인 · 마케터</span>
+          </div>
+          <div class="fw-arrow">→</div>
+          <div class="fw-node is-core">
+            <span class="fw-step">Step 3 · Core</span>
+            <span class="fw-label">영업권 이관</span>
+            <span class="fw-sub">광고 계정을 플랫폼으로</span>
+          </div>
+          <div class="fw-arrow">→</div>
+          <div class="fw-node is-core">
+            <span class="fw-step">Step 4 · Core</span>
+            <span class="fw-label">매체 대행 수수료 수취</span>
+            <span class="fw-sub">매체사 → 플랫폼</span>
+          </div>
+          <div class="fw-arrow loopback">
+            <span>↻ 수수료 재투자 → 더 많은 유저 유입 → 더 많은 영업권 이관 (반복)</span>
+          </div>
+        </div>
+        <p class="fw-caption">
+          핵심: 사장님에게 과금하지 않는다. 수익은 매체사가 대행사에 주는 수수료에서 나온다.
+          그래서 유저를 모을수록(무료) 수익원이 늘어난다.
+        </p>
+      </div>
+    </section>
+
+    <!-- 2. 수익 3레이어 -->
+    <section id="revenue">
+      <div class="section-head">
+        <h2><span class="num">2</span> 수익 구조 3레이어</h2>
+        <span class="hint">Core / Back-end / Zero-Liability</span>
+      </div>
+      <div class="revenue-grid">
+        <div class="rev core">
+          <div class="rev-top">
+            <span class="rev-tag">Layer 1 · Core</span>
+            <div class="rev-title">매체 대행 수수료</div>
+            <div class="rev-take">영업권 이관 → 매체사 수수료</div>
+          </div>
+          <div class="rev-body">
+            <ul>
+              <li>사장님이 광고 영업권을 플랫폼에 이관</li>
+              <li>플랫폼이 공식 대행사로 매체(네이버 등) 집행</li>
+              <li>매체사로부터 대행 수수료 수취</li>
+              <li>유저당 비용 0 → 규모가 곧 수익</li>
+            </ul>
+          </div>
+        </div>
+        <div class="rev backend">
+          <div class="rev-top">
+            <span class="rev-tag">Layer 2 · Back-end</span>
+            <div class="rev-title">VIP 업셀링</div>
+            <div class="rev-take">고관여 유저 대상 유료 제안</div>
+          </div>
+          <div class="rev-body">
+            <ul>
+              <li>랜딩페이지 제작</li>
+              <li>MMP(앱 어트리뷰션) 연동</li>
+              <li>풀퍼널 광고 운영 대행</li>
+              <li>이미 활성 유저라 전환율 높음</li>
+            </ul>
+          </div>
+        </div>
+        <div class="rev zero">
+          <div class="rev-top">
+            <span class="rev-tag">Layer 3 · Zero-Liability</span>
+            <div class="rev-title">B2B 제휴 수수료</div>
+            <div class="rev-take">CPA 기반 · 재고/리스크 0</div>
+          </div>
+          <div class="rev-body">
+            <ul>
+              <li>법인설립 대행 연계</li>
+              <li>카카오싱크 등 솔루션 제휴</li>
+              <li>세무·금융 파트너 CPA</li>
+              <li>우리는 리드만 연결, 비용 부담 없음</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="track-grid">
+        <div class="track a">
+          <span class="track-tag">Target A · 소상공인</span>
+          <h3>영업권 이관 → 무료 SaaS</h3>
+          <p>마케팅 도구가 필요하지만 대행 여력이 없는 사장님. 영업권을 넘기면 모든 기능을 무료로.</p>
+          <span class="track-hook">→ Layer 1(대행 수수료) 직접 기여</span>
+        </div>
+        <div class="track b">
+          <span class="track-tag">Target B · 인하우스 마케터</span>
+          <h3>광고비 페이백 2~7%</h3>
+          <p>이미 직접 광고를 돌리는 마케터. 같은 광고비로 페이백을 받으니 갈아탈 이유가 생긴다.</p>
+          <span class="track-hook">→ 유입 후 Layer 1·2로 확장</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 정부지원 사업 전략 (강조) -->
+    <section id="gov" class="gov-section">
+      <div class="section-head">
+        <h2><span class="num">3</span> 정부지원 사업 전략</h2>
+        <span class="hint">플랫폼 DB = 수혜 대상자 풀</span>
+      </div>
+      <p class="gov-lead">
+        소상공인 DB는 그 자체로 자산이다. <strong>가입 단계에서 정부지원 알림 동의</strong>를 받아
+        수혜 대상자 풀을 축적하면, 정부지원 사업 수요조사 시점에 우리가 곧 모수가 된다.
+        이는 정부와 협력할 때 강력한 협상 레버리지가 된다.
+      </p>
+      <div class="gov-flow">
+        <div class="gov-step">
+          <span class="gov-no">1</span>
+          <h4>사전 모수 확보</h4>
+          <p>앱 가입 시 정부지원 알림 수신 동의 → 업종·지역·규모 데이터를 DB로 축적.</p>
+        </div>
+        <div class="gov-step">
+          <span class="gov-no">2</span>
+          <h4>수요조사 접수 시스템</h4>
+          <p>정부지원 사업 수요조사 공고 시 앱 내에서 바로 접수. 신청 자격 자동 체크 + 서류 작성 보조.</p>
+        </div>
+        <div class="gov-step">
+          <span class="gov-no">3</span>
+          <h4>협력 레버리지</h4>
+          <p>축적된 수혜 대상자 풀로 정부·지자체와 협력. 집행 채널이자 데이터 파트너로 포지셔닝.</p>
+        </div>
+      </div>
+      <div class="gov-leverage">
+        <strong>핵심 논리:</strong> 플랫폼 DB = 정부지원 수혜 대상자 풀.
+        우리가 모수를 쥐고 있으면, 정부지원 사업의 집행 파트너로 들어갈 명분과 협상력이 생긴다.
+      </div>
+    </section>
+
+    <!-- 4. 기능 현황 -->
+    <section id="features">
+      <div class="section-head">
+        <h2><span class="num">4</span> 기능 현황 &amp; BM 기여도</h2>
+        <span class="hint">완료 / 부분완료 / UI만 / 미구현</span>
+      </div>
+      <div class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>기능</th>
+                <th>상태</th>
+                <th>BM 기여</th>
+                <th>비고</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="feat">지식거래소 (Q&amp;A)</td>
+                <td><span class="badge done">완료</span></td>
+                <td><span class="bm-tag acq">유저 유입</span></td>
+                <td class="note">Supabase 실데이터 연동</td>
+              </tr>
+              <tr>
+                <td class="feat">커뮤니티</td>
+                <td><span class="badge done">완료</span></td>
+                <td><span class="bm-tag acq">유저 유입</span></td>
+                <td class="note">실데이터 연동</td>
+              </tr>
+              <tr>
+                <td class="feat">수익 관리</td>
+                <td><span class="badge done">완료</span></td>
+                <td><span class="bm-tag core">영업권/대행</span></td>
+                <td class="note">페이백·수익 집계 화면</td>
+              </tr>
+              <tr>
+                <td class="feat">개인 설정</td>
+                <td><span class="badge done">완료</span></td>
+                <td><span class="bm-tag b2b">기반</span></td>
+                <td class="note">프로필·계정</td>
+              </tr>
+              <tr>
+                <td class="feat">연동 허브 (영업권 신청 UI)</td>
+                <td><span class="badge partial">부분 완료</span></td>
+                <td><span class="bm-tag core">영업권/대행</span></td>
+                <td class="note">신청 UI 완료, 이관 플로우 미완성</td>
+              </tr>
+              <tr>
+                <td class="feat">영수증 리워드</td>
+                <td><span class="badge partial">부분 완료</span></td>
+                <td><span class="bm-tag acq">유저 유입</span></td>
+                <td class="note">OCR 완료, 리워드 정산 연결 필요</td>
+              </tr>
+              <tr>
+                <td class="feat">팀구매</td>
+                <td><span class="badge partial">부분 완료</span></td>
+                <td><span class="bm-tag b2b">B2B 제휴</span></td>
+                <td class="note">UI 완료, 결제 PG 없음</td>
+              </tr>
+              <tr>
+                <td class="feat">네이버 플레이스 모니터링</td>
+                <td><span class="badge partial">부분 완료</span></td>
+                <td><span class="bm-tag upsell">VIP 업셀</span></td>
+                <td class="note">파싱 동작, cron 자동화 없음</td>
+              </tr>
+              <tr>
+                <td class="feat">카카오 로그인</td>
+                <td><span class="badge uionly">UI만</span></td>
+                <td><span class="bm-tag acq">유저 유입</span></td>
+                <td class="note">OAuth 실연동 필요</td>
+              </tr>
+              <tr>
+                <td class="feat">체험단</td>
+                <td><span class="badge uionly">UI만</span></td>
+                <td><span class="bm-tag acq">유저 유입</span></td>
+                <td class="note">화면만 존재</td>
+              </tr>
+              <tr>
+                <td class="feat">AI 블로그</td>
+                <td><span class="badge uionly">UI만</span></td>
+                <td><span class="bm-tag upsell">VIP 업셀</span></td>
+                <td class="note">생성 엔진 미연동</td>
+              </tr>
+              <tr>
+                <td class="feat">추천인</td>
+                <td><span class="badge uionly">UI만</span></td>
+                <td><span class="bm-tag acq">유저 유입</span></td>
+                <td class="note">화면만 존재</td>
+              </tr>
+              <tr>
+                <td class="feat">정부지원 사업 기능</td>
+                <td><span class="badge todo">미구현</span></td>
+                <td><span class="bm-tag gov">정부 협력</span></td>
+                <td class="note">모수 확보·수요조사 접수 (신규)</td>
+              </tr>
+              <tr>
+                <td class="feat">어드민 인증</td>
+                <td><span class="badge todo">미구현</span></td>
+                <td><span class="bm-tag b2b">기반</span></td>
+                <td class="note">운영 필수</td>
+              </tr>
+              <tr>
+                <td class="feat">팀구매 결제 PG</td>
+                <td><span class="badge todo">미구현</span></td>
+                <td><span class="bm-tag b2b">B2B 제휴</span></td>
+                <td class="note">결제 연동</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Phase 로드맵 -->
+    <section id="roadmap">
+      <div class="section-head">
+        <h2><span class="num">5</span> Phase별 로드맵</h2>
+        <span class="hint">기반 → 플라이휠 가동 → 정부 협력</span>
+      </div>
+      <div class="phase-grid">
+        <div class="phase now">
+          <div class="phase-top">
+            <span class="phase-no">Phase 1 · 현재</span>
+            <div class="phase-name">출시 기반 완성</div>
+            <div class="phase-goal">로그인·인증·영업권 코어</div>
+          </div>
+          <ul>
+            <li>카카오 OAuth 실연동</li>
+            <li>어드민 인증</li>
+            <li>영업권 이관 핵심 플로우</li>
+            <li>실데이터 4종(지식·커뮤니티·수익·설정) 운영</li>
+          </ul>
+        </div>
+        <div class="phase next">
+          <div class="phase-top">
+            <span class="phase-no">Phase 2 · 플라이휠</span>
+            <div class="phase-name">수익 엔진 가동</div>
+            <div class="phase-goal">유입 → 이관 → 수수료 루프</div>
+          </div>
+          <ul>
+            <li>정부지원 모수 확보(가입 동의)</li>
+            <li>팀구매 결제 PG</li>
+            <li>포인트 실사용</li>
+            <li>페이백 정산 자동화</li>
+          </ul>
+        </div>
+        <div class="phase future">
+          <div class="phase-top">
+            <span class="phase-no">Phase 3 · 정부 협력</span>
+            <div class="phase-name">데이터 레버리지</div>
+            <div class="phase-goal">수요조사·업셀·제휴 확장</div>
+          </div>
+          <ul>
+            <li>정부지원 수요조사 접수 시스템</li>
+            <li>AI 블로그 실연동</li>
+            <li>VIP 리드 업셀링 플로우</li>
+            <li>B2B 제휴 CPA 확대</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. 다음 스프린트 -->
+    <section id="sprint">
+      <div class="section-head">
+        <h2><span class="num">6</span> 다음 스프린트 우선순위</h2>
+        <span class="hint">P0 출시 필수 · P1 핵심 BM · P2 성장</span>
+      </div>
+      <div class="priority-grid">
+        <div class="pcol p0">
+          <header><span class="tier">P0</span><span class="cap">출시 필수</span></header>
+          <ol>
+            <li>카카오 OAuth 실연동<span class="desc">로그인 없으면 온보딩 불가</span></li>
+            <li>어드민 인증<span class="desc">운영·정산 관리 진입점</span></li>
+            <li>영업권 이관 핵심 플로우<span class="newtag">신규</span><span class="desc">Layer 1 수익의 출발점</span></li>
+          </ol>
+        </div>
+        <div class="pcol p1">
+          <header><span class="tier">P1</span><span class="cap">핵심 BM</span></header>
+          <ol>
+            <li>정부지원 모수 확보 기능<span class="newtag">신규</span><span class="desc">가입 동의 → DB 축적</span></li>
+            <li>팀구매 결제 PG<span class="desc">B2B 제휴 수익 활성화</span></li>
+            <li>포인트 실사용<span class="desc">리텐션·재방문 루프</span></li>
+          </ol>
+        </div>
+        <div class="pcol p2">
+          <header><span class="tier">P2</span><span class="cap">성장</span></header>
+          <ol>
+            <li>AI 블로그 실연동<span class="desc">VIP 업셀 후킹</span></li>
+            <li>정부지원 수요조사 접수<span class="newtag">신규</span><span class="desc">협력 레버리지 실현</span></li>
+            <li>VIP 리드 업셀링 플로우<span class="desc">Layer 2 수익 전환</span></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7-A. 수수료 티어 & 매체별 마진 -->
+    <section id="tiers">
+      <div class="section-head">
+        <h2><span class="num">7</span> 영업권 수수료 구조 상세</h2>
+        <p class="section-sub">광고비 규모별 사장님 페이백 & 플랫폼 순마진 (네이버 기준 매체 수수료 15%)</p>
+      </div>
+
+      <div class="tier-grid">
+        <div class="tier-card tier-t1">
+          <div class="tier-label">T1</div>
+          <div class="tier-range">월 10만~50만</div>
+          <div class="tier-payback">페이백 <strong>10%</strong></div>
+          <div class="tier-margin">순마진 <strong class="margin-val">5%</strong></div>
+          <div class="tier-target">동네 카페·미용실</div>
+        </div>
+        <div class="tier-card tier-t2">
+          <div class="tier-label">T2</div>
+          <div class="tier-range">월 50만~200만</div>
+          <div class="tier-payback">페이백 <strong>11%</strong></div>
+          <div class="tier-margin">순마진 <strong class="margin-val">4%</strong></div>
+          <div class="tier-target">음식점·의원</div>
+        </div>
+        <div class="tier-card tier-t3">
+          <div class="tier-label">T3</div>
+          <div class="tier-range">월 200만~500만</div>
+          <div class="tier-payback">페이백 <strong>11.5%</strong></div>
+          <div class="tier-margin">순마진 <strong class="margin-val">3.5%</strong></div>
+          <div class="tier-target">프랜차이즈 가맹점</div>
+        </div>
+        <div class="tier-card tier-t4">
+          <div class="tier-label">T4</div>
+          <div class="tier-range">월 500만~1,000만</div>
+          <div class="tier-payback">페이백 <strong>12%</strong></div>
+          <div class="tier-margin">순마진 <strong class="margin-val">3%</strong></div>
+          <div class="tier-target">성장 SMB</div>
+        </div>
+        <div class="tier-card tier-t5">
+          <div class="tier-label">T5</div>
+          <div class="tier-range">월 1,000만~3,000만</div>
+          <div class="tier-payback">페이백 <strong>12.5%</strong></div>
+          <div class="tier-margin">순마진 <strong class="margin-val">2.5%</strong></div>
+          <div class="tier-target">중견 직영·중소기업</div>
+        </div>
+        <div class="tier-card tier-t6">
+          <div class="tier-label">T6 ★</div>
+          <div class="tier-range">월 3,000만~5,000만+</div>
+          <div class="tier-payback">페이백 <strong>13%</strong></div>
+          <div class="tier-margin">순마진 <strong class="margin-val">2%</strong></div>
+          <div class="tier-target">인하우스 마케터</div>
+          <div class="tier-note">부가서비스 없는 순수 영업권 단일 계약 시만 적용</div>
+        </div>
+      </div>
+
+      <h3 style="margin:32px 0 16px">매체별 수수료율 & 순마진 비교</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>매체</th><th>매체 수수료</th><th>T1 순마진</th><th>T6 순마진</th><th>특이사항</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>네이버 검색광고</td><td>15%</td><td>5%</td><td>2%</td><td>핵심 볼륨</td></tr>
+            <tr><td>네이버 GFA</td><td>15%</td><td>5%</td><td>2%</td><td>디스플레이</td></tr>
+            <tr><td>카카오모먼트</td><td>15%</td><td>5%</td><td>2%</td><td></td></tr>
+            <tr><td>틱톡</td><td>17%</td><td>7%</td><td>4%</td><td>성장 중 플랫폼</td></tr>
+            <tr><td>구글애즈</td><td>12%</td><td>2%</td><td>—</td><td>T5↑ 별도 협의</td></tr>
+            <tr class="highlight-row"><td><strong>모비온</strong></td><td><strong>20%</strong></td><td><strong class="accent">10%</strong></td><td><strong class="accent">7%</strong></td><td>고마진 ★</td></tr>
+            <tr class="highlight-row"><td><strong>ADN</strong></td><td><strong>20%</strong></td><td><strong class="accent">10%</strong></td><td><strong class="accent">7%</strong></td><td>고마진 ★</td></tr>
+            <tr><td>기타 요청 매체</td><td>협의</td><td colspan="2">전액 페이백</td><td>관계 유지·데이터 확보 목적</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note-text">모비온/ADN은 동일 페이백율에서 순마진이 타 매체의 2~3.5배. 초기 영업 집중 매체로 우선 고려.</p>
+    </section>
+
+    <!-- 7-B. 1년 재무 시뮬레이션 -->
+    <section id="simulation">
+      <div class="section-head">
+        <h2><span class="num">8</span> 1년 재무 시뮬레이션</h2>
+        <p class="section-sub">런칭 M1=2026년 7월 / 영업권 플로우 완성 M4=10월 / 정부지원 기능 M7=2027년 1월</p>
+      </div>
+
+      <div class="sim-assumption">
+        <div class="sim-box conservative">
+          <h3>보수적 시나리오</h3>
+          <ul>
+            <li>월 신규 가입: 100명 → 600명 (선형)</li>
+            <li>이관 전환율: 누적 가입자 대비 <strong>2%/월</strong></li>
+            <li>이관자 평균 광고비: <strong>150만원/월</strong></li>
+            <li>순마진: <strong>3.5%</strong> (T2~T3)</li>
+            <li>이탈률: 3%/월 · 운영비: 250→400만/월</li>
+          </ul>
+        </div>
+        <div class="sim-box aggressive">
+          <h3>공격적 시나리오</h3>
+          <ul>
+            <li>월 신규 가입: 500명 → 3,000명 (가속)</li>
+            <li>이관 전환율: 누적 가입자 대비 <strong>5%/월</strong></li>
+            <li>이관자 평균 광고비: <strong>250만원/월</strong></li>
+            <li>순마진: <strong>3.5%</strong> (T3~T4)</li>
+            <li>이탈률: 2%/월 · 운영비: 500→2,000만/월</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="margin:28px 0 12px">보수적 시나리오 — 월별 손익</h3>
+      <div class="table-wrap">
+        <table class="sim-table">
+          <thead>
+            <tr><th>월</th><th>기간</th><th>이관자</th><th>Core 매출</th><th>기타 매출</th><th>비용</th><th>월 손익</th><th>누적 손익</th></tr>
+          </thead>
+          <tbody>
+            <tr class="pre-launch"><td>M1</td><td>Jul'26</td><td>0</td><td>—</td><td>—</td><td>-250만</td><td class="neg">-250만</td><td class="neg">-250만</td></tr>
+            <tr class="pre-launch"><td>M2</td><td>Aug'26</td><td>0</td><td>—</td><td>—</td><td>-250만</td><td class="neg">-250만</td><td class="neg">-500만</td></tr>
+            <tr class="pre-launch"><td>M3</td><td>Sep'26</td><td>0</td><td>—</td><td>—</td><td>-250만</td><td class="neg">-250만</td><td class="neg">-750만</td></tr>
+            <tr class="launch-row"><td>M4 ★</td><td>Oct'26</td><td>14명</td><td>74만</td><td>10만</td><td>-250만</td><td class="neg">-166만</td><td class="neg">-916만</td></tr>
+            <tr><td>M5</td><td>Nov'26</td><td>33명</td><td>173만</td><td>25만</td><td>-270만</td><td class="neg">-72만</td><td class="neg">-988만</td></tr>
+            <tr class="bep-row"><td>M6 ✓</td><td>Dec'26</td><td>62명</td><td>326만</td><td>50만</td><td>-300만</td><td class="pos">+76만</td><td class="neg">-912만</td></tr>
+            <tr><td>M7</td><td>Jan'27</td><td>96명</td><td>504만</td><td>80만</td><td>-300만</td><td class="pos">+284만</td><td class="neg">-628만</td></tr>
+            <tr><td>M8</td><td>Feb'27</td><td>140명</td><td>735만</td><td>110만</td><td>-320만</td><td class="pos">+525만</td><td class="neg">-103만</td></tr>
+            <tr class="cumulative-bep"><td>M9 ✓</td><td>Mar'27</td><td>191명</td><td>1,003만</td><td>150만</td><td>-320만</td><td class="pos">+833만</td><td class="pos">+730만</td></tr>
+            <tr><td>M10</td><td>Apr'27</td><td>253명</td><td>1,328만</td><td>200만</td><td>-350만</td><td class="pos">+1,178만</td><td class="pos">+1,908만</td></tr>
+            <tr><td>M11</td><td>May'27</td><td>323명</td><td>1,696만</td><td>260만</td><td>-370만</td><td class="pos">+1,586만</td><td class="pos">+3,494만</td></tr>
+            <tr><td>M12</td><td>Jun'27</td><td>403명</td><td>2,116만</td><td>330만</td><td>-400만</td><td class="pos">+2,046만</td><td class="pos">+5,540만</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sim-legend">
+        <span class="leg launch">★ M4: 영업권 이관 플로우 오픈</span>
+        <span class="leg bep">✓ M6: 월 흑자 전환</span>
+        <span class="leg cbep">✓ M9: 누적 손익 흑자</span>
+      </div>
+
+      <h3 style="margin:28px 0 12px">공격적 시나리오 — 월별 손익</h3>
+      <div class="table-wrap">
+        <table class="sim-table">
+          <thead>
+            <tr><th>월</th><th>기간</th><th>이관자</th><th>Core 매출</th><th>기타 매출</th><th>비용</th><th>월 손익</th><th>누적 손익</th></tr>
+          </thead>
+          <tbody>
+            <tr class="pre-launch"><td>M1</td><td>Jul'26</td><td>0</td><td>—</td><td>—</td><td>-500만</td><td class="neg">-500만</td><td class="neg">-500만</td></tr>
+            <tr class="pre-launch"><td>M2</td><td>Aug'26</td><td>0</td><td>—</td><td>—</td><td>-600만</td><td class="neg">-600만</td><td class="neg">-1,100만</td></tr>
+            <tr class="pre-launch"><td>M3</td><td>Sep'26</td><td>0</td><td>—</td><td>—</td><td>-700만</td><td class="neg">-700만</td><td class="neg">-1,800만</td></tr>
+            <tr class="launch-row bep-row"><td>M4 ★✓</td><td>Oct'26</td><td>165명</td><td>1,444만</td><td>100만</td><td>-900만</td><td class="pos">+644만</td><td class="neg">-1,156만</td></tr>
+            <tr class="cumulative-bep"><td>M5 ✓</td><td>Nov'26</td><td>402명</td><td>3,518만</td><td>250만</td><td>-1,000만</td><td class="pos">+2,768만</td><td class="pos">+1,612만</td></tr>
+            <tr><td>M6</td><td>Dec'26</td><td>724명</td><td>6,335만</td><td>500만</td><td>-1,200만</td><td class="pos">+5,635만</td><td class="pos">+7,247만</td></tr>
+            <tr><td>M7</td><td>Jan'27</td><td>1,135명</td><td>9,931만</td><td>800만</td><td>-1,500만</td><td class="pos">+9,231만</td><td class="pos">+1.65억</td></tr>
+            <tr><td>M8</td><td>Feb'27</td><td>1,638명</td><td>1.43억</td><td>1,200만</td><td>-1,700만</td><td class="pos">+1.29억</td><td class="pos">+2.94억</td></tr>
+            <tr><td>M9</td><td>Mar'27</td><td>2,248명</td><td>1.97억</td><td>1,600만</td><td>-1,800만</td><td class="pos">+1.79억</td><td class="pos">+4.73억</td></tr>
+            <tr><td>M10</td><td>Apr'27</td><td>2,978명</td><td>2.61억</td><td>2,000만</td><td>-2,000만</td><td class="pos">+2.41억</td><td class="pos">+7.14억</td></tr>
+            <tr><td>M11</td><td>May'27</td><td>3,837명</td><td>3.36억</td><td>2,600만</td><td>-2,000만</td><td class="pos">+3.16억</td><td class="pos">+10.3억</td></tr>
+            <tr><td>M12</td><td>Jun'27</td><td>4,826명</td><td>4.22억</td><td>3,200만</td><td>-2,000만</td><td class="pos">+4.02억</td><td class="pos">+14.3억</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sim-legend">
+        <span class="leg launch">★ M4: 영업권 이관 플로우 오픈</span>
+        <span class="leg bep">✓ M4: 월 흑자 전환</span>
+        <span class="leg cbep">✓ M5: 누적 손익 흑자</span>
+      </div>
+
+      <!-- KPI 요약 카드 -->
+      <h3 style="margin:32px 0 16px">핵심 KPI 비교</h3>
+      <div class="kpi-compare">
+        <div class="kpi-c-card">
+          <div class="kpi-c-label">보수적</div>
+          <div class="kpi-c-row"><span>연간 총 매출</span><strong>약 8,300만원</strong></div>
+          <div class="kpi-c-row"><span>연간 영업이익</span><strong>약 4,700만원</strong></div>
+          <div class="kpi-c-row"><span>월 BEP 이관자 수</span><strong>48명</strong></div>
+          <div class="kpi-c-row"><span>월 흑자 전환</span><strong>M6 (Dec'26)</strong></div>
+          <div class="kpi-c-row"><span>누적 흑자 전환</span><strong>M9 (Mar'27)</strong></div>
+          <div class="kpi-c-row"><span>최대 초기 투자금</span><strong>약 988만원</strong></div>
+          <div class="kpi-c-row"><span>이관자 LTV (33개월)</span><strong>약 173만원/인</strong></div>
+        </div>
+        <div class="kpi-c-card aggressive">
+          <div class="kpi-c-label">공격적</div>
+          <div class="kpi-c-row"><span>연간 총 매출</span><strong>약 25억원</strong></div>
+          <div class="kpi-c-row"><span>연간 영업이익</span><strong>약 23.4억원</strong></div>
+          <div class="kpi-c-row"><span>월 BEP 이관자 수</span><strong>58명</strong></div>
+          <div class="kpi-c-row"><span>월 흑자 전환</span><strong>M4 (Oct'26)</strong></div>
+          <div class="kpi-c-row"><span>누적 흑자 전환</span><strong>M5 (Nov'26)</strong></div>
+          <div class="kpi-c-row"><span>최대 초기 투자금</span><strong>약 1,800만원</strong></div>
+          <div class="kpi-c-row"><span>이관자 LTV (50개월)</span><strong>약 438만원/인</strong></div>
+        </div>
+      </div>
+      <p class="note-text">두 시나리오 모두 초기 투자금이 2,000만원 이하 — 자본 효율이 매우 높은 BM 구조. BEP를 결정하는 핵심 변수는 "영업권 이관 플로우 완성 속도".</p>
+    </section>
+
+    <!-- 구분: 기존 논의 포인트 -->
+    <!-- 7. 논의 포인트 -->
+    <section id="discuss" class="discuss">
+      <div class="section-head">
+        <h2><span class="num">7</span> 팀 미팅 논의 포인트</h2>
+      </div>
+      <p class="lead">아래 항목을 미팅에서 하나씩 합의하고 체크. 결정 못 한 건 담당자·기한을 정해 넘긴다.</p>
+      <ul class="checklist">
+        <li>
+          <input type="checkbox" id="d1" />
+          <label for="d1">
+            <span class="q">영업권 이관 플로우를 어떻게 설계할 것인가</span>
+            <span class="why">Layer 1 전체 수익이 여기서 출발. 신청→검증→매체 등록까지 단계 정의 필요.</span>
+          </label>
+        </li>
+        <li>
+          <input type="checkbox" id="d2" />
+          <label for="d2">
+            <span class="q">매체 대행 수수료 수취 구조를 어떻게 확정할 것인가</span>
+            <span class="why">공식 대행사 자격·정산 주기·매체별 수수료율을 명확히 해야 수익 모델이 닫힌다.</span>
+          </label>
+        </li>
+        <li>
+          <input type="checkbox" id="d3" />
+          <label for="d3">
+            <span class="q">정부지원 사업 파트너십을 어떻게 추진할 것인가</span>
+            <span class="why">모수 동의 문구·개인정보 동의 범위·어느 기관부터 접촉할지.</span>
+          </label>
+        </li>
+        <li>
+          <input type="checkbox" id="d4" />
+          <label for="d4">
+            <span class="q">VIP 리드 기준을 어떻게 정할 것인가</span>
+            <span class="why">광고비 규모·활성도 등 어떤 신호로 업셀 대상을 가를지.</span>
+          </label>
+        </li>
+        <li>
+          <input type="checkbox" id="d5" />
+          <label for="d5">
+            <span class="q">Target A vs B, 초기 집중 타겟은 누구인가</span>
+            <span class="why">소상공인(영업권)과 마케터(페이백)는 메시지·획득 채널이 다르다.</span>
+          </label>
+        </li>
+        <li>
+          <input type="checkbox" id="d6" />
+          <label for="d6">
+            <span class="q">가입 시 정부지원 알림 동의를 어떻게 자연스럽게 받을 것인가</span>
+            <span class="why">동의율이 곧 모수 규모. 온보딩 UX와 가치 제안이 핵심.</span>
+          </label>
+        </li>
+        <li>
+          <input type="checkbox" id="d7" />
+          <label for="d7">
+            <span class="q">팀구매 결제 PG, 어떤 PG사로 갈 것인가</span>
+            <span class="why">B2B 제휴 수익화 시점과 수수료에 직접 영향.</span>
+          </label>
+        </li>
+        <li>
+          <input type="checkbox" id="d8" />
+          <label for="d8">
+            <span class="q">Phase 1 출시 범위를 어디까지로 자를 것인가</span>
+            <span class="why">P0 3종만으로 출시할지, 영업권 코어까지 묶을지 결정.</span>
+          </label>
+        </li>
+      </ul>
+    </section>
+
+  </main>
+
+  <footer class="colophon">
+    <div class="wrap">
+      <span>퍼즐 사장님 · 비즈니스 모델 &amp; 전략 문서 v1.0.0</span>
+      <span>내부 검토용 · 2026-06-23</span>
+    </div>
+  </footer>
+</body>
+</html>
