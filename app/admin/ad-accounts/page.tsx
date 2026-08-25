@@ -1,225 +1,316 @@
 'use client'
-import React, { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { ChevronDown, ChevronUp } from 'lucide-react'
-
-type AccountStatus = 'pending' | 'approval_requested' | 'active' | 'rejected'
+import { useState, useEffect } from 'react'
+import {
+  Platform,
+  PLATFORM_INFO,
+  TransferStatus,
+  TRANSFER_STATUSES,
+  TRANSFER_STATUS_LABEL,
+  ConnectionStatus,
+  CONNECTION_STATUSES,
+  CONNECTION_STATUS_LABEL,
+} from '@/lib/hub'
 
 interface AdAccount {
   id: string
-  platform: string
+  platform: Platform
   account_name: string
   account_id: string
-  monthly_spend: number
-  payback_rate: number
-  status: AccountStatus
+  created_at: string
   user_id: string
+  business_number: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  tax_invoice_direct: boolean
+  transfer_status: TransferStatus
+  connection_status: ConnectionStatus
 }
 
-interface SalesForm {
-  manager: string
-  notes: string
+type PatchPayload = Partial<Pick<AdAccount, 'contact_email' | 'contact_phone' | 'tax_invoice_direct' | 'transfer_status' | 'connection_status'>>
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
-const PLATFORM_NAME: Record<string, string> = {
-  naver: '네이버', meta: '메타', google: '구글', kakao: '카카오',
-  toss: '토스', danggeun: '당근', naver_gfa: '네이버 GFA',
-}
+interface ToastState { message: string; isError: boolean }
 
-const STATUS_BADGE: Record<AccountStatus, { label: string; cls: string }> = {
-  pending:            { label: '검토중',    cls: 'bg-amber-50 text-amber-700' },
-  approval_requested: { label: '승인 대기', cls: 'bg-blue-50 text-blue-700' },
-  active:             { label: '활성',      cls: 'bg-green-50 text-green-700' },
-  rejected:           { label: '거절',      cls: 'bg-red-50 text-red-700' },
-}
+function useToast() {
+  const [toast, setToast] = useState<ToastState | null>(null)
 
-const MOCK_FALLBACK: AdAccount[] = [
-  { id: 'a1', platform: 'naver', account_name: '을지로 쌈밥 철수네', account_id: '1234567890', monthly_spend: 380000, payback_rate: 5.0, status: 'active', user_id: 'demo-user-001' },
-  { id: 'a2', platform: 'kakao', account_name: '홍대 카페 사장님', account_id: '9876543210', monthly_spend: 200000, payback_rate: 4.5, status: 'pending', user_id: 'demo-user-002' },
-]
-
-export default function AdminAdAccountsPage() {
-  const [accounts, setAccounts] = useState<AdAccount[]>([])
-  const [loading, setLoading] = useState(true)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [forms, setForms] = useState<Record<string, SalesForm>>({})
-  const [requesting, setRequesting] = useState<string | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const { data, error } = await supabase
-          .from('ad_accounts')
-          .select('*')
-          .order('created_at', { ascending: false })
-        if (error || !data || data.length === 0) throw new Error('no data')
-        setAccounts(data as AdAccount[])
-      } catch {
-        setAccounts(MOCK_FALLBACK)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
-
-  function showToast(msg: string) {
-    setToast(msg)
+  function showToast(message: string, isError: boolean) {
+    setToast({ message, isError })
     setTimeout(() => setToast(null), 3000)
   }
 
-  function getForm(id: string): SalesForm {
-    return forms[id] ?? { manager: '', notes: '' }
+  return { toast, showToast }
+}
+
+function useAdAccountsAdmin() {
+  const [accounts, setAccounts] = useState<AdAccount[]>([])
+  const [loading, setLoading] = useState(true)
+  const [savingId, setSavingId] = useState<string | null>(null)
+  const { toast, showToast } = useToast()
+
+  function load() {
+    setLoading(true)
+    fetch('/api/ad-accounts?scope=all')
+      .then(r => r.json())
+      .then((data: AdAccount[]) => setAccounts(Array.isArray(data) ? data : []))
+      .finally(() => setLoading(false))
   }
 
-  function setFormField(id: string, field: keyof SalesForm, value: string) {
-    setForms(prev => ({ ...prev, [id]: { ...getForm(id), [field]: value } }))
-  }
+  useEffect(load, [])
 
-  async function requestApproval(acc: AdAccount) {
-    setRequesting(acc.id)
-    const form = getForm(acc.id)
+  async function patchAccount(id: string, payload: PatchPayload) {
+    setSavingId(id)
     try {
-      await fetch(`/api/ad-accounts/${acc.id}/request-approval`, {
-        method: 'POST',
+      const res = await fetch(`/api/ad-accounts/${id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ manager: form.manager, notes: form.notes }),
+        body: JSON.stringify(payload),
       })
-    } catch { /* local fallback */ }
-    setAccounts(prev => prev.map(a => a.id === acc.id ? { ...a, status: 'approval_requested' } : a))
-    setExpandedId(null)
-    showToast('등록 요청이 발송되었습니다')
-    setRequesting(null)
+      const body = await res.json()
+      if (!res.ok) {
+        showToast(body.error ?? '저장에 실패했습니다', true)
+        return
+      }
+      setAccounts(prev => prev.map(a => a.id === id ? { ...a, ...payload } : a))
+    } finally {
+      setSavingId(null)
+    }
   }
 
-  async function updateStatus(id: string, status: 'active' | 'rejected') {
-    try {
-      await supabase.from('ad_accounts').update({ status }).eq('id', id)
-    } catch {
-      // local only
-    }
-    setAccounts(prev => prev.map(a => a.id === id ? { ...a, status } : a))
+  function saveIfChanged(acc: AdAccount, field: 'contact_email' | 'contact_phone', value: string) {
+    const current = acc[field] ?? ''
+    if (value === current) return
+    patchAccount(acc.id, { [field]: value })
   }
+
+  return { accounts, loading, savingId, toast, patchAccount, saveIfChanged }
+}
+
+export default function AdminAdAccountsPage() {
+  const { accounts, loading, savingId, toast, patchAccount, saveIfChanged } = useAdAccountsAdmin()
 
   return (
     <div>
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 rounded-[11px] bg-[#0066cc] px-5 py-3 text-[14px] font-medium text-white shadow-lg">
-          {toast}
-        </div>
-      )}
-      <h1 className="text-[20px] font-semibold text-[#1d1d1f] mb-5">광고계정 관리</h1>
+      {toast && <AdminToast toast={toast} />}
+      <h1 className="text-[20px] font-semibold text-[#1d1d1f] mb-1">광고계정 관리</h1>
+      <p className="text-[13px] text-[#6e6e73] mb-5">사장님이 이관 완료를 요청하면 &quot;연동 확인 중&quot;으로 넘어와요 — 실제 권한이 들어왔는지 확인 후 &quot;연동 완료&quot;로 넘겨주세요.</p>
       <div className="bg-white rounded-[18px] border border-[#e0e0e0] overflow-hidden">
-        {loading ? (
-          <div className="p-8 space-y-3">
-            {[1, 2].map(i => <div key={i} className="h-14 rounded-lg bg-[#f5f5f7] animate-pulse" />)}
-          </div>
-        ) : (
-          <table className="w-full text-[13px]">
-            <thead className="bg-[#f5f5f7] border-b border-[#e0e0e0]">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">플랫폼</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">계정명</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">계정 ID</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">월 예산</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">페이백율</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">상태</th>
-                <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">액션</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#e0e0e0]">
-              {accounts.flatMap(a => {
-                const badge = STATUS_BADGE[a.status] ?? STATUS_BADGE.pending
-                const isExpanded = expandedId === a.id
-                const form = getForm(a.id)
-
-                const mainRow = (
-                  <tr key={a.id} className="hover:bg-[#f5f5f7] transition-colors">
-                    <td className="px-4 py-3 font-medium text-[#1d1d1f]">{PLATFORM_NAME[a.platform] ?? a.platform}</td>
-                    <td className="px-4 py-3 text-[#1d1d1f]">{a.account_name}</td>
-                    <td className="px-4 py-3 text-[#6e6e73] font-mono text-[12px]">{a.account_id}</td>
-                    <td className="px-4 py-3 text-[#6e6e73]">{a.monthly_spend.toLocaleString()}원</td>
-                    <td className="px-4 py-3 font-medium text-[#0066cc]">{a.payback_rate}%</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-[9999px] px-2.5 py-1 text-[11px] font-medium ${badge.cls}`}>
-                        {badge.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2 items-center">
-                        {a.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => setExpandedId(isExpanded ? null : a.id)}
-                              className="flex items-center gap-1 rounded-[9999px] bg-[#0066cc] text-white px-3 py-1 text-[11px] hover:bg-[#0058b3] transition-colors"
-                            >
-                              영업권 등록
-                              {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                            </button>
-                            <button
-                              onClick={() => updateStatus(a.id, 'rejected')}
-                              className="rounded-[9999px] bg-red-50 text-red-700 px-2.5 py-1 text-[11px] hover:bg-red-100 transition-colors"
-                            >
-                              거절
-                            </button>
-                          </>
-                        )}
-                        {a.status === 'approval_requested' && (
-                          <span className="text-[11px] text-blue-600">광고주 승인 대기 중</span>
-                        )}
-                        {a.status === 'active' && (
-                          <span className="text-[11px] text-green-600">운영 중</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-
-                if (!isExpanded) return [mainRow]
-
-                const expandRow = (
-                  <tr key={`${a.id}-expand`}>
-                    <td colSpan={7} className="bg-blue-50/40 px-6 py-4 border-b border-blue-100">
-                      <div className="max-w-lg space-y-3">
-                        <p className="text-[13px] font-semibold text-[#1d1d1f]">영업권 정보 입력</p>
-                        <div>
-                          <label className="block text-[12px] font-medium text-[#6e6e73] mb-1">담당 영업사원</label>
-                          <input
-                            value={form.manager}
-                            onChange={e => setFormField(a.id, 'manager', e.target.value)}
-                            placeholder="담당자 이름"
-                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] outline-none focus:border-[#0066cc]"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-medium text-[#6e6e73] mb-1">계약 조건 메모</label>
-                          <textarea
-                            value={form.notes}
-                            onChange={e => setFormField(a.id, 'notes', e.target.value)}
-                            placeholder="영업권 관련 메모"
-                            rows={2}
-                            className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-[13px] outline-none focus:border-[#0066cc]"
-                          />
-                        </div>
-                        <button
-                          onClick={() => requestApproval(a)}
-                          disabled={requesting === a.id}
-                          className="rounded-[9999px] bg-[#0066cc] text-white px-4 py-2 text-[13px] font-medium hover:bg-[#0058b3] disabled:opacity-50 transition-colors"
-                        >
-                          {requesting === a.id ? '발송 중...' : '등록 요청 발송'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-
-                return [mainRow, expandRow]
-              })}
-            </tbody>
-          </table>
-        )}
+        <AdAccountsPanel accounts={accounts} loading={loading} savingId={savingId} onPatch={patchAccount} onSaveIfChanged={saveIfChanged} />
       </div>
     </div>
+  )
+}
+
+function AdminToast({ toast }: { toast: ToastState }) {
+  return (
+    <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 rounded-[11px] px-5 py-3 text-[14px] font-medium text-white shadow-lg ${toast.isError ? 'bg-red-600' : 'bg-[#0066cc]'}`}>
+      {toast.message}
+    </div>
+  )
+}
+
+function AdAccountsPanel({
+  accounts,
+  loading,
+  savingId,
+  onPatch,
+  onSaveIfChanged,
+}: {
+  accounts: AdAccount[]
+  loading: boolean
+  savingId: string | null
+  onPatch: (id: string, payload: PatchPayload) => void
+  onSaveIfChanged: (acc: AdAccount, field: 'contact_email' | 'contact_phone', value: string) => void
+}) {
+  if (loading) {
+    return (
+      <div className="p-8 space-y-3">
+        {[1, 2].map(i => <div key={i} className="h-14 rounded-lg bg-[#f5f5f7] animate-pulse" />)}
+      </div>
+    )
+  }
+  if (accounts.length === 0) {
+    return <div className="p-8 text-center text-[#6e6e73] text-[14px]">등록된 광고계정이 없습니다</div>
+  }
+  return (
+    <div className="overflow-x-auto">
+      <AdAccountsTable accounts={accounts} savingId={savingId} onPatch={onPatch} onSaveIfChanged={onSaveIfChanged} />
+    </div>
+  )
+}
+
+function AdAccountsTable({
+  accounts,
+  savingId,
+  onPatch,
+  onSaveIfChanged,
+}: {
+  accounts: AdAccount[]
+  savingId: string | null
+  onPatch: (id: string, payload: PatchPayload) => void
+  onSaveIfChanged: (acc: AdAccount, field: 'contact_email' | 'contact_phone', value: string) => void
+}) {
+  return (
+    <table className="w-full text-[13px] min-w-[1180px]">
+      <thead className="bg-[#f5f5f7] border-b border-[#e0e0e0]">
+        <tr>
+          <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">플랫폼</th>
+          <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">접수일자</th>
+          <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">계정명 / 아이디</th>
+          <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">담당자 이메일 / 연락처</th>
+          <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">신청자(아이디) / 사업자 등록번호</th>
+          <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">세금계산서 직발행</th>
+          <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">이관 상태</th>
+          <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">연결 상태</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-[#e0e0e0]">
+        {accounts.map(acc => (
+          <AdAccountRow key={acc.id} acc={acc} saving={savingId === acc.id} onPatch={onPatch} onSaveIfChanged={onSaveIfChanged} />
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+function AdAccountRow({
+  acc,
+  saving,
+  onPatch,
+  onSaveIfChanged,
+}: {
+  acc: AdAccount
+  saving: boolean
+  onPatch: (id: string, payload: PatchPayload) => void
+  onSaveIfChanged: (acc: AdAccount, field: 'contact_email' | 'contact_phone', value: string) => void
+}) {
+  return (
+    <tr className={`hover:bg-[#f5f5f7] transition-colors ${acc.connection_status === 'duplicate' ? 'bg-red-50/40' : ''}`}>
+      <PlatformCell platform={acc.platform} />
+      <td className="px-4 py-3 text-[#6e6e73] whitespace-nowrap">{formatDate(acc.created_at)}</td>
+      <td className="px-4 py-3 text-[#1d1d1f]">
+        {acc.account_name}
+        <p className="text-[11px] text-[#6e6e73] font-mono">{acc.account_id}</p>
+      </td>
+      <ContactCell acc={acc} saving={saving} onSaveIfChanged={onSaveIfChanged} />
+      <ApplicantCell userId={acc.user_id} businessNumber={acc.business_number} />
+      <TaxInvoiceCell checked={acc.tax_invoice_direct} saving={saving} onChange={checked => onPatch(acc.id, { tax_invoice_direct: checked })} />
+      <StatusSelectCell
+        value={acc.transfer_status}
+        options={TRANSFER_STATUSES}
+        labels={TRANSFER_STATUS_LABEL}
+        saving={saving}
+        onChange={value => onPatch(acc.id, { transfer_status: value })}
+      />
+      <StatusSelectCell
+        value={acc.connection_status}
+        options={CONNECTION_STATUSES}
+        labels={CONNECTION_STATUS_LABEL}
+        saving={saving}
+        onChange={value => onPatch(acc.id, { connection_status: value })}
+      />
+    </tr>
+  )
+}
+
+function ContactCell({
+  acc,
+  saving,
+  onSaveIfChanged,
+}: {
+  acc: AdAccount
+  saving: boolean
+  onSaveIfChanged: (acc: AdAccount, field: 'contact_email' | 'contact_phone', value: string) => void
+}) {
+  return (
+    <td className="px-4 py-3">
+      <input
+        defaultValue={acc.contact_email ?? ''}
+        placeholder="이메일 미등록"
+        onBlur={e => onSaveIfChanged(acc, 'contact_email', e.target.value)}
+        disabled={saving}
+        className="w-[160px] rounded-[6px] border border-transparent px-1.5 py-1 text-[12px] hover:border-[#e0e0e0] focus:border-[#0066cc] outline-none transition-colors disabled:opacity-50"
+      />
+      <input
+        defaultValue={acc.contact_phone ?? ''}
+        placeholder="연락처 미등록"
+        onBlur={e => onSaveIfChanged(acc, 'contact_phone', e.target.value)}
+        disabled={saving}
+        className="w-[160px] rounded-[6px] border border-transparent px-1.5 py-1 text-[12px] text-[#6e6e73] hover:border-[#e0e0e0] focus:border-[#0066cc] outline-none transition-colors disabled:opacity-50"
+      />
+    </td>
+  )
+}
+
+function PlatformCell({ platform }: { platform: Platform }) {
+  const info = PLATFORM_INFO[platform] ?? { name: platform, color: '#6e6e73' }
+  return (
+    <td className="px-4 py-3">
+      <span className="inline-flex items-center gap-1.5 font-medium" style={{ color: info.color }}>
+        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: info.color }} />
+        {info.name}
+      </span>
+    </td>
+  )
+}
+
+function ApplicantCell({ userId, businessNumber }: { userId: string; businessNumber: string | null }) {
+  return (
+    <td className="px-4 py-3">
+      <p className="font-mono text-[11px] text-[#6e6e73]">{userId.slice(0, 8)}…</p>
+      <p className="text-[12px] text-[#1d1d1f]">{businessNumber ?? '미등록'}</p>
+    </td>
+  )
+}
+
+function TaxInvoiceCell({
+  checked,
+  saving,
+  onChange,
+}: {
+  checked: boolean
+  saving: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <td className="px-4 py-3 text-center">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={saving}
+        onChange={e => onChange(e.target.checked)}
+        className="w-4 h-4 accent-[#0066cc] disabled:opacity-50"
+      />
+    </td>
+  )
+}
+
+function StatusSelectCell<T extends string>({
+  value,
+  options,
+  labels,
+  saving,
+  onChange,
+}: {
+  value: T
+  options: T[]
+  labels: Record<T, string>
+  saving: boolean
+  onChange: (value: T) => void
+}) {
+  return (
+    <td className="px-4 py-3">
+      <select
+        value={value}
+        disabled={saving}
+        onChange={e => onChange(e.target.value as T)}
+        className="rounded-[8px] border border-[#e0e0e0] px-2 py-1.5 text-[12px] disabled:opacity-50"
+      >
+        {options.map(o => <option key={o} value={o}>{labels[o]}</option>)}
+      </select>
+    </td>
   )
 }

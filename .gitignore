@@ -28,6 +28,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# 사업자등록증 원본 스캔 등 민감 문서 — 퍼블릭 레포에 절대 커밋 금지
+/문서/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

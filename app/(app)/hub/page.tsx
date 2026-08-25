@@ -1,7 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react'
-
-type Platform = 'naver' | 'toss' | 'google' | 'kakao' | 'danggeun' | 'naver_gfa'
+import { useState, useEffect, useMemo } from 'react'
+import { Platform, PLATFORM_INFO, ConnectionStatus } from '@/lib/hub'
+import AccountStatusBadges from '@/components/hub/AccountStatusBadges'
+import TransferGuide from '@/components/hub/TransferGuide'
+import StatementCard, { StatementSummary } from '@/components/hub/StatementCard'
+import NaverCredentialsModal from '@/components/hub/NaverCredentialsModal'
 
 interface AdAccount {
   id: string
@@ -10,8 +13,9 @@ interface AdAccount {
   account_id: string
   monthly_spend: number
   payback_rate: number
-  status: 'pending' | 'approval_requested' | 'active' | 'rejected'
-  verified_at: string | null
+  transfer_status: 'waiting' | 'transfer_needed' | 'verifying' | 'completed'
+  connection_status: ConnectionStatus
+  cost_verification_status: 'not_configured' | 'configured' | 'verified' | 'failed'
 }
 
 interface Payback {
@@ -19,55 +23,65 @@ interface Payback {
   amount: number
   period: string
   status: 'pending' | 'confirmed' | 'paid'
-  ad_accounts: {
-    platform: string
-    account_name: string
-    monthly_spend: number
-    payback_rate: number
-  }
+  scheduled_pay_date: string | null
+  ad_accounts: { platform: string; account_name: string }
 }
 
-const PLATFORM_INFO: Record<Platform, { name: string; color: string; payback: string }> = {
-  naver:     { name: '네이버',     color: '#03C75A', payback: '5.0%' },
-  toss:      { name: '토스',       color: '#0066FF', payback: '3.0%' },
-  google:    { name: '구글',       color: '#EA4335', payback: '3.5%' },
-  kakao:     { name: '카카오',     color: '#FEE500', payback: '4.5%' },
-  danggeun:  { name: '당근',       color: '#FF6F0F', payback: '2.5%' },
-  naver_gfa: { name: '네이버 GFA', color: '#03C75A', payback: '4.0%' },
-}
-
-const PLATFORM_STATUS_LABEL = {
-  pending:            { text: '검토중',    class: 'bg-amber-50 text-amber-700 border-amber-200' },
-  approval_requested: { text: '승인 대기', class: 'bg-blue-50 text-blue-700 border-blue-200' },
-  active:             { text: '활성',      class: 'bg-green-50 text-green-700 border-green-200' },
-  rejected:           { text: '거절',      class: 'bg-red-50 text-red-700 border-red-200' },
-}
+type Tab = 'accounts' | 'statements' | 'guide'
 
 export default function HubPage() {
   const [accounts, setAccounts] = useState<AdAccount[]>([])
   const [paybacks, setPaybacks] = useState<Payback[]>([])
   const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [duplicateWarning, setDuplicateWarning] = useState(false)
   const [form, setForm] = useState<{ platform: Platform; account_id: string; account_name: string; monthly_spend: string }>({
     platform: 'naver', account_id: '', account_name: '', monthly_spend: '',
   })
   const [submitting, setSubmitting] = useState(false)
-  const [tab, setTab] = useState<'accounts' | 'paybacks'>('accounts')
+  const [tab, setTab] = useState<Tab>('accounts')
+  const [guidePlatform, setGuidePlatform] = useState<Platform>('naver')
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [cancelingId, setCancelingId] = useState<string | null>(null)
+  const [credentialAccountId, setCredentialAccountId] = useState<string | null>(null)
 
-  useEffect(() => {
+  function loadData() {
+    setLoading(true)
     Promise.all([
       fetch('/api/ad-accounts').then(r => r.json()),
       fetch('/api/paybacks').then(r => r.json()),
     ]).then(([accs, pbs]) => {
-      setAccounts(accs)
-      setPaybacks(pbs)
+      setAccounts(Array.isArray(accs) ? accs : [])
+      setPaybacks(Array.isArray(pbs) ? pbs : [])
       setLoading(false)
     }).catch(() => setLoading(false))
-  }, [])
+  }
 
-  const totalPayback = paybacks.reduce((sum, p) => sum + p.amount, 0)
+  useEffect(loadData, [])
+
+  const totalPayback = paybacks
+    .filter(p => p.status !== 'paid')
+    .reduce((sum, p) => sum + p.amount, 0)
   const confirmedPayback = paybacks.filter(p => p.status === 'confirmed').reduce((sum, p) => sum + p.amount, 0)
+
+  const statements: StatementSummary[] = useMemo(() => {
+    const byPeriod = new Map<string, Payback[]>()
+    for (const p of paybacks) {
+      const list = byPeriod.get(p.period) ?? []
+      list.push(p)
+      byPeriod.set(p.period, list)
+    }
+    return Array.from(byPeriod.entries())
+      .map(([period, rows]) => ({
+        period,
+        totalAmount: rows.reduce((sum, r) => sum + r.amount, 0),
+        scheduledPayDate: rows[0].scheduled_pay_date,
+        status: rows.every(r => r.status === 'paid') ? 'paid' : rows[0].status,
+        accountCount: rows.length,
+      }))
+      .sort((a, b) => b.period.localeCompare(a.period))
+  }, [paybacks])
 
   async function handleSubmit() {
     setSubmitting(true)
@@ -82,35 +96,66 @@ export default function HubPage() {
           monthly_spend: Number(form.monthly_spend.replace(/,/g, '')),
         }),
       })
-      const newAccount = await res.json() as AdAccount
+      if (!res.ok) return
+      const newAccount = await res.json() as AdAccount & { duplicateWarning: boolean }
       setAccounts(prev => [newAccount, ...prev])
+      setDuplicateWarning(newAccount.duplicateWarning)
       setSubmitted(true)
     } finally {
       setSubmitting(false)
     }
   }
 
-  function closeModal() {
-    setShowModal(false)
+  async function handleConfirmTransfer(id: string) {
+    setConfirmingId(id)
+    try {
+      const res = await fetch(`/api/ad-accounts/${id}/confirm-transfer`, { method: 'POST' })
+      if (res.ok) {
+        setAccounts(prev => prev.map(a => a.id === id ? { ...a, transfer_status: 'verifying' } : a))
+      }
+    } finally {
+      setConfirmingId(null)
+    }
+  }
+
+  async function handleCancelTransfer(id: string) {
+    setCancelingId(id)
+    try {
+      const res = await fetch(`/api/ad-accounts/${id}/cancel-transfer`, { method: 'POST' })
+      if (res.ok) {
+        setAccounts(prev => prev.map(a => a.id === id ? { ...a, transfer_status: 'transfer_needed' } : a))
+      }
+    } finally {
+      setCancelingId(null)
+    }
+  }
+
+  function openGuideFor(platform: Platform) {
+    setGuidePlatform(platform)
+    setTab('guide')
+  }
+
+  function closeAddModal() {
+    setShowAddModal(false)
     setSubmitted(false)
+    setDuplicateWarning(false)
     setForm({ platform: 'naver', account_id: '', account_name: '', monthly_spend: '' })
   }
 
   const selectedPlatformInfo = PLATFORM_INFO[form.platform]
   const estimatedModalPayback = form.monthly_spend
-    ? Math.round(Number(form.monthly_spend.replace(/,/g, '')) * parseFloat(selectedPlatformInfo.payback) / 100)
+    ? Math.round(Number(form.monthly_spend.replace(/,/g, '')) * selectedPlatformInfo.paybackRate / 100)
     : 0
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* 상단 요약 */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-5">
           <p className="text-[13px] text-[#6e6e73] mb-1">연동 광고계정</p>
           <p className="text-[28px] font-semibold text-[#1d1d1f]">{accounts.length}개</p>
         </div>
         <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-5">
-          <p className="text-[13px] text-[#6e6e73] mb-1">이번 달 페이백 예정</p>
+          <p className="text-[13px] text-[#6e6e73] mb-1">정산 예정 페이백</p>
           <p className="text-[28px] font-semibold text-[#0066cc]">{totalPayback.toLocaleString()}P</p>
         </div>
         <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-5">
@@ -119,21 +164,21 @@ export default function HubPage() {
         </div>
       </div>
 
-      {/* 탭 */}
       <div className="bg-white rounded-[18px] border border-[#e0e0e0] overflow-hidden">
         <div className="flex border-b border-[#e0e0e0]">
-          <button
-            onClick={() => setTab('accounts')}
-            className={`flex-1 py-4 text-[14px] font-medium transition-colors ${tab === 'accounts' ? 'text-[#0066cc] border-b-2 border-[#0066cc]' : 'text-[#6e6e73]'}`}
-          >
-            광고계정 관리
-          </button>
-          <button
-            onClick={() => setTab('paybacks')}
-            className={`flex-1 py-4 text-[14px] font-medium transition-colors ${tab === 'paybacks' ? 'text-[#0066cc] border-b-2 border-[#0066cc]' : 'text-[#6e6e73]'}`}
-          >
-            페이백 내역
-          </button>
+          {([
+            ['accounts', '광고계정 관리'],
+            ['statements', '정산 내역'],
+            ['guide', '이관 가이드'],
+          ] as [Tab, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`flex-1 py-4 text-[14px] font-medium transition-colors ${tab === key ? 'text-[#0066cc] border-b-2 border-[#0066cc]' : 'text-[#6e6e73]'}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         <div className="p-6">
@@ -145,19 +190,18 @@ export default function HubPage() {
                   <p className="text-[13px] text-[#6e6e73] mt-0.5">네이버·토스·구글·카카오·당근·네이버 GFA 광고계정을 연결하고 페이백 받기</p>
                 </div>
                 <button
-                  onClick={() => setShowModal(true)}
+                  onClick={() => setShowAddModal(true)}
                   className="bg-[#0066cc] text-white rounded-[9999px] px-4 py-2 text-[14px] font-medium hover:bg-[#0058b3] transition-colors"
                 >
                   계정 추가
                 </button>
               </div>
 
-              {/* 페이백 요율 안내 */}
               <div className="grid grid-cols-3 gap-3 mb-6">
                 {(Object.entries(PLATFORM_INFO) as [Platform, typeof PLATFORM_INFO[Platform]][]).map(([key, info]) => (
                   <div key={key} className="rounded-[11px] border border-[#e0e0e0] p-3 text-center">
                     <p className="text-[12px] text-[#6e6e73]">{info.name}</p>
-                    <p className="text-[18px] font-semibold text-[#0066cc] mt-0.5">{info.payback}</p>
+                    <p className="text-[18px] font-semibold text-[#0066cc] mt-0.5">{info.paybackRate}%</p>
                     <p className="text-[11px] text-[#6e6e73]">페이백</p>
                   </div>
                 ))}
@@ -165,7 +209,7 @@ export default function HubPage() {
 
               {loading ? (
                 <div className="space-y-3">
-                  {[1, 2].map(i => <div key={i} className="h-20 rounded-[11px] bg-[#f5f5f7] animate-pulse" />)}
+                  {[1, 2].map(i => <div key={i} className="h-24 rounded-[11px] bg-[#f5f5f7] animate-pulse" />)}
                 </div>
               ) : accounts.length === 0 ? (
                 <div className="text-center py-12 text-[#6e6e73]">
@@ -175,31 +219,79 @@ export default function HubPage() {
               ) : (
                 <div className="space-y-3">
                   {accounts.map(acc => {
-                    const info = PLATFORM_INFO[acc.platform as Platform] ?? { name: acc.platform, color: '#6e6e73', payback: '0%' }
-                    const status = PLATFORM_STATUS_LABEL[acc.status] ?? PLATFORM_STATUS_LABEL.pending
+                    const info = PLATFORM_INFO[acc.platform] ?? { name: acc.platform, color: '#6e6e73', paybackRate: 0 }
                     const estimatedPayback = Math.round(acc.monthly_spend * acc.payback_rate / 100)
                     return (
-                      <div key={acc.id} className="flex items-center justify-between rounded-[11px] border border-[#e0e0e0] p-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-10 h-10 rounded-[8px] flex items-center justify-center text-[11px] font-bold text-white"
-                            style={{ backgroundColor: info.color === '#FEE500' ? '#191919' : info.color }}
-                          >
-                            {info.name[0]}
+                      <div key={acc.id} className="rounded-[11px] border border-[#e0e0e0] p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-[8px] flex items-center justify-center text-[11px] font-bold text-white"
+                              style={{ backgroundColor: info.color }}
+                            >
+                              {info.name[0]}
+                            </div>
+                            <div>
+                              <p className="text-[14px] font-medium text-[#1d1d1f]">{acc.account_name}</p>
+                              <p className="text-[12px] text-[#6e6e73]">ID: {acc.account_id} · 월 {acc.monthly_spend.toLocaleString()}원(제출값)</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[14px] font-medium text-[#1d1d1f]">{acc.account_name}</p>
-                            <p className="text-[12px] text-[#6e6e73]">ID: {acc.account_id} · 월 {acc.monthly_spend.toLocaleString()}원</p>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <p className="text-[13px] font-semibold text-[#0066cc]">월 {estimatedPayback.toLocaleString()}P</p>
+                              <p className="text-[11px] text-[#6e6e73]">예상 페이백</p>
+                            </div>
+                            <AccountStatusBadges transferStatus={acc.transfer_status} connectionStatus={acc.connection_status} />
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <p className="text-[13px] font-semibold text-[#0066cc]">월 {estimatedPayback.toLocaleString()}P</p>
-                            <p className="text-[11px] text-[#6e6e73]">예상 페이백</p>
-                          </div>
-                          <span className={`rounded-[9999px] border px-2.5 py-1 text-[11px] font-medium ${status.class}`}>
-                            {status.text}
-                          </span>
+
+                        {acc.connection_status === 'duplicate' && (
+                          <p className="mt-2 text-[12px] text-red-600">
+                            이미 등록된 계정과 동일하게 감지되어 검토가 필요해요. 퍼즐팀이 확인 후 연락드려요.
+                          </p>
+                        )}
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {(acc.transfer_status === 'transfer_needed' || acc.transfer_status === 'waiting') && (
+                            <>
+                              <button
+                                onClick={() => openGuideFor(acc.platform)}
+                                className="rounded-[9999px] bg-[#0066cc] text-white px-3.5 py-1.5 text-[12px] font-medium hover:bg-[#0058b3] transition-colors"
+                              >
+                                이관 진행하기
+                              </button>
+                              <button
+                                onClick={() => handleConfirmTransfer(acc.id)}
+                                disabled={confirmingId === acc.id}
+                                className="rounded-[9999px] border border-[#e0e0e0] px-3.5 py-1.5 text-[12px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] disabled:opacity-50 transition-colors"
+                              >
+                                {confirmingId === acc.id ? '요청 중...' : '이관 완료, 확인 요청'}
+                              </button>
+                            </>
+                          )}
+                          {acc.transfer_status === 'verifying' && (
+                            <>
+                              <span className="text-[12px] text-blue-600">퍼즐팀이 연동을 확인하고 있어요</span>
+                              <button
+                                onClick={() => handleCancelTransfer(acc.id)}
+                                disabled={cancelingId === acc.id}
+                                className="rounded-[9999px] px-3 py-1 text-[12px] text-[#6e6e73] underline decoration-dotted underline-offset-2 hover:text-[#1d1d1f] disabled:opacity-50 transition-colors"
+                              >
+                                {cancelingId === acc.id ? '취소 중...' : '취소'}
+                              </button>
+                            </>
+                          )}
+                          {acc.platform === 'naver' && acc.transfer_status === 'completed' && acc.cost_verification_status === 'not_configured' && (
+                            <button
+                              onClick={() => setCredentialAccountId(acc.id)}
+                              className="rounded-[9999px] border border-[#0066cc] text-[#0066cc] px-3.5 py-1.5 text-[12px] font-medium hover:bg-[#0066cc]/5 transition-colors"
+                            >
+                              비용 자동 확인용 API 키 등록
+                            </button>
+                          )}
+                          {acc.cost_verification_status === 'configured' && (
+                            <span className="text-[12px] text-[#6e6e73]">API 키 등록됨 · 비용 확인 대기 중</span>
+                          )}
                         </div>
                       </div>
                     )
@@ -209,39 +301,34 @@ export default function HubPage() {
             </>
           )}
 
-          {tab === 'paybacks' && (
+          {tab === 'statements' && (
             <>
-              <h3 className="text-[16px] font-semibold text-[#1d1d1f] mb-5">페이백 내역</h3>
-              <div className="space-y-3">
-                {paybacks.map(pb => {
-                  const statusMap = {
-                    pending:   { text: '처리중',   class: 'text-amber-600 bg-amber-50 border-amber-200' },
-                    confirmed: { text: '확정',     class: 'text-green-600 bg-green-50 border-green-200' },
-                    paid:      { text: '지급완료', class: 'text-[#6e6e73] bg-[#f5f5f7] border-[#e0e0e0]' },
-                  }
-                  const s = statusMap[pb.status]
-                  return (
-                    <div key={pb.id} className="flex items-center justify-between rounded-[11px] border border-[#e0e0e0] p-4">
-                      <div>
-                        <p className="text-[14px] font-medium text-[#1d1d1f]">{pb.ad_accounts.account_name}</p>
-                        <p className="text-[12px] text-[#6e6e73]">{pb.period} · {pb.ad_accounts.payback_rate}% 페이백</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <p className="text-[16px] font-semibold text-[#0066cc]">+{pb.amount.toLocaleString()}P</p>
-                        <span className={`rounded-[9999px] border px-2.5 py-1 text-[11px] font-medium ${s.class}`}>{s.text}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              <h3 className="text-[16px] font-semibold text-[#1d1d1f] mb-1">정산 내역</h3>
+              <p className="text-[13px] text-[#6e6e73] mb-5">퍼즐코퍼레이션이 발행하는 월별 정산내역서예요. PDF로도 받아보실 수 있어요.</p>
+              {statements.length === 0 ? (
+                <div className="text-center py-12 text-[#6e6e73]">
+                  <p className="text-[15px]">아직 발행된 정산 내역이 없습니다</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {statements.map(s => <StatementCard key={s.period} summary={s} />)}
+                </div>
+              )}
+            </>
+          )}
+
+          {tab === 'guide' && (
+            <>
+              <h3 className="text-[16px] font-semibold text-[#1d1d1f] mb-1">영업권 이관 가이드</h3>
+              <p className="text-[13px] text-[#6e6e73] mb-5">플랫폼별로 담당자 계정을 초대하는 방법을 순서대로 안내해드려요.</p>
+              <TransferGuide initialPlatform={guidePlatform} />
             </>
           )}
         </div>
       </div>
 
-      {/* 광고계정 등록 모달 */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeModal}>
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeAddModal}>
           <div className="bg-white rounded-[18px] w-full max-w-[520px] mx-4 p-6" onClick={e => e.stopPropagation()}>
             {submitted ? (
               <div className="py-4 text-center">
@@ -250,12 +337,16 @@ export default function HubPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-[18px] font-semibold text-[#1d1d1f] mb-2">영업권 신청이 완료되었습니다</h3>
+                <h3 className="text-[18px] font-semibold text-[#1d1d1f] mb-2">
+                  {duplicateWarning ? '등록되었지만 확인이 필요해요' : '광고계정이 등록되었습니다'}
+                </h3>
                 <p className="text-[14px] text-[#6e6e73] leading-relaxed">
-                  영업일 기준 2일 이내에 영업권이 등록되고 나서<br />페이백 받을 수 있습니다.
+                  {duplicateWarning
+                    ? '동일한 계정이 이미 등록돼 있어 퍼즐팀이 확인 후 연락드려요.'
+                    : <>영업권 이관 가이드를 따라 진행해주시면{'\n'}이관 완료 후 페이백 대상이 됩니다.</>}
                 </p>
                 <button
-                  onClick={closeModal}
+                  onClick={() => { closeAddModal(); setTab('accounts') }}
                   className="mt-6 w-full rounded-[9999px] bg-[#0066cc] py-3 text-[15px] font-medium text-white hover:bg-[#0058b3] transition-colors"
                 >
                   확인
@@ -264,7 +355,7 @@ export default function HubPage() {
             ) : (
               <>
                 <h3 className="text-[18px] font-semibold text-[#1d1d1f] mb-1">광고계정 추가</h3>
-                <p className="text-[13px] text-[#6e6e73] mb-5">광고계정 정보를 입력하면 퍼즐팀이 확인 후 영업권을 등록합니다</p>
+                <p className="text-[13px] text-[#6e6e73] mb-5">등록 후 영업권 이관을 완료해야 페이백 대상이 됩니다</p>
 
                 <div className="space-y-4">
                   <div>
@@ -277,7 +368,7 @@ export default function HubPage() {
                           className={`rounded-[11px] border p-2.5 text-center transition-colors ${form.platform === key ? 'border-[#0066cc] bg-[#0066cc]/5' : 'border-[#e0e0e0]'}`}
                         >
                           <p className={`text-[12px] font-medium ${form.platform === key ? 'text-[#0066cc]' : 'text-[#1d1d1f]'}`}>{info.name}</p>
-                          <p className="text-[11px] text-[#0066cc]">{info.payback}</p>
+                          <p className="text-[11px] text-[#0066cc]">{info.paybackRate}%</p>
                         </button>
                       ))}
                     </div>
@@ -306,7 +397,7 @@ export default function HubPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">월 광고 예산</label>
+                    <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">월 광고 예산(제출값)</label>
                     <div className="relative">
                       <input
                         type="text"
@@ -319,14 +410,14 @@ export default function HubPage() {
                     </div>
                     {form.monthly_spend && (
                       <p className="mt-1.5 text-[12px] text-[#0066cc]">
-                        예상 월 페이백: +{estimatedModalPayback.toLocaleString()}P
+                        예상 월 페이백: +{estimatedModalPayback.toLocaleString()}P (연동 완료 후 실비용 기준으로 재계산돼요)
                       </p>
                     )}
                   </div>
                 </div>
 
                 <div className="flex gap-3 mt-6">
-                  <button onClick={closeModal} className="flex-1 rounded-[9999px] border border-[#e0e0e0] py-3 text-[15px] text-[#6e6e73] hover:bg-[#f5f5f7] transition-colors">
+                  <button onClick={closeAddModal} className="flex-1 rounded-[9999px] border border-[#e0e0e0] py-3 text-[15px] text-[#6e6e73] hover:bg-[#f5f5f7] transition-colors">
                     취소
                   </button>
                   <button
@@ -341,6 +432,14 @@ export default function HubPage() {
             )}
           </div>
         </div>
+      )}
+
+      {credentialAccountId && (
+        <NaverCredentialsModal
+          accountId={credentialAccountId}
+          onClose={() => setCredentialAccountId(null)}
+          onSaved={() => { setCredentialAccountId(null); loadData() }}
+        />
       )}
     </div>
   )

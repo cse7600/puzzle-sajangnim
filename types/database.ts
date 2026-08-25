@@ -42,36 +42,102 @@ export interface Database {
         Row: {
           id: string
           user_id: string
-          platform: 'naver' | 'meta' | 'google' | 'kakao'
+          platform: 'naver' | 'meta' | 'google' | 'kakao' | 'toss' | 'danggeun' | 'naver_gfa'
           account_id: string
           account_name: string
           monthly_spend: number
           payback_rate: number
-          status: 'pending' | 'active' | 'rejected'
+          status: 'pending' | 'approval_requested' | 'active' | 'rejected'
           verified_at: string | null
           created_at: string
+          transfer_status: 'waiting' | 'transfer_needed' | 'verifying' | 'completed'
+          connection_status: 'duplicate' | 'reviewing' | 'connected'
+          duplicate_of: string | null
+          api_credentials: Json
+          cost_verification_status: 'not_configured' | 'configured' | 'verified' | 'failed'
+          verified_spend: number | null
+          contact_email: string | null
+          contact_phone: string | null
+          tax_invoice_direct: boolean
         }
         Insert: {
           user_id: string
-          platform: 'naver' | 'meta' | 'google' | 'kakao'
+          platform: 'naver' | 'meta' | 'google' | 'kakao' | 'toss' | 'danggeun' | 'naver_gfa'
           account_id: string
           account_name: string
           monthly_spend: number
           payback_rate: number
-          status: 'pending' | 'active' | 'rejected'
+          status?: 'pending' | 'approval_requested' | 'active' | 'rejected'
           verified_at?: string | null
+          transfer_status?: 'waiting' | 'transfer_needed' | 'verifying' | 'completed'
+          connection_status?: 'duplicate' | 'reviewing' | 'connected'
+          duplicate_of?: string | null
+          api_credentials?: Json
+          cost_verification_status?: 'not_configured' | 'configured' | 'verified' | 'failed'
+          verified_spend?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          tax_invoice_direct?: boolean
         }
         Update: {
           user_id?: string
-          platform?: 'naver' | 'meta' | 'google' | 'kakao'
+          platform?: 'naver' | 'meta' | 'google' | 'kakao' | 'toss' | 'danggeun' | 'naver_gfa'
           account_id?: string
           account_name?: string
           monthly_spend?: number
           payback_rate?: number
-          status?: 'pending' | 'active' | 'rejected'
+          status?: 'pending' | 'approval_requested' | 'active' | 'rejected'
           verified_at?: string | null
+          transfer_status?: 'waiting' | 'transfer_needed' | 'verifying' | 'completed'
+          connection_status?: 'duplicate' | 'reviewing' | 'connected'
+          duplicate_of?: string | null
+          api_credentials?: Json
+          cost_verification_status?: 'not_configured' | 'configured' | 'verified' | 'failed'
+          verified_spend?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          tax_invoice_direct?: boolean
         }
         Relationships: []
+      }
+      business_verifications: {
+        Row: {
+          id: string
+          user_id: string
+          business_number: string
+          certificate_path: string | null
+          status: 'pending' | 'approved' | 'rejected'
+          reviewer_note: string | null
+          submitted_at: string
+          reviewed_at: string | null
+        }
+        Insert: {
+          user_id: string
+          business_number: string
+          certificate_path?: string | null
+          status?: 'pending' | 'approved' | 'rejected'
+          reviewer_note?: string | null
+          submitted_at?: string
+          reviewed_at?: string | null
+        }
+        Update: {
+          user_id?: string
+          business_number?: string
+          certificate_path?: string | null
+          status?: 'pending' | 'approved' | 'rejected'
+          reviewer_note?: string | null
+          submitted_at?: string
+          reviewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'business_verifications_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
       }
       paybacks: {
         Row: {
@@ -83,6 +149,8 @@ export interface Database {
           status: 'pending' | 'confirmed' | 'paid'
           processed_at: string | null
           created_at: string
+          scheduled_pay_date: string | null
+          cost_basis: 'submitted' | 'verified'
         }
         Insert: {
           user_id: string
@@ -91,6 +159,8 @@ export interface Database {
           period: string
           status: 'pending' | 'confirmed' | 'paid'
           processed_at?: string | null
+          scheduled_pay_date?: string | null
+          cost_basis?: 'submitted' | 'verified'
         }
         Update: {
           user_id?: string
@@ -99,6 +169,32 @@ export interface Database {
           period?: string
           status?: 'pending' | 'confirmed' | 'paid'
           processed_at?: string | null
+          scheduled_pay_date?: string | null
+          cost_basis?: 'submitted' | 'verified'
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'paybacks_ad_account_id_fkey'
+            columns: ['ad_account_id']
+            isOneToOne: false
+            referencedRelation: 'ad_accounts'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      settlement_settings: {
+        Row: {
+          id: number
+          settlement_day: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          settlement_day?: number
+        }
+        Update: {
+          settlement_day?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -257,6 +353,7 @@ export interface Database {
 
 export type User = Database['public']['Tables']['users']['Row']
 export type AdAccount = Database['public']['Tables']['ad_accounts']['Row']
+export type BusinessVerification = Database['public']['Tables']['business_verifications']['Row']
 export type Payback = Database['public']['Tables']['paybacks']['Row']
 export type Receipt = Database['public']['Tables']['receipts']['Row']
 export type TeamDeal = Database['public']['Tables']['team_deals']['Row']

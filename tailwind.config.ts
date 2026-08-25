@@ -8,18 +8,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: '#0066cc',
-        ink: '#1d1d1f',
-        parchment: '#f5f5f7',
+        primary: '#9fe870',
+        'primary-dark': '#163300',
+        'primary-hover': '#cdffad',
+        ink: '#0e0f0c',
+        parchment: '#e8ebe6',
         'canvas-white': '#ffffff',
-        'dark-tile': '#272729',
-        muted: '#6e6e73',
+        'dark-tile': '#0e0f0c',
+        muted: '#454745',
+        'muted-light': '#868685',
         hairline: '#e0e0e0',
+        'accent-bg': '#e2f6d5',
+        'accent-text': '#054d28',
       },
       fontSize: {
-        hero: ['56px', { lineHeight: '1.07', letterSpacing: '-0.28px', fontWeight: '600' }],
-        display: ['40px', { lineHeight: '1.1', letterSpacing: '-0.2px', fontWeight: '600' }],
-        section: ['34px', { lineHeight: '1.12', letterSpacing: '-0.17px', fontWeight: '600' }],
+        hero: ['56px', { lineHeight: '1.07', letterSpacing: '-0.5px', fontWeight: '900' }],
+        display: ['40px', { lineHeight: '1.1', letterSpacing: '-0.5px', fontWeight: '900' }],
+        section: ['34px', { lineHeight: '1.12', letterSpacing: '-0.5px', fontWeight: '900' }],
         tagline: ['21px', { lineHeight: '1.3', fontWeight: '600' }],
         body: ['17px', { lineHeight: '1.47', fontWeight: '400' }],
         caption: ['14px', { lineHeight: '1.4', fontWeight: '400' }],
@@ -27,16 +32,16 @@ const config: Config = {
       },
       borderRadius: {
         pill: '9999px',
-        lg: '18px',
+        lg: '24px',
         md: '11px',
         sm: '8px',
       },
       fontFamily: {
-        apple: [
+        pretendard: [
+          'Pretendard Variable',
+          'Pretendard',
           '-apple-system',
           'BlinkMacSystemFont',
-          'SF Pro Display',
-          'Inter',
           'sans-serif',
         ],
       },

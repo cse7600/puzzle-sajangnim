@@ -4,6 +4,13 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  experimental: {
+    // 정산내역서 PDF에 쓰는 한글 폰트 파일 — 서버리스 번들 트레이싱에 명시적으로 포함
+    outputFileTracingIncludes: {
+      '/api/paybacks/statement': ['./assets/fonts/**'],
+    },
+  },
+
   async headers() {
     return [
       // 정적 에셋 — 1년 불변 캐시

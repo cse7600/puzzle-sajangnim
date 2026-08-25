@@ -9,6 +9,12 @@ type NavSection = { label: string; items: NavItem[] };
 
 const NAV_SECTIONS: NavSection[] = [
   {
+    label: '핵심',
+    items: [
+      { icon: '🔗', label: '연동 허브', href: '/hub' },
+    ],
+  },
+  {
     label: '마케팅 도구',
     items: [
       { icon: '📊', label: '대시보드', href: '/dashboard' },
@@ -31,7 +37,6 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: '설정',
     items: [
-      { icon: '🔗', label: '연동 허브', href: '/hub' },
       { icon: '⚙️', label: '개인 설정', href: '/settings' },
     ],
   },

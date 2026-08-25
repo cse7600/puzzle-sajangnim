@@ -123,10 +123,10 @@ export default function LandingPage() {
       <section className="bg-dark-tile text-white">
         <div className="mx-auto flex max-w-content flex-col items-center px-6 py-24 text-center md:py-32">
           <span className="badge-animated mb-6 inline-flex items-center gap-2 rounded-pill border border-white/15 bg-white/5 px-4 py-2 text-caption text-white/90">
-            <Sparkles size={14} className="text-primary" />
+            <Sparkles size={14} className="text-primary" aria-hidden="true" />
             AI 기반 마케팅 자동화
           </span>
-          <h1 className="max-w-3xl text-[40px] font-semibold leading-[1.08] tracking-[-0.5px] md:text-hero">
+          <h1 className="max-w-3xl text-[40px] font-black leading-[1.08] tracking-[-0.5px] md:text-hero">
             복잡한 마케팅,
             <br />
             이제 사장님이 직접 합니다
@@ -158,9 +158,9 @@ export default function LandingPage() {
             {STATS.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-lg border border-hairline bg-canvas-white p-6 text-center"
+                className="rounded-lg border border-ink bg-canvas-white p-6 text-center"
               >
-                <div className="text-[34px] font-semibold tracking-tight text-primary md:text-[40px]">
+                <div className="text-[34px] font-semibold tracking-tight text-primary-dark md:text-[40px]">
                   {stat.value}
                 </div>
                 <div className="mt-2 text-caption text-muted">{stat.label}</div>
@@ -174,10 +174,10 @@ export default function LandingPage() {
       <section className="bg-parchment">
         <div className="mx-auto grid max-w-wide items-center gap-12 px-6 py-section lg:grid-cols-2">
           <div>
-            <span className="text-caption font-semibold uppercase tracking-wide text-primary">
+            <span className="text-caption font-semibold uppercase tracking-wide text-primary-dark">
               사장님을 위해
             </span>
-            <h2 className="mt-3 text-[30px] font-semibold leading-[1.12] tracking-tight text-ink md:text-section">
+            <h2 className="mt-3 text-[30px] font-black leading-[1.12] tracking-tight text-ink md:text-section">
               마케팅은 해야 하는데
               <br />
               돈이 없다면
@@ -203,9 +203,9 @@ export default function LandingPage() {
             ].map((item) => (
               <li
                 key={item}
-                className="flex items-start gap-3 rounded-lg border border-hairline bg-canvas-white p-5"
+                className="flex items-start gap-3 rounded-lg border border-ink bg-canvas-white p-5"
               >
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-primary text-white">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-primary text-ink">
                   <Check size={14} strokeWidth={3} />
                 </span>
                 <span className="text-body text-ink">{item}</span>
@@ -219,11 +219,11 @@ export default function LandingPage() {
       <section className="bg-dark-tile text-white">
         <div className="mx-auto grid max-w-wide items-center gap-12 px-6 py-section lg:grid-cols-2">
           <div>
-            <span className="badge-animated inline-flex items-center gap-2 rounded-pill bg-primary px-4 py-2 text-caption font-semibold text-white">
+            <span className="badge-animated inline-flex items-center gap-2 rounded-pill bg-primary px-4 py-2 text-caption font-semibold text-ink">
               <TrendingUp size={14} />
               최대 7% 페이백
             </span>
-            <h2 className="mt-5 text-[30px] font-semibold leading-[1.12] tracking-tight md:text-section">
+            <h2 className="mt-5 text-[30px] font-black leading-[1.12] tracking-tight md:text-section">
               광고비는 쓰는데
               <br />
               돌아오는 게 없다면
@@ -250,7 +250,7 @@ export default function LandingPage() {
                 key={item}
                 className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 p-5"
               >
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-primary text-white">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-primary text-ink">
                   <Check size={14} strokeWidth={3} />
                 </span>
                 <span className="text-body text-white/90">{item}</span>
@@ -264,7 +264,7 @@ export default function LandingPage() {
       <section className="bg-canvas-white">
         <div className="mx-auto max-w-wide px-6 py-section">
           <div className="mb-12 text-center">
-            <h2 className="text-[30px] font-semibold tracking-tight text-ink md:text-section">
+            <h2 className="text-[30px] font-black tracking-tight text-ink md:text-section">
               필요한 모든 마케팅, 하나의 앱에서
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-body text-muted">
@@ -275,9 +275,9 @@ export default function LandingPage() {
             {FEATURES.map((feature) => (
               <div
                 key={feature.title}
-                className="flex flex-col rounded-lg border border-hairline bg-canvas-white p-6"
+                className="flex flex-col rounded-lg border border-ink bg-canvas-white p-6"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-md bg-parchment text-primary">
+                <div className="flex h-12 w-12 items-center justify-center rounded-md bg-accent-bg text-primary-dark">
                   {feature.icon}
                 </div>
                 <h3 className="mt-5 text-tagline text-ink">{feature.title}</h3>
@@ -286,7 +286,7 @@ export default function LandingPage() {
                 </p>
                 <a
                   href="/signup"
-                  className="mt-5 inline-flex items-center gap-1 text-caption font-semibold text-primary"
+                  className="mt-5 inline-flex items-center gap-1 text-caption font-semibold text-primary-dark"
                 >
                   시작하기 <ArrowRight size={14} />
                 </a>
@@ -300,10 +300,10 @@ export default function LandingPage() {
       <section className="bg-parchment">
         <div className="mx-auto grid max-w-wide items-center gap-12 px-6 py-section lg:grid-cols-2">
           <div>
-            <span className="text-caption font-semibold uppercase tracking-wide text-primary">
+            <span className="text-caption font-semibold uppercase tracking-wide text-primary-dark">
               앱테크 리워드
             </span>
-            <h2 className="mt-3 text-[30px] font-semibold leading-[1.12] tracking-tight text-ink md:text-section">
+            <h2 className="mt-3 text-[30px] font-black leading-[1.12] tracking-tight text-ink md:text-section">
               영수증 올리면
               <br />
               포인트가 쌓입니다
@@ -314,13 +314,13 @@ export default function LandingPage() {
             </p>
             <div className="mt-6 flex gap-3">
               <div className="rounded-md bg-canvas-white px-4 py-3 text-center">
-                <div className="text-tagline font-semibold text-primary">
+                <div className="text-tagline font-semibold text-primary-dark">
                   50~500원
                 </div>
                 <div className="text-caption text-muted">영수증 1장당</div>
               </div>
               <div className="rounded-md bg-canvas-white px-4 py-3 text-center">
-                <div className="text-tagline font-semibold text-primary">
+                <div className="text-tagline font-semibold text-primary-dark">
                   월 4만원+
                 </div>
                 <div className="text-caption text-muted">평균 적립</div>
@@ -329,9 +329,9 @@ export default function LandingPage() {
           </div>
 
           {/* Receipt upload mockup */}
-          <div className="rounded-lg border border-hairline bg-canvas-white p-6">
+          <div className="rounded-lg border border-ink bg-canvas-white p-6">
             <div className="mb-4 flex items-center gap-2 text-ink">
-              <Receipt size={20} className="text-primary" />
+              <Receipt size={20} className="text-primary-dark" />
               <span className="text-tagline">오늘 올린 영수증</span>
             </div>
             <ul className="space-y-3">
@@ -346,7 +346,7 @@ export default function LandingPage() {
                     </div>
                     <div className="text-caption text-muted">{r.item}</div>
                   </div>
-                  <span className="text-tagline font-semibold text-primary">
+                  <span className="text-tagline font-semibold text-primary-dark">
                     {r.reward}
                   </span>
                 </li>
@@ -365,10 +365,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-wide px-6 py-section">
           <div className="mb-12 text-center">
             <span className="badge-animated inline-flex items-center gap-2 rounded-pill bg-white/10 px-4 py-2 text-caption text-white/90">
-              <ShoppingBag size={14} className="text-primary" />
+              <ShoppingBag size={14} className="text-primary" aria-hidden="true" />
               팀 구매 진행 중
             </span>
-            <h2 className="mt-5 text-[30px] font-semibold tracking-tight md:text-section">
+            <h2 className="mt-5 text-[30px] font-black tracking-tight md:text-section">
               여럿이 모이면, 반값이 됩니다
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-body text-white/70">
@@ -384,7 +384,7 @@ export default function LandingPage() {
               >
                 <div className="flex items-start justify-between">
                   <h3 className="max-w-[70%] text-tagline">{g.title}</h3>
-                  <span className="rounded-pill bg-primary px-3 py-1 text-caption font-semibold">
+                  <span className="rounded-pill bg-primary px-3 py-1 text-caption font-semibold text-ink">
                     {g.discount} 할인
                   </span>
                 </div>
@@ -432,10 +432,10 @@ export default function LandingPage() {
       <section className="bg-canvas-white">
         <div className="mx-auto grid max-w-wide items-center gap-12 px-6 py-section lg:grid-cols-2">
           <div>
-            <span className="text-caption font-semibold uppercase tracking-wide text-primary">
+            <span className="text-caption font-semibold uppercase tracking-wide text-primary-dark">
               추천인 시스템
             </span>
-            <h2 className="mt-3 text-[30px] font-semibold leading-[1.12] tracking-tight text-ink md:text-section">
+            <h2 className="mt-3 text-[30px] font-black leading-[1.12] tracking-tight text-ink md:text-section">
               친구 소개할 때마다
               <br />
               수익이 생깁니다
@@ -444,8 +444,8 @@ export default function LandingPage() {
               내가 추천한 사장님이 만드는 수익의 5%를 평생 받습니다. 한 번 소개로
               끝나지 않는, 진짜 평생 연금형 수익 구조입니다.
             </p>
-            <div className="mt-6 inline-flex items-center gap-2 rounded-pill bg-parchment px-5 py-3">
-              <Gift size={18} className="text-primary" />
+            <div className="mt-6 inline-flex items-center gap-2 rounded-pill bg-accent-bg px-5 py-3">
+              <Gift size={18} className="text-primary-dark" />
               <span className="text-body font-semibold text-ink">
                 추천 수익의 5% · 평생 연금
               </span>
@@ -461,17 +461,17 @@ export default function LandingPage() {
           </div>
 
           {/* Referral tree visual */}
-          <div className="rounded-lg border border-hairline bg-parchment p-8">
+          <div className="rounded-lg border border-ink bg-parchment p-8">
             <div className="flex flex-col items-center">
-              <div className="rounded-md bg-primary px-5 py-3 text-center text-white">
+              <div className="rounded-md bg-primary px-5 py-3 text-center text-ink">
                 <div className="text-body font-semibold">나</div>
-                <div className="text-caption text-white/80">월 +37만원 수익</div>
+                <div className="text-caption text-ink/70">월 +37만원 수익</div>
               </div>
               <div className="my-3 h-6 w-px bg-hairline" />
               <div className="flex gap-6">
                 {['김사장', '이대표', '박점주'].map((name) => (
                   <div key={name} className="flex flex-col items-center">
-                    <div className="rounded-md border border-hairline bg-canvas-white px-4 py-2 text-center">
+                    <div className="rounded-md border border-ink bg-canvas-white px-4 py-2 text-center">
                       <div className="text-caption font-semibold text-ink">
                         {name}
                       </div>
@@ -494,7 +494,7 @@ export default function LandingPage() {
       <section className="bg-parchment">
         <div className="mx-auto max-w-wide px-6 py-section">
           <div className="mb-12 text-center">
-            <h2 className="text-[30px] font-semibold tracking-tight text-ink md:text-section">
+            <h2 className="text-[30px] font-black tracking-tight text-ink md:text-section">
               이미 32,000명의 사장님이 쓰고 있습니다
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-body text-muted">
@@ -505,9 +505,9 @@ export default function LandingPage() {
             {TESTIMONIALS.map((t) => (
               <div
                 key={t.name}
-                className="flex flex-col rounded-lg border border-hairline bg-canvas-white p-6"
+                className="flex flex-col rounded-lg border border-ink bg-canvas-white p-6"
               >
-                <Quote size={24} className="text-primary" />
+                <Quote size={24} className="text-primary-dark" />
                 <p className="mt-4 flex-1 text-body leading-[1.5] text-ink">
                   “{t.quote}”
                 </p>
@@ -526,7 +526,7 @@ export default function LandingPage() {
       {/* ====================== 10. FOOTER CTA (dark) ======================= */}
       <section className="bg-dark-tile text-white">
         <div className="mx-auto max-w-content px-6 py-24 text-center md:py-28">
-          <h2 className="text-[34px] font-semibold leading-[1.1] tracking-tight md:text-display">
+          <h2 className="text-[34px] font-black leading-[1.1] tracking-tight md:text-display">
             지금 바로 시작하세요
           </h2>
           <p className="mx-auto mt-5 max-w-lg text-body text-white/70 md:text-[21px]">
