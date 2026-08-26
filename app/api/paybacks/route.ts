@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { usersReadOnlyAdmin, resolveBusinessName } from '@/lib/admin-users';
 import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/auth-server';
+import { convertExpiredPaybacks } from '@/lib/settlement-points';
 
 interface PaybackWithAdAccount {
   ad_account_id: string;
@@ -54,12 +55,38 @@ async function attachAdvertiserName<T extends { user_id: string }>(
   return rows.map(row => ({ ...row, advertiser_name: nameByUserId.get(row.user_id) ?? row.user_id }));
 }
 
+// 각 정산 건에 현재 유효한(canceled/rejected 제외) 출금 신청 상태를 붙인다.
+// 신청이 없으면 null — UI가 "출금 신청" 버튼을 노출할지 판단하는 근거.
+async function attachWithdrawalInfo<T extends { id: string }>(
+  rows: T[]
+): Promise<(T & { withdrawal: { id: string; status: string } | null })[]> {
+  if (rows.length === 0) return [];
+
+  const paybackIds = rows.map(row => row.id);
+  const { data: withdrawals } = await supabaseAdmin
+    .from('withdrawal_requests')
+    .select('id, payback_id, status, requested_at')
+    .in('payback_id', paybackIds)
+    .in('status', ['requested', 'processing', 'paid', 'rejected'])
+    .order('requested_at', { ascending: true });
+
+  // 오래된 것부터 넣어 같은 payback_id는 가장 최근 신청으로 덮어써진다
+  // (rejected 후 재신청한 경우 최신 requested 건을 보여줘야 함).
+  const byPaybackId = new Map<string, { id: string; status: string }>();
+  for (const row of withdrawals ?? []) {
+    byPaybackId.set(row.payback_id, { id: row.id, status: row.status });
+  }
+  return rows.map(row => ({ ...row, withdrawal: byPaybackId.get(row.id) ?? null }));
+}
+
 export async function GET(req: NextRequest) {
   const sessionUser = await getSessionUser();
   if (!sessionUser) return unauthorizedResponse();
 
   const scope = req.nextUrl.searchParams.get('scope');
   if (scope === 'all' && !sessionUser.isAdmin) return forbiddenResponse();
+
+  await convertExpiredPaybacks(scope === 'all' ? undefined : sessionUser.id);
 
   let query = supabaseAdmin
     .from('paybacks')
@@ -73,7 +100,7 @@ export async function GET(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: '페이백 내역을 불러오지 못했습니다' }, { status: 500 });
   }
-  const withSpendBasis = await attachSpendBasisAmount(data ?? []);
+  const withSpendBasis = await attachWithdrawalInfo(await attachSpendBasisAmount(data ?? []));
   if (scope !== 'all') {
     return NextResponse.json(withSpendBasis);
   }

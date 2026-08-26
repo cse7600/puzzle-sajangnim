@@ -18,11 +18,76 @@ export interface PaybackLineItem {
   cost_basis: CostBasis
   scheduled_pay_date: string | null
   spend_basis_amount: number
+  withdrawal_deadline: string | null
+  withdrawal: { id: string; status: string } | null
   ad_accounts: {
     platform: Platform
     account_name: string
     payback_rate: number
   }
+}
+
+const WITHDRAWAL_STATUS_TEXT: Record<string, string> = {
+  requested: '출금 신청 접수됨',
+  processing: '출금 지급 처리중',
+  paid: '출금 지급완료',
+  rejected: '출금 신청 반려됨 — 재신청 가능',
+}
+
+function daysUntil(deadline: string): number {
+  return Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+}
+
+function WithdrawalAction({ payback, onRequested }: { payback: PaybackLineItem; onRequested: () => void }) {
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (payback.status !== 'confirmed') return null
+
+  if (payback.withdrawal && payback.withdrawal.status !== 'rejected') {
+    return <p className="mt-1 text-[11px] text-[#6e6e73]">{WITHDRAWAL_STATUS_TEXT[payback.withdrawal.status]}</p>
+  }
+
+  async function requestWithdrawal() {
+    setSubmitting(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/withdrawals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payback_id: payback.id }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        setError(body.error ?? '출금 신청에 실패했습니다')
+        return
+      }
+      onRequested()
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const remainingDays = payback.withdrawal_deadline ? daysUntil(payback.withdrawal_deadline) : null
+
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={requestWithdrawal}
+        disabled={submitting}
+        className="rounded-[9999px] border border-[#0066cc] px-2.5 py-1 text-[11px] font-medium text-[#0066cc] hover:bg-[#f0f7ff] disabled:opacity-50 transition-colors"
+      >
+        {submitting ? '신청 중...' : '출금 신청'}
+      </button>
+      {remainingDays !== null && (
+        <span className="ml-1.5 text-[11px] text-[#a1a1a6]">
+          {remainingDays > 0 ? `D-${remainingDays} 내 미신청 시 포인트 전환` : '기한 만료 — 곧 포인트 전환됩니다'}
+        </span>
+      )}
+      {error && <p className="mt-0.5 text-[11px] text-red-600">{error}</p>}
+    </div>
+  )
 }
 
 interface MonthGroup {
@@ -35,8 +100,9 @@ interface MonthGroup {
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
   처리중: 'text-amber-600 bg-amber-50 border-amber-200',
-  확정: 'text-green-600 bg-green-50 border-green-200',
+  '확정 — 출금 신청 가능': 'text-green-600 bg-green-50 border-green-200',
   지급완료: 'text-[#6e6e73] bg-[#f5f5f7] border-[#e0e0e0]',
+  '포인트 전환 완료': 'text-violet-600 bg-violet-50 border-violet-200',
 }
 
 // 한 달 안에 여러 광고계정 라인아이템의 상태가 섞일 수 있다(예: 계정 A는 confirmed, 계정 B는 draft).
@@ -100,7 +166,7 @@ async function downloadStatement(period: string): Promise<{ error?: string }> {
   return {}
 }
 
-function LineItemRow({ row }: { row: PaybackLineItem }) {
+function LineItemRow({ row, onWithdrawalRequested }: { row: PaybackLineItem; onWithdrawalRequested: () => void }) {
   const platformInfo = PLATFORM_INFO[row.ad_accounts.platform] ?? {
     name: row.ad_accounts.platform,
     color: '#6e6e73',
@@ -128,6 +194,7 @@ function LineItemRow({ row }: { row: PaybackLineItem }) {
         <span className={`rounded-[9999px] border px-2 py-0.5 text-[11px] font-medium ${STATUS_BADGE_CLASS[statusLabel]}`}>
           {statusLabel}
         </span>
+        <WithdrawalAction payback={row} onRequested={onWithdrawalRequested} />
       </td>
     </tr>
   )
@@ -138,11 +205,13 @@ function MonthTable({
   downloading,
   error,
   onDownload,
+  onWithdrawalRequested,
 }: {
   group: MonthGroup
   downloading: boolean
   error: string | null
   onDownload: () => void
+  onWithdrawalRequested: () => void
 }) {
   const headerLabel = PAYBACK_USER_STATUS_LABEL[group.status]
 
@@ -185,7 +254,7 @@ function MonthTable({
             </tr>
           </thead>
           <tbody>
-            {group.rows.map(row => <LineItemRow key={row.id} row={row} />)}
+            {group.rows.map(row => <LineItemRow key={row.id} row={row} onWithdrawalRequested={onWithdrawalRequested} />)}
           </tbody>
           <tfoot>
             <tr className="border-t border-[#e0e0e0] font-semibold">
@@ -202,7 +271,13 @@ function MonthTable({
   )
 }
 
-export default function SettlementTable({ paybacks }: { paybacks: PaybackLineItem[] }) {
+export default function SettlementTable({
+  paybacks,
+  onWithdrawalRequested,
+}: {
+  paybacks: PaybackLineItem[]
+  onWithdrawalRequested?: () => void
+}) {
   const groups = useMemo(() => groupByPeriod(paybacks), [paybacks])
   const periodOptions = useMemo(() => groups.map(g => g.period), [groups])
   const [selectedPeriod, setSelectedPeriod] = useState<string>('all')
@@ -257,6 +332,7 @@ export default function SettlementTable({ paybacks }: { paybacks: PaybackLineIte
               downloading={downloadingPeriod === group.period}
               error={downloadError?.period === group.period ? downloadError.message : null}
               onDownload={() => handleDownload(group.period)}
+              onWithdrawalRequested={() => onWithdrawalRequested?.()}
             />
           ))}
         </div>

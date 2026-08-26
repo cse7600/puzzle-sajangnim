@@ -1,56 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
-const MOCK_DEALS: Record<string, { current_count: number; target_count: number; deal_price: number }> = {
-  'deal-1': { current_count: 4, target_count: 5, deal_price: 297000 },
-  'deal-2': { current_count: 2, target_count: 3, deal_price: 720000 },
-  'deal-3': { current_count: 1, target_count: 4, deal_price: 270000 },
+const db = supabaseAdmin as any
+
+interface JoinResult {
+  ok: boolean
+  reason?: 'not_found' | 'deal_not_active' | 'deal_expired' | 'deal_full' | 'already_joined' | 'insufficient_points'
+  balance?: number
+  new_count?: number
+  completed?: boolean
+  price_paid?: number
 }
 
+const ERROR_STATUS: Record<NonNullable<JoinResult['reason']>, number> = {
+  not_found: 404,
+  deal_not_active: 409,
+  deal_expired: 409,
+  deal_full: 409,
+  already_joined: 409,
+  insufficient_points: 402,
+}
+
+const ERROR_MESSAGE: Record<NonNullable<JoinResult['reason']>, string> = {
+  not_found: '팀구매를 찾을 수 없습니다',
+  deal_not_active: '진행 중인 팀구매가 아닙니다',
+  deal_expired: '마감된 팀구매입니다',
+  deal_full: '이미 모집이 마감됐습니다',
+  already_joined: '이미 참여한 팀구매입니다',
+  insufficient_points: '포인트가 부족합니다',
+}
+
+// 잔액 확인→차감→참여 기록→카운트 증가를 join_team_deal Postgres 함수 하나로 원자 처리한다.
+// (행 잠금 + advisory lock으로 마지막 자리 race·동일 유저 이중 차감 race를 DB에서 막음)
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const sessionUser = await getSessionUser()
   if (!sessionUser) return unauthorizedResponse()
 
-  try {
-    const { data: deal } = await supabase
-      .from('team_deals')
-      .select('*')
-      .eq('id', params.id)
-      .single()
+  const { data, error } = await db.rpc('join_team_deal', {
+    p_deal_id: params.id,
+    p_user_id: sessionUser.id,
+  })
 
-    if (!deal) return NextResponse.json({ error: 'not_found' }, { status: 404 })
-    if (deal.status !== 'active') return NextResponse.json({ error: 'deal_not_active' }, { status: 409 })
-    if (new Date(deal.deadline) < new Date()) return NextResponse.json({ error: 'deal_expired' }, { status: 409 })
-
-    const newCount = deal.current_count + 1
-    const isCompleted = newCount >= deal.target_count
-
-    await supabase.from('team_deals').update({
-      current_count: newCount,
-      status: isCompleted ? 'completed' : 'active',
-    }).eq('id', params.id)
-
-    return NextResponse.json({
-      success: true,
-      new_count: newCount,
-      target_count: deal.target_count,
-      status: isCompleted ? 'completed' : 'active',
-      price_paid: deal.deal_price,
-    })
-  } catch {
-    // DB 미연결 상태 — 목 딜에 대한 시뮬레이션
-    const mock = MOCK_DEALS[params.id]
-    if (!mock) return NextResponse.json({ success: false, error: 'not_found' }, { status: 404 })
-    const newCount = mock.current_count + 1
-    const isCompleted = newCount >= mock.target_count
-    mock.current_count = newCount
-    return NextResponse.json({
-      success: true,
-      new_count: newCount,
-      target_count: mock.target_count,
-      status: isCompleted ? 'completed' : 'active',
-      price_paid: mock.deal_price,
-    })
+  if (error) {
+    return NextResponse.json({ error: '팀구매 참여 처리에 실패했습니다' }, { status: 500 })
   }
+
+  const result = data as JoinResult
+  if (!result.ok) {
+    const reason = result.reason ?? 'not_found'
+    return NextResponse.json(
+      { error: ERROR_MESSAGE[reason], reason, balance: result.balance },
+      { status: ERROR_STATUS[reason] }
+    )
+  }
+
+  return NextResponse.json({
+    success: true,
+    new_count: result.new_count,
+    completed: result.completed,
+    price_paid: result.price_paid,
+  })
 }

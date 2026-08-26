@@ -278,7 +278,7 @@ export default function HubPage() {
             <>
               <h3 className="text-[16px] font-semibold text-[#1d1d1f] mb-1">정산 내역</h3>
               <p className="text-[13px] text-[#6e6e73] mb-5">퍼즐코퍼레이션이 발행하는 월별 정산내역서예요. PDF로도 받아보실 수 있어요.</p>
-              <SettlementTable paybacks={paybacks} />
+              <SettlementTable paybacks={paybacks} onWithdrawalRequested={loadData} />
             </>
           )}
 

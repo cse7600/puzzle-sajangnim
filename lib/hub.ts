@@ -33,17 +33,18 @@ export const CONNECTION_STATUS_LABEL: Record<ConnectionStatus, string> = {
   connected: '연동 완료',
 };
 
-export type PaybackStatus = 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid';
+export type PaybackStatus = 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid' | 'converted_to_points';
 
-export const PAYBACK_STATUSES: PaybackStatus[] = ['draft', 'review_1', 'review_2', 'confirmed', 'paid'];
+export const PAYBACK_STATUSES: PaybackStatus[] = ['draft', 'review_1', 'review_2', 'confirmed', 'paid', 'converted_to_points'];
 
-// 어드민용 5단계 라벨
+// 어드민용 6단계 라벨
 export const PAYBACK_STATUS_LABEL: Record<PaybackStatus, string> = {
   draft: '초안',
   review_1: '1차검토',
   review_2: '2차검토',
   confirmed: '확정',
   paid: '지급완료',
+  converted_to_points: '포인트 전환',
 };
 
 // 사장님(사용자) 노출용 — 내부 검토 단계는 뭉뚱그려 "처리중"
@@ -51,8 +52,22 @@ export const PAYBACK_USER_STATUS_LABEL: Record<PaybackStatus, string> = {
   draft: '처리중',
   review_1: '처리중',
   review_2: '처리중',
-  confirmed: '확정',
+  confirmed: '확정 — 출금 신청 가능',
   paid: '지급완료',
+  converted_to_points: '포인트 전환 완료',
+};
+
+// withdrawal_requests.status
+export type WithdrawalStatus = 'requested' | 'processing' | 'paid' | 'rejected' | 'canceled';
+
+export const WITHDRAWAL_STATUSES: WithdrawalStatus[] = ['requested', 'processing', 'paid', 'rejected', 'canceled'];
+
+export const WITHDRAWAL_STATUS_LABEL: Record<WithdrawalStatus, string> = {
+  requested: '신청 접수',
+  processing: '지급 처리중',
+  paid: '지급완료',
+  rejected: '반려',
+  canceled: '취소됨',
 };
 
 export type CostBasis = 'submitted' | 'verified' | 'manual';

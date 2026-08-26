@@ -43,10 +43,6 @@ type ReferralEarning = {
   created_at: string;
 };
 
-function formatWon(n: number) {
-  return n.toLocaleString('ko-KR') + '원';
-}
-
 function relativeTime(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const minutes = Math.floor(diffMs / 60000);
@@ -115,16 +111,16 @@ export default function ReferralPage() {
 
   const summaryCards = [
     {
-      label: '누적 수익',
-      value: formatWon(totalEarned),
+      label: '누적 포인트 적립',
+      value: `${totalEarned.toLocaleString('ko-KR')}P`,
       sub: '가입 후 전체 합계',
       icon: TrendingUp,
       accent: true,
     },
     {
-      label: '미정산 수익',
-      value: formatWon(unpaidEarned),
-      sub: '출금 대기 중',
+      label: '적립 처리중',
+      value: `${unpaidEarned.toLocaleString('ko-KR')}P`,
+      sub: '보통 즉시 반영됩니다',
       icon: HandCoins,
       accent: false,
     },
@@ -144,7 +140,7 @@ export default function ReferralPage() {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">추천인 시스템</h1>
           <p className="mt-1 text-sm text-gray-500">
-            친구가 결제할 때마다 5%가 평생 내 통장으로
+            친구가 포인트를 벌 때마다 5%가 내 포인트로 즉시 적립돼요
           </p>
         </div>
         <button
@@ -340,7 +336,7 @@ export default function ReferralPage() {
                 아직 발생한 수익이 없습니다
               </p>
               <p className="text-xs text-gray-400">
-                추천한 친구가 결제하면 여기에 표시됩니다
+                추천한 친구가 포인트를 벌면 여기에 표시됩니다
               </p>
             </div>
           ) : (
@@ -368,12 +364,12 @@ export default function ReferralPage() {
                             : 'bg-amber-50 text-amber-600'
                         }`}
                       >
-                        {earning.is_paid ? '정산완료' : '미정산'}
+                        {earning.is_paid ? '포인트 적립됨' : '적립 처리중'}
                       </span>
                     </div>
                   </div>
                   <span className="whitespace-nowrap text-sm font-semibold text-green-600">
-                    +{formatWon(earning.earned_amount)}
+                    +{earning.earned_amount.toLocaleString('ko-KR')}P
                   </span>
                 </li>
               ))}
@@ -382,41 +378,25 @@ export default function ReferralPage() {
         </div>
       </div>
 
-      {/* 출금 카드 */}
+      {/* 포인트 적립 안내 카드 */}
       <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-4">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#0066cc]/10 text-[#0066cc]">
-              <Wallet className="h-6 w-6" />
-            </span>
-            <div>
-              <p className="text-sm text-gray-500">출금 가능 잔액</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatWon(totalEarned)}
-              </p>
-            </div>
-          </div>
-
-          <div className="group relative">
-            <button
-              disabled
-              className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-gray-200 px-5 py-3 text-sm font-medium text-gray-400"
-            >
-              출금 신청
-              <Info className="h-4 w-4" />
-            </button>
-            <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden whitespace-nowrap rounded-md bg-gray-900 px-3 py-1.5 text-xs text-white shadow-lg group-hover:block">
-              출시 후 활성화됩니다
-              <span className="absolute right-6 top-full -mt-px border-4 border-transparent border-t-gray-900" />
-            </div>
+        <div className="flex items-center gap-4">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#0066cc]/10 text-[#0066cc]">
+            <Wallet className="h-6 w-6" />
+          </span>
+          <div>
+            <p className="text-sm text-gray-500">누적 포인트 적립</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {totalEarned.toLocaleString('ko-KR')}P
+            </p>
           </div>
         </div>
 
-        <div className="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 px-4 py-3">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-          <p className="text-xs text-amber-700">
-            출금 기능은 정식 출시 후 활성화될 예정입니다. 그 전까지 발생한
-            수익은 모두 누적되어 안전하게 보관됩니다.
+        <div className="mt-4 flex items-start gap-2 rounded-lg bg-blue-50 px-4 py-3">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#0066cc]" />
+          <p className="text-xs text-[#0066cc]">
+            추천 수익은 발생 즉시 포인트로 적립됩니다. 별도 출금 신청 없이
+            내 포인트 잔액에 자동으로 합산돼요.
           </p>
         </div>
       </div>

@@ -177,7 +177,7 @@ export interface Database {
           ad_account_id: string
           amount: number
           period: string
-          status: 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid'
+          status: 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid' | 'converted_to_points'
           processed_at: string | null
           created_at: string
           scheduled_pay_date: string | null
@@ -188,13 +188,15 @@ export interface Database {
           reviewed_at_2: string | null
           confirmed_by: string | null
           confirmed_at: string | null
+          withdrawal_deadline: string | null
+          converted_at: string | null
         }
         Insert: {
           user_id: string
           ad_account_id: string
           amount: number
           period: string
-          status: 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid'
+          status: 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid' | 'converted_to_points'
           processed_at?: string | null
           scheduled_pay_date?: string | null
           cost_basis?: 'submitted' | 'verified' | 'manual'
@@ -204,13 +206,15 @@ export interface Database {
           reviewed_at_2?: string | null
           confirmed_by?: string | null
           confirmed_at?: string | null
+          withdrawal_deadline?: string | null
+          converted_at?: string | null
         }
         Update: {
           user_id?: string
           ad_account_id?: string
           amount?: number
           period?: string
-          status?: 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid'
+          status?: 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid' | 'converted_to_points'
           processed_at?: string | null
           scheduled_pay_date?: string | null
           cost_basis?: 'submitted' | 'verified' | 'manual'
@@ -220,6 +224,8 @@ export interface Database {
           reviewed_at_2?: string | null
           confirmed_by?: string | null
           confirmed_at?: string | null
+          withdrawal_deadline?: string | null
+          converted_at?: string | null
         }
         Relationships: [
           {
@@ -268,17 +274,69 @@ export interface Database {
         Row: {
           id: number
           settlement_day: number
+          withdrawal_deadline_days: number
+          withdrawal_min_amount: number
           updated_at: string
         }
         Insert: {
           id?: number
           settlement_day?: number
+          withdrawal_deadline_days?: number
+          withdrawal_min_amount?: number
         }
         Update: {
           settlement_day?: number
+          withdrawal_deadline_days?: number
+          withdrawal_min_amount?: number
           updated_at?: string
         }
         Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          id: string
+          user_id: string
+          payback_id: string
+          amount: number
+          status: 'requested' | 'processing' | 'paid' | 'rejected' | 'canceled'
+          bank_name: string
+          account_number: string
+          account_holder: string
+          requested_at: string
+          processed_by: string | null
+          processed_at: string | null
+          reject_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          payback_id: string
+          amount: number
+          status?: 'requested' | 'processing' | 'paid' | 'rejected' | 'canceled'
+          bank_name: string
+          account_number: string
+          account_holder: string
+          processed_by?: string | null
+          processed_at?: string | null
+          reject_reason?: string | null
+        }
+        Update: {
+          status?: 'requested' | 'processing' | 'paid' | 'rejected' | 'canceled'
+          processed_by?: string | null
+          processed_at?: string | null
+          reject_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'withdrawal_requests_payback_id_fkey'
+            columns: ['payback_id']
+            isOneToOne: false
+            referencedRelation: 'paybacks'
+            referencedColumns: ['id']
+          }
+        ]
       }
       receipts: {
         Row: {

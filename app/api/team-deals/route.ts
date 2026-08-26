@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
+import { refundFailedTeamDeals } from '@/lib/team-deal-refunds'
 
 // 목 데이터 표시용 플레이스홀더 — 실제 유저 UUID가 아니며 DB에 쓰이지 않는다.
 const MOCK_CREATOR_ID = 'mock-deal-creator'
@@ -107,6 +108,8 @@ const MOCK_DEALS = [
 export async function GET() {
   const sessionUser = await getSessionUser()
   if (!sessionUser) return unauthorizedResponse()
+
+  await refundFailedTeamDeals()
 
   try {
     const { data, error } = await supabase

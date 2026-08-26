@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
+import { convertExpiredPaybacks } from '@/lib/settlement-points'
 
 const db = supabaseAdmin as any
 
@@ -14,6 +15,8 @@ type PointType =
   | 'reward'
   | 'redeem'
   | 'community'
+  | 'payback'
+  | 'refund'
 
 interface BreakdownGroup {
   key: string
@@ -27,6 +30,8 @@ const GROUPS: BreakdownGroup[] = [
   { key: 'referral', label: '추천인 수익', types: ['referral'] },
   { key: 'reward', label: '이벤트 리워드', types: ['reward'] },
   { key: 'community', label: '커뮤니티', types: ['community'] },
+  { key: 'payback', label: '광고 수수료 전환', types: ['payback'] },
+  { key: 'refund', label: '팀구매 환불', types: ['refund'] },
   { key: 'redeem', label: '차감', types: ['redeem'] },
 ]
 
@@ -37,6 +42,8 @@ function buildEmptySummary() {
 export async function GET() {
   const sessionUser = await getSessionUser()
   if (!sessionUser) return unauthorizedResponse()
+
+  await convertExpiredPaybacks(sessionUser.id)
 
   const { data, error } = await db
     .from('point_transactions')

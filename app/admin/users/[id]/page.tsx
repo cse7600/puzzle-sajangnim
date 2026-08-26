@@ -21,6 +21,7 @@ interface PaybackSummary {
   review_2: number
   confirmed: number
   paid: number
+  converted_to_points: number
   total: number
 }
 

@@ -298,6 +298,9 @@ function AdvertiserSubtotalRow({ group }: { group: AdvertiserPeriodGroup }) {
 export default function AdminSettlementPage() {
   const [settlementDay, setSettlementDay] = useState<number>(10)
   const [savingDay, setSavingDay] = useState(false)
+  const [withdrawalDeadlineDays, setWithdrawalDeadlineDays] = useState<number>(7)
+  const [withdrawalMinAmount, setWithdrawalMinAmount] = useState<number>(10000)
+  const [savingWithdrawalPolicy, setSavingWithdrawalPolicy] = useState(false)
   const [paybacks, setPaybacks] = useState<Payback[]>([])
   const [loading, setLoading] = useState(true)
   const [generatePeriod, setGeneratePeriod] = useState(currentPeriod())
@@ -311,6 +314,8 @@ export default function AdminSettlementPage() {
       fetch('/api/paybacks?scope=all').then(r => r.json()),
     ]).then(([config, pbs]) => {
       setSettlementDay(config.settlement_day ?? 10)
+      setWithdrawalDeadlineDays(config.withdrawal_deadline_days ?? 7)
+      setWithdrawalMinAmount(config.withdrawal_min_amount ?? 10000)
       setPaybacks(Array.isArray(pbs) ? pbs : [])
     }).finally(() => setLoading(false))
   }
@@ -333,6 +338,23 @@ export default function AdminSettlementPage() {
       if (res.ok) showToast('정산 마감일이 변경되었습니다')
     } finally {
       setSavingDay(false)
+    }
+  }
+
+  async function saveWithdrawalPolicy() {
+    setSavingWithdrawalPolicy(true)
+    try {
+      const res = await fetch('/api/settlement-config', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          withdrawal_deadline_days: withdrawalDeadlineDays,
+          withdrawal_min_amount: withdrawalMinAmount,
+        }),
+      })
+      if (res.ok) showToast('출금 신청 정책이 변경되었습니다')
+    } finally {
+      setSavingWithdrawalPolicy(false)
     }
   }
 
@@ -404,6 +426,39 @@ export default function AdminSettlementPage() {
             className="rounded-[9999px] bg-[#0066cc] text-white px-4 py-2 text-[13px] font-medium hover:bg-[#0058b3] disabled:opacity-50 transition-colors"
           >
             {savingDay ? '저장 중...' : '저장'}
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-5 mb-5">
+        <h2 className="text-[15px] font-semibold text-[#1d1d1f] mb-1">출금 신청 정책</h2>
+        <p className="text-[13px] text-[#6e6e73] mb-4">확정된 정산을 사장님이 출금 신청하지 않으면 아래 유예기간이 지난 뒤 자동으로 포인트 전환됩니다.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-[13px] text-[#6e6e73]">확정 후</span>
+          <input
+            type="number"
+            min={1}
+            max={90}
+            value={withdrawalDeadlineDays}
+            onChange={e => setWithdrawalDeadlineDays(Number(e.target.value))}
+            className="w-20 rounded-[9px] border border-[#e0e0e0] px-3 py-2 text-[14px] text-center outline-none focus:border-[#0066cc]"
+          />
+          <span className="text-[13px] text-[#6e6e73]">일 이내 미신청 시 포인트 전환 · 최소 출금액</span>
+          <input
+            type="number"
+            min={0}
+            step={1000}
+            value={withdrawalMinAmount}
+            onChange={e => setWithdrawalMinAmount(Number(e.target.value))}
+            className="w-28 rounded-[9px] border border-[#e0e0e0] px-3 py-2 text-[14px] text-center outline-none focus:border-[#0066cc]"
+          />
+          <span className="text-[13px] text-[#6e6e73]">원</span>
+          <button
+            onClick={saveWithdrawalPolicy}
+            disabled={savingWithdrawalPolicy}
+            className="rounded-[9999px] bg-[#0066cc] text-white px-4 py-2 text-[13px] font-medium hover:bg-[#0058b3] disabled:opacity-50 transition-colors"
+          >
+            {savingWithdrawalPolicy ? '저장 중...' : '저장'}
           </button>
         </div>
       </div>

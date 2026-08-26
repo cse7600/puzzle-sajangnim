@@ -10,6 +10,7 @@ import {
   Receipt,
   ShoppingBag,
   Coins,
+  Banknote,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
@@ -19,6 +20,7 @@ const NAV = [
   { label: '사용자', href: '/admin/users', icon: Users },
   { label: '광고계정', href: '/admin/ad-accounts', icon: Megaphone },
   { label: '정산 관리', href: '/admin/settlement', icon: Wallet },
+  { label: '출금 관리', href: '/admin/withdrawals', icon: Banknote },
   { label: '영수증 검토', href: '/admin/receipts', icon: Receipt },
   { label: '팀 구매', href: '/admin/team-deals', icon: ShoppingBag },
   { label: '포인트', href: '/admin/points', icon: Coins },

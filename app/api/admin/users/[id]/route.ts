@@ -38,11 +38,13 @@ async function loadLatestVerification(userId: string) {
   return { ...data, certificate_url: certificateUrl, bankbook_copy_url: bankbookCopyUrl }
 }
 
-// 5단계 status(draft/review_1/review_2/confirmed/paid) 전부를 버킷팅한다.
+// 6단계 status(draft/review_1/review_2/confirmed/paid/converted_to_points) 전부를 버킷팅한다.
 // 구버전(pending/confirmed/paid) 3버킷은 draft 3건을 전부 누락시켜 total이 과소 집계됐다.
 async function loadPaybackSummary(userId: string) {
   const { data } = await supabaseAdmin.from('paybacks').select('*').eq('user_id', userId)
-  const summary: Record<PaybackStatus, number> = { draft: 0, review_1: 0, review_2: 0, confirmed: 0, paid: 0 }
+  const summary: Record<PaybackStatus, number> = {
+    draft: 0, review_1: 0, review_2: 0, confirmed: 0, paid: 0, converted_to_points: 0,
+  }
   for (const row of data ?? []) {
     if ((PAYBACK_STATUSES as readonly string[]).includes(row.status)) {
       summary[row.status as PaybackStatus] += row.amount
