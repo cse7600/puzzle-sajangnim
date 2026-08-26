@@ -9,7 +9,7 @@ export interface AdminTeamDeal {
   target_count: number
   current_count: number
   deadline: string
-  status: 'active' | 'completed' | 'failed' | 'cancelled'
+  status: 'draft' | 'active' | 'completed' | 'failed' | 'cancelled'
   thumbnail_url: string | null
   content_html: string | null
   created_at: string
@@ -42,6 +42,7 @@ export const DEAL_CATEGORY_EMOJI: Record<string, string> = {
 }
 
 export const DEAL_STATUS_LABEL: Record<AdminTeamDeal['status'], string> = {
+  draft: '비공개(문항 필요)',
   active: '모집중',
   completed: '완료',
   failed: '미달종료',
@@ -49,6 +50,7 @@ export const DEAL_STATUS_LABEL: Record<AdminTeamDeal['status'], string> = {
 }
 
 export const DEAL_STATUS_STYLE: Record<AdminTeamDeal['status'], string> = {
+  draft: 'bg-orange-50 text-orange-700',
   active: 'bg-amber-50 text-amber-700',
   completed: 'bg-green-50 text-green-700',
   failed: 'bg-[#f5f5f7] text-[#6e6e73]',

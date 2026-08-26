@@ -4,100 +4,38 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/auth-server'
 import { isUuid } from '@/lib/admin-users'
+import { parseQuestionSet, saveQuestionSet, listQuestions } from '@/lib/admin-team-deal-questions'
 
 const db = supabaseAdmin as any
 
-const QUESTION_TYPES = new Set(['text', 'link', 'image'])
-const MAX_QUESTIONS = 30
-const MAX_LABEL_LENGTH = 200
-
-interface IncomingQuestion {
-  id?: string
-  position: number
-  question_type: 'text' | 'link' | 'image'
-  label: string
-  required: boolean
-}
-
-function parseQuestion(raw: unknown, index: number): { error: string } | { question: IncomingQuestion } {
-  const item = raw as Record<string, unknown>
-  const label = typeof item.label === 'string' ? item.label.trim() : ''
-  if (!label) return { error: `${index + 1}번 문항의 질문 내용을 입력해주세요` }
-  if (label.length > MAX_LABEL_LENGTH) {
-    return { error: `${index + 1}번 문항의 질문은 ${MAX_LABEL_LENGTH}자를 초과할 수 없습니다` }
-  }
-  if (typeof item.question_type !== 'string' || !QUESTION_TYPES.has(item.question_type)) {
-    return { error: `${index + 1}번 문항의 타입이 올바르지 않습니다 (텍스트/링크/이미지)` }
-  }
-  if (item.id !== undefined && (typeof item.id !== 'string' || !isUuid(item.id))) {
-    return { error: `${index + 1}번 문항의 ID 형식이 올바르지 않습니다` }
-  }
-  return {
-    question: {
-      id: item.id as string | undefined,
-      position: index,
-      question_type: item.question_type as IncomingQuestion['question_type'],
-      label,
-      required: item.required === true,
-    },
-  }
-}
-
-function parseBody(body: unknown): { error: string } | { questions: IncomingQuestion[] } {
-  const questionsRaw = (body as { questions?: unknown })?.questions
-  if (!Array.isArray(questionsRaw)) {
-    return { error: 'questions 배열이 필요합니다' }
-  }
-  if (questionsRaw.length > MAX_QUESTIONS) {
-    return { error: `설문 문항은 최대 ${MAX_QUESTIONS}개까지 등록할 수 있습니다` }
-  }
-  const questions: IncomingQuestion[] = []
-  for (let index = 0; index < questionsRaw.length; index += 1) {
-    const parsed = parseQuestion(questionsRaw[index], index)
-    if ('error' in parsed) return parsed
-    questions.push(parsed.question)
-  }
-  return { questions }
-}
-
-// 전체 세트 저장: id 있으면 update, 없으면 insert, 목록에서 빠진 기존 문항은 delete(답변 FK cascade).
-async function saveQuestionSet(dealId: string, questions: IncomingQuestion[]): Promise<string | null> {
-  const { data: existingRows, error: existingError } = await db
-    .from('team_deal_survey_questions')
-    .select('id')
-    .eq('deal_id', dealId)
-  if (existingError) return '기존 문항을 불러오지 못했습니다'
-
-  const existingIds = new Set<string>((existingRows ?? []).map((row: { id: string }) => row.id))
-  const keptIds = new Set(questions.filter(q => q.id).map(q => q.id as string))
-  for (const id of keptIds) {
-    if (!existingIds.has(id)) return '이 딜의 문항이 아닌 항목이 포함되어 있습니다'
-  }
-
-  const removedIds = Array.from(existingIds).filter(id => !keptIds.has(id))
-  if (removedIds.length > 0) {
-    const { error } = await db.from('team_deal_survey_questions').delete().in('id', removedIds)
-    if (error) return '삭제된 문항 정리에 실패했습니다'
-  }
-
-  const updates = questions.filter(q => q.id).map(q => ({ ...q, deal_id: dealId }))
-  if (updates.length > 0) {
-    const { error } = await db.from('team_deal_survey_questions').upsert(updates)
-    if (error) return '문항 수정에 실패했습니다'
-  }
-
-  const inserts = questions.filter(q => !q.id).map(({ id: _unused, ...q }) => ({ ...q, deal_id: dealId }))
-  if (inserts.length > 0) {
-    const { error } = await db.from('team_deal_survey_questions').insert(inserts)
-    if (error) return '문항 추가에 실패했습니다'
-  }
-  return null
-}
-
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+async function requireAdmin(): Promise<NextResponse | null> {
   const sessionUser = await getSessionUser()
   if (!sessionUser) return unauthorizedResponse()
   if (!sessionUser.isAdmin) return forbiddenResponse()
+  return null
+}
+
+async function fetchDealStatus(dealId: string): Promise<string | null> {
+  const { data } = await db.from('team_deals').select('id, status').eq('id', dealId).maybeSingle()
+  return data?.status ?? null
+}
+
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const gate = await requireAdmin()
+  if (gate) return gate
+  if (!isUuid(params.id)) {
+    return NextResponse.json({ error: '팀구매를 찾을 수 없습니다' }, { status: 404 })
+  }
+  const status = await fetchDealStatus(params.id)
+  if (!status) {
+    return NextResponse.json({ error: '팀구매를 찾을 수 없습니다' }, { status: 404 })
+  }
+  return NextResponse.json({ questions: await listQuestions(params.id) })
+}
+
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  const gate = await requireAdmin()
+  if (gate) return gate
   if (!isUuid(params.id)) {
     return NextResponse.json({ error: '팀구매를 찾을 수 없습니다' }, { status: 404 })
   }
@@ -108,25 +46,27 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   } catch {
     return NextResponse.json({ error: '요청 본문이 올바른 JSON 형식이 아닙니다' }, { status: 400 })
   }
-  const parsed = parseBody(body)
+  const parsed = parseQuestionSet((body as { questions?: unknown })?.questions)
   if ('error' in parsed) {
     return NextResponse.json({ error: parsed.error }, { status: 400 })
   }
 
-  const { data: deal } = await db.from('team_deals').select('id').eq('id', params.id).maybeSingle()
-  if (!deal) {
+  const status = await fetchDealStatus(params.id)
+  if (!status) {
     return NextResponse.json({ error: '팀구매를 찾을 수 없습니다' }, { status: 404 })
+  }
+  // 오픈 전제조건 불변식: 모집중(active) 딜에서 문항을 전부 비울 수 없다.
+  // draft → active 자동 전환은 딜 편집 저장 경로(PATCH)로 일원화 — 여기서는 하지 않는다.
+  if (status === 'active' && parsed.questions.length === 0) {
+    return NextResponse.json(
+      { error: '모집중인 딜의 요청서 문항은 전부 삭제할 수 없습니다. 딜을 취소하거나 문항을 남겨주세요' },
+      { status: 400 }
+    )
   }
 
   const saveError = await saveQuestionSet(params.id, parsed.questions)
   if (saveError) {
     return NextResponse.json({ error: saveError }, { status: 500 })
   }
-
-  const { data: saved } = await db
-    .from('team_deal_survey_questions')
-    .select('id, position, question_type, label, required')
-    .eq('deal_id', params.id)
-    .order('position', { ascending: true })
-  return NextResponse.json({ questions: saved ?? [] })
+  return NextResponse.json({ questions: await listQuestions(params.id) })
 }

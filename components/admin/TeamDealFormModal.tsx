@@ -1,8 +1,9 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X, ImagePlus } from 'lucide-react'
-import { AdminTeamDeal, DEAL_CATEGORY_OPTIONS } from './team-deal-types'
+import { AdminSurveyQuestion, AdminTeamDeal, DEAL_CATEGORY_OPTIONS } from './team-deal-types'
+import { DraftQuestion, SurveyQuestionEditor } from './SurveyQuestionEditor'
 
 interface DealFormState {
   title: string
@@ -44,8 +45,10 @@ function buildInitialForm(deal: AdminTeamDeal | null): DealFormState {
   }
 }
 
-function validateForm(form: DealFormState): string | null {
+function validateForm(form: DealFormState, questions: DraftQuestion[]): string | null {
   if (!form.title.trim()) return '제목을 입력해주세요'
+  const emptyIndex = questions.findIndex(question => !question.label.trim())
+  if (emptyIndex >= 0) return `${emptyIndex + 1}번 요청서 문항의 질문 내용을 입력해주세요`
   const originalPrice = Number(form.original_price)
   const dealPrice = Number(form.deal_price)
   if (!Number.isInteger(originalPrice) || originalPrice <= 0) return '정가는 1원 이상의 정수여야 합니다'
@@ -68,13 +71,32 @@ export function TeamDealFormModal({
 }: {
   deal: AdminTeamDeal | null
   onClose: () => void
-  onSaved: () => void
+  onSaved: (savedStatus: AdminTeamDeal['status']) => void
 }) {
   const [form, setForm] = useState<DealFormState>(() => buildInitialForm(deal))
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [questions, setQuestions] = useState<DraftQuestion[]>([])
+  const [questionsLoading, setQuestionsLoading] = useState(deal !== null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const dealId = deal?.id ?? null
+  useEffect(() => {
+    if (!dealId) return
+    fetch(`/api/admin/team-deals/${dealId}/questions`)
+      .then(async res => {
+        const body = await res.json()
+        if (!res.ok) throw new Error(body.error ?? '요청서 문항을 불러오지 못했습니다')
+        setQuestions(
+          ((body.questions ?? []) as AdminSurveyQuestion[]).map(
+            ({ id, label, question_type, required }) => ({ id, label, question_type, required })
+          )
+        )
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setQuestionsLoading(false))
+  }, [dealId])
 
   function setField<K extends keyof DealFormState>(key: K, value: string) {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -103,7 +125,7 @@ export function TeamDealFormModal({
   }
 
   async function handleSave() {
-    const clientError = validateForm(form)
+    const clientError = validateForm(form, questions)
     if (clientError) {
       setError(clientError)
       return
@@ -120,6 +142,7 @@ export function TeamDealFormModal({
       description: form.description.trim() || null,
       thumbnail_url: form.thumbnail_url || null,
       content_html: form.content_html || null,
+      questions: questions.map((question, index) => ({ ...question, position: index })),
     }
     try {
       const res = await fetch(deal ? `/api/admin/team-deals/${deal.id}` : '/api/admin/team-deals', {
@@ -132,7 +155,7 @@ export function TeamDealFormModal({
         setError(body.error ?? '저장에 실패했습니다')
         return
       }
-      onSaved()
+      onSaved(body.status)
     } catch {
       setError('저장 중 네트워크 오류가 발생했습니다')
     } finally {
@@ -280,6 +303,30 @@ export function TeamDealFormModal({
             />
           </div>
 
+          <div className="border-t border-[#e0e0e0] pt-4">
+            <label className="block text-[12px] font-medium text-[#6e6e73] mb-1">요청서 문항</label>
+            <p className="text-[11px] text-[#a1a1a6] mb-3">
+              신청자가 결제 후 작성할 이행 정보 설문입니다. 문항이 1개 이상 있어야 딜이 고객에게 오픈됩니다.
+            </p>
+            {questionsLoading ? (
+              <div className="space-y-2">
+                {[1, 2].map(i => <div key={i} className="h-9 rounded-[9px] bg-[#f5f5f7] animate-pulse" />)}
+              </div>
+            ) : (
+              <SurveyQuestionEditor
+                drafts={questions}
+                onChange={setQuestions}
+                shouldConfirmRemove={draft => draft.id !== undefined}
+                confirmRemoveMessage="저장 시 이 문항과 신청자들이 이미 제출한 답변이 함께 삭제됩니다. 계속할까요?"
+              />
+            )}
+            {!questionsLoading && questions.length === 0 && (
+              <p className="mt-3 rounded-[11px] bg-orange-50 px-4 py-2.5 text-[12px] font-medium text-orange-700">
+                요청서 문항이 없어 비공개(대기) 상태로 저장됩니다. 문항을 추가해야 고객에게 오픈됩니다.
+              </p>
+            )}
+          </div>
+
           {error && (
             <p className="rounded-[11px] bg-red-50 px-4 py-2.5 text-[12px] font-medium text-red-600">{error}</p>
           )}
@@ -294,7 +341,7 @@ export function TeamDealFormModal({
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || uploading}
+            disabled={saving || uploading || questionsLoading}
             className="rounded-[9999px] bg-[#0066cc] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
           >
             {saving ? '저장 중...' : '저장'}

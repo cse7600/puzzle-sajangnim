@@ -27,7 +27,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (error) {
     return NextResponse.json({ error: '팀구매 정보를 불러오지 못했습니다' }, { status: 500 })
   }
-  if (!data) {
+  // draft(비공개 대기) 딜은 고객에게 노출되지 않는다 — 존재 자체를 숨긴다.
+  if (!data || data.status === 'draft') {
     return NextResponse.json({ error: '팀구매를 찾을 수 없습니다' }, { status: 404 })
   }
 

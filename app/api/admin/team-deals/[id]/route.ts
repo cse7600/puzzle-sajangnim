@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/auth-server'
 import { isUuid } from '@/lib/admin-users'
-import { validateDealPatch } from '@/lib/admin-team-deals'
+import { validateDealPatch, hasDealPatchField } from '@/lib/admin-team-deals'
+import { parseQuestionSet, saveQuestionSet, IncomingQuestion } from '@/lib/admin-team-deal-questions'
 
 const db = supabaseAdmin as any
 
@@ -46,26 +47,69 @@ async function cancelDeal(deal: DealRow) {
   return NextResponse.json({ success: true, cancelled: true, refunded_members: refunded })
 }
 
-async function editDeal(deal: DealRow, body: Record<string, unknown>) {
+function validateEditValues(deal: DealRow, body: Record<string, unknown>) {
+  if (!hasDealPatchField(body)) return { values: {} as Record<string, unknown> }
   const checked = validateDealPatch(body)
-  if ('error' in checked) {
-    return NextResponse.json({ error: checked.error }, { status: 400 })
-  }
+  if ('error' in checked) return checked
   const values = checked.values
 
   if (values.target_count !== undefined && values.target_count < deal.current_count) {
-    return NextResponse.json(
-      { error: `목표 수량은 현재 참여 수량(${deal.current_count}) 미만으로 줄일 수 없습니다` },
-      { status: 400 }
-    )
+    return { error: `목표 수량은 현재 참여 수량(${deal.current_count}) 미만으로 줄일 수 없습니다` }
   }
   const nextDealPrice = values.deal_price ?? deal.deal_price
   const nextOriginalPrice = values.original_price ?? deal.original_price
   if (nextDealPrice > nextOriginalPrice) {
-    return NextResponse.json({ error: '딜 가격은 정가를 초과할 수 없습니다' }, { status: 400 })
+    return { error: '딜 가격은 정가를 초과할 수 없습니다' }
+  }
+  return { values: values as Record<string, unknown> }
+}
+
+// 오픈 전제조건 불변식: 문항 0개인 딜은 active가 될 수 없다.
+// draft 딜이 문항을 갖추고 저장되면 여기서만 active로 자동 전환한다(전환 경로 일원화).
+async function editDeal(deal: DealRow, body: Record<string, unknown>) {
+  let questions: IncomingQuestion[] | null = null
+  if (body.questions !== undefined) {
+    const parsed = parseQuestionSet(body.questions)
+    if ('error' in parsed) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 })
+    }
+    if (deal.status === 'active' && parsed.questions.length === 0) {
+      return NextResponse.json(
+        { error: '모집중인 딜의 요청서 문항은 전부 삭제할 수 없습니다. 딜을 취소하거나 문항을 남겨주세요' },
+        { status: 400 }
+      )
+    }
+    questions = parsed.questions
   }
 
-  const { data, error } = await db.from('team_deals').update(values).eq('id', deal.id).select().single()
+  const checked = validateEditValues(deal, body)
+  if ('error' in checked) {
+    return NextResponse.json({ error: checked.error }, { status: 400 })
+  }
+  if (questions === null && Object.keys(checked.values).length === 0) {
+    return NextResponse.json({ error: '수정할 항목이 없습니다' }, { status: 400 })
+  }
+
+  if (questions !== null) {
+    const saveError = await saveQuestionSet(deal.id, questions)
+    if (saveError) {
+      return NextResponse.json({ error: saveError }, { status: 500 })
+    }
+  }
+
+  const values = { ...checked.values }
+  if (deal.status === 'draft') {
+    const { count } = await db
+      .from('team_deal_survey_questions')
+      .select('id', { count: 'exact', head: true })
+      .eq('deal_id', deal.id)
+    if ((count ?? 0) >= 1) values.status = 'active'
+  }
+
+  const { data, error } =
+    Object.keys(values).length > 0
+      ? await db.from('team_deals').update(values).eq('id', deal.id).select().single()
+      : await db.from('team_deals').select().eq('id', deal.id).single()
   if (error || !data) {
     return NextResponse.json({ error: '팀구매 수정에 실패했습니다' }, { status: 500 })
   }

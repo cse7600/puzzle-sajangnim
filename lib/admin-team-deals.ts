@@ -78,6 +78,10 @@ export function validateDealCreate(body: Record<string, unknown>): { error: stri
   return { values: result }
 }
 
+export function hasDealPatchField(body: Record<string, unknown>): boolean {
+  return ALL_KEYS.some(key => body[key] !== undefined)
+}
+
 export function validateDealPatch(body: Record<string, unknown>): { error: string } | { values: Partial<TeamDealWriteValues> } {
   const values: Partial<Record<keyof TeamDealWriteValues, unknown>> = {}
   for (const key of ALL_KEYS) {

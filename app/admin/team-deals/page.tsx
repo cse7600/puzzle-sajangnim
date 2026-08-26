@@ -108,9 +108,13 @@ export default function AdminTeamDealsPage() {
     }
   }
 
-  function handleSaved() {
+  function handleSaved(savedStatus: AdminTeamDeal['status']) {
     setFormTarget(null)
-    showToast('저장했습니다')
+    showToast(
+      savedStatus === 'draft'
+        ? '요청서 문항이 없어 비공개(대기) 상태로 저장했습니다. 문항을 추가하면 오픈됩니다'
+        : '저장했습니다'
+    )
     load()
   }
 
