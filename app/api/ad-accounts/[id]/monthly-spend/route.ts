@@ -42,6 +42,59 @@ async function ensureAdAccountExists(adAccountId: string): Promise<boolean> {
   return data !== null;
 }
 
+type ReconcileOutcome = {
+  attempted: boolean;
+  updated: boolean;
+  paybackId?: string;
+  previousAmount?: number;
+  newAmount?: number;
+  skippedReason?: 'no_payback' | 'manual_cost_basis' | 'already_finalized' | 'update_failed';
+};
+
+// 실 소진액 upsert 후, 같은 (계정, period)의 미확정 정산을 새 금액으로 재계산한다.
+// confirmed/paid(확정·지급 완료)와 cost_basis='manual'(어드민 수동 조정)은 절대 자동 갱신하지 않는다.
+async function reconcilePayback(adAccountId: string, period: string, spend: number): Promise<ReconcileOutcome> {
+  const { data: payback } = await supabaseAdmin
+    .from('paybacks')
+    .select('id, amount, cost_basis, status')
+    .eq('ad_account_id', adAccountId)
+    .eq('period', period)
+    .maybeSingle();
+
+  if (!payback) return { attempted: false, updated: false, skippedReason: 'no_payback' };
+  if (payback.cost_basis === 'manual') {
+    return { attempted: false, updated: false, paybackId: payback.id, skippedReason: 'manual_cost_basis' };
+  }
+  if (payback.status === 'confirmed' || payback.status === 'paid') {
+    return { attempted: false, updated: false, paybackId: payback.id, skippedReason: 'already_finalized' };
+  }
+
+  return applyRecalculatedAmount(adAccountId, spend, payback);
+}
+
+async function applyRecalculatedAmount(
+  adAccountId: string,
+  spend: number,
+  payback: { id: string; amount: number }
+): Promise<ReconcileOutcome> {
+  const { data: account } = await supabaseAdmin
+    .from('ad_accounts')
+    .select('payback_rate')
+    .eq('id', adAccountId)
+    .maybeSingle();
+  const newAmount = Math.round((spend * (account?.payback_rate ?? 0)) / 100);
+
+  const { error: updateError } = await supabaseAdmin
+    .from('paybacks')
+    .update({ amount: newAmount, cost_basis: 'verified' })
+    .eq('id', payback.id);
+
+  if (updateError) {
+    return { attempted: true, updated: false, paybackId: payback.id, skippedReason: 'update_failed' };
+  }
+  return { attempted: true, updated: true, paybackId: payback.id, previousAmount: payback.amount, newAmount };
+}
+
 // 어드민 전용 — 계정별 확인된 월 광고비 입력 이력.
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const sessionUser = await getSessionUser();
@@ -108,5 +161,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: '월별 광고비 저장에 실패했습니다' }, { status: 500 });
   }
 
-  return NextResponse.json({ entry: data });
+  const reconcile = await reconcilePayback(params.id, period, spend);
+  return NextResponse.json({ entry: data, reconcile });
 }

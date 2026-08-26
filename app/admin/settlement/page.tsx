@@ -29,6 +29,35 @@ interface Payback {
   confirmed_at: string | null
   spend_basis_amount: number
   ad_accounts: AdAccountSummary | null
+  advertiser_name: string
+}
+
+// 정산서는 광고주(사장님) 단위·월 단위로 발행되므로, 같은 광고주가 같은 달에 광고계정을 여러 개
+// 연동해도 "광고주 칼럼 안에 월 정산"으로 묶여 보여야 실제 발행 기준과 일치한다.
+interface AdvertiserPeriodGroup {
+  key: string
+  advertiserName: string
+  userId: string
+  period: string
+  items: Payback[]
+  total: number
+}
+
+function groupByAdvertiserPeriod(paybacks: Payback[]): AdvertiserPeriodGroup[] {
+  const groups = new Map<string, AdvertiserPeriodGroup>()
+  for (const p of paybacks) {
+    const key = `${p.user_id}:${p.period}`
+    const existing = groups.get(key)
+    if (existing) {
+      existing.items.push(p)
+      existing.total += p.amount
+    } else {
+      groups.set(key, { key, advertiserName: p.advertiser_name, userId: p.user_id, period: p.period, items: [p], total: p.amount })
+    }
+  }
+  return Array.from(groups.values()).sort((a, b) =>
+    a.advertiserName.localeCompare(b.advertiserName, 'ko') || b.period.localeCompare(a.period)
+  )
 }
 
 function currentPeriod(): string {
@@ -66,6 +95,11 @@ function CostBasisBadge({ payback }: { payback: Payback }) {
     <div className="space-y-0.5">
       <span className="text-[12px] text-muted">{COST_BASIS_LABEL[payback.cost_basis]}</span>
       <p className="text-[11px] text-muted-light">{payback.spend_basis_amount.toLocaleString()}원 기준 · {rate}%</p>
+      {delta !== 0 && (
+        <p className="text-[11px] text-muted-light">
+          계산값 {computed.toLocaleString()}P ({delta >= 0 ? '+' : ''}{delta.toLocaleString()}P 차이)
+        </p>
+      )}
     </div>
   )
 }
@@ -179,6 +213,88 @@ function updatePaybackInList(prev: Payback[], id: string, patch: Partial<Payback
   return prev.map(p => (p.id === id ? { ...p, ...patch } : p))
 }
 
+function PaybackItemRow({
+  payback,
+  advertiserCell,
+  onAmountSaved,
+  onUpdate,
+}: {
+  payback: Payback
+  advertiserCell: { advertiserName: string; period: string; rowSpan: number } | null
+  onAmountSaved: (patch: Partial<Payback>) => void
+  onUpdate: (patch: { scheduled_pay_date?: string; status?: PaybackStatus }) => void
+}) {
+  return (
+    <tr className="hover:bg-[#f5f5f7] transition-colors align-top">
+      {advertiserCell && (
+        <>
+          <td rowSpan={advertiserCell.rowSpan} className="px-4 py-3 text-[#1d1d1f] font-medium border-r border-[#f0f0f2] align-top">
+            {advertiserCell.advertiserName}
+          </td>
+          <td rowSpan={advertiserCell.rowSpan} className="px-4 py-3 text-[#1d1d1f] align-top">
+            {advertiserCell.period}
+          </td>
+        </>
+      )}
+      <td className="px-4 py-3 text-[#1d1d1f]">{payback.ad_accounts?.account_name}</td>
+      <td className="px-4 py-3"><CostBasisBadge payback={payback} /></td>
+      <td className="px-4 py-3">
+        <AmountEditor payback={payback} onSaved={onAmountSaved} />
+      </td>
+      <td className="px-4 py-3">
+        <input
+          type="date"
+          defaultValue={payback.scheduled_pay_date ?? ''}
+          onBlur={e => e.target.value && onUpdate({ scheduled_pay_date: e.target.value })}
+          className="rounded-[7px] border border-[#e0e0e0] px-2 py-1 text-[12px] outline-none focus:border-[#0066cc]"
+        />
+      </td>
+      <td className="px-4 py-3">
+        <select
+          value={payback.status}
+          onChange={e => onUpdate({ status: e.target.value as PaybackStatus })}
+          className="rounded-[7px] border border-[#e0e0e0] px-2 py-1 text-[12px] outline-none focus:border-[#0066cc]"
+        >
+          {PAYBACK_STATUSES.map(s => <option key={s} value={s}>{PAYBACK_STATUS_LABEL[s]}</option>)}
+        </select>
+      </td>
+      <td className="px-4 py-3"><AuditTrail payback={payback} /></td>
+      <td className="px-4 py-3">
+        <a
+          href={`/api/paybacks/statement?period=${payback.period}&user_id=${payback.user_id}`}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[12px] text-[#0066cc] hover:underline"
+        >
+          보기
+        </a>
+      </td>
+    </tr>
+  )
+}
+
+function AdvertiserSubtotalRow({ group }: { group: AdvertiserPeriodGroup }) {
+  return (
+    <tr className="bg-[#f5f5f7] font-medium">
+      <td colSpan={2} className="px-4 py-2 text-[12px] text-[#6e6e73]">{group.advertiserName} · {group.period} 정산 합계 ({group.items.length}건)</td>
+      <td className="px-4 py-2 text-[13px] text-[#0066cc]">{group.total.toLocaleString()}P</td>
+      <td className="px-4 py-2" />
+      <td className="px-4 py-2" />
+      <td className="px-4 py-2" />
+      <td className="px-4 py-2">
+        <a
+          href={`/api/paybacks/statement?period=${group.period}&user_id=${group.userId}`}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[12px] text-[#0066cc] hover:underline"
+        >
+          정산서
+        </a>
+      </td>
+    </tr>
+  )
+}
+
 export default function AdminSettlementPage() {
   const [settlementDay, setSettlementDay] = useState<number>(10)
   const [savingDay, setSavingDay] = useState(false)
@@ -228,9 +344,10 @@ export default function AdminSettlementPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ period: generatePeriod }),
       })
-      const body = await res.json() as { created?: number; skipped?: number; error?: string }
+      const body = await res.json() as { created?: number; alreadyGenerated?: number; missingSpend?: number; error?: string }
       if (res.ok) {
-        showToast(`정산 ${body.created}건 생성, ${body.skipped}건 건너뜀`)
+        const missingNote = body.missingSpend ? ` · 실 소진액 미입력 ${body.missingSpend}건은 건너뜀(광고 계정 이력 관리에서 입력 필요)` : ''
+        showToast(`정산 ${body.created}건 생성 · 이미 생성됨 ${body.alreadyGenerated}건${missingNote}`)
         load()
       } else {
         showToast(body.error ?? '정산 생성에 실패했습니다')
@@ -293,7 +410,7 @@ export default function AdminSettlementPage() {
 
       <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-5 mb-5">
         <h2 className="text-[15px] font-semibold text-[#1d1d1f] mb-1">정산 생성</h2>
-        <p className="text-[13px] text-[#6e6e73] mb-4">영업권 이관이 완료된(연동 완료) 계정만 대상입니다. 이미 생성된 계정은 건너뜁니다.</p>
+        <p className="text-[13px] text-[#6e6e73] mb-4">영업권 이관이 완료된(연동 완료) 계정 중 어드민이 광고 계정 &gt; 이력 관리에서 그 달 실 소진액을 입력한 계정만 대상입니다. 사장님이 등록 시 제출한 값으로는 정산이 생성되지 않습니다. 이미 생성된 계정은 건너뜁니다.</p>
         <div className="flex items-center gap-3">
           <input
             type="month"
@@ -323,6 +440,7 @@ export default function AdminSettlementPage() {
           <table className="w-full text-[13px]">
             <thead className="bg-[#f5f5f7] border-b border-[#e0e0e0]">
               <tr>
+                <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">광고주</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">기간</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">계정</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">기준</th>
@@ -334,44 +452,21 @@ export default function AdminSettlementPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e0e0e0]">
-              {paybacks.map(p => (
-                <tr key={p.id} className="hover:bg-[#f5f5f7] transition-colors align-top">
-                  <td className="px-4 py-3 text-[#1d1d1f]">{p.period}</td>
-                  <td className="px-4 py-3 text-[#1d1d1f]">{p.ad_accounts?.account_name}</td>
-                  <td className="px-4 py-3"><CostBasisBadge payback={p} /></td>
-                  <td className="px-4 py-3">
-                    <AmountEditor payback={p} onSaved={patch => handleAmountSaved(p.id, patch)} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <input
-                      type="date"
-                      defaultValue={p.scheduled_pay_date ?? ''}
-                      onBlur={e => e.target.value && updateRecord(p.id, { scheduled_pay_date: e.target.value })}
-                      className="rounded-[7px] border border-[#e0e0e0] px-2 py-1 text-[12px] outline-none focus:border-[#0066cc]"
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <select
-                      value={p.status}
-                      onChange={e => updateRecord(p.id, { status: e.target.value as PaybackStatus })}
-                      className="rounded-[7px] border border-[#e0e0e0] px-2 py-1 text-[12px] outline-none focus:border-[#0066cc]"
-                    >
-                      {PAYBACK_STATUSES.map(s => <option key={s} value={s}>{PAYBACK_STATUS_LABEL[s]}</option>)}
-                    </select>
-                  </td>
-                  <td className="px-4 py-3"><AuditTrail payback={p} /></td>
-                  <td className="px-4 py-3">
-                    <a
-                      href={`/api/paybacks/statement?period=${p.period}&user_id=${p.user_id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[12px] text-[#0066cc] hover:underline"
-                    >
-                      보기
-                    </a>
-                  </td>
-                </tr>
-              ))}
+              {groupByAdvertiserPeriod(paybacks).flatMap(group => {
+                const showSubtotal = group.items.length > 1
+                const rowSpan = group.items.length + (showSubtotal ? 1 : 0)
+                const rows = group.items.map((p, idx) => (
+                  <PaybackItemRow
+                    key={p.id}
+                    payback={p}
+                    advertiserCell={idx === 0 ? { advertiserName: group.advertiserName, period: group.period, rowSpan } : null}
+                    onAmountSaved={patch => handleAmountSaved(p.id, patch)}
+                    onUpdate={patch => updateRecord(p.id, patch)}
+                  />
+                ))
+                if (showSubtotal) rows.push(<AdvertiserSubtotalRow key={`${group.key}-subtotal`} group={group} />)
+                return rows
+              })}
             </tbody>
           </table>
           </div>

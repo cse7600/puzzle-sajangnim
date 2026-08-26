@@ -32,6 +32,7 @@ export default function RewardsPage() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [form, setForm] = useState({ store_name: '', amount: '' })
   const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [uploadError, setUploadError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const [fileName, setFileName] = useState('')
   const [previewUrl, setPreviewUrl] = useState('')
@@ -45,6 +46,7 @@ export default function RewardsPage() {
     setPreviewUrl('')
     setAnalyzing(false)
     setAnalyzeError('')
+    setUploadError('')
     setOcrData(null)
     if (fileRef.current) fileRef.current.value = ''
   }
@@ -100,18 +102,28 @@ export default function RewardsPage() {
   const pendingPoints = receipts.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.points_earned, 0)
 
   async function handleUpload() {
+    const picked = fileRef.current?.files?.[0]
+    if (!picked) {
+      setUploadError('영수증 사진을 첨부해주세요')
+      return
+    }
     setUploading(true)
+    setUploadError('')
     try {
       const fd = new FormData()
       fd.append('store_name', form.store_name)
       fd.append('amount', form.amount.replace(/,/g, ''))
-      if (fileRef.current?.files?.[0]) fd.append('image', fileRef.current.files[0])
+      fd.append('image', picked)
       if (ocrData) fd.append('ocr_data', JSON.stringify(ocrData))
       if (ocrData?.date) fd.append('receipt_date', ocrData.date)
 
       const res = await fetch('/api/receipts', { method: 'POST', body: fd })
-      const newReceipt = await res.json()
-      setReceipts(prev => [newReceipt, ...prev])
+      const body = await res.json()
+      if (!res.ok) {
+        setUploadError(body.error ?? '영수증 등록에 실패했습니다')
+        return
+      }
+      setReceipts(prev => [body as Receipt, ...prev])
       setUploadSuccess(true)
       setTimeout(() => {
         setUploadSuccess(false)
@@ -310,11 +322,17 @@ export default function RewardsPage() {
                     )}
                   </div>
                 </div>
+                {uploadError && (
+                  <div className="flex items-start gap-2 rounded-[9px] bg-red-50 px-3 py-2.5 mt-4">
+                    <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={15} />
+                    <p className="text-[12px] text-red-700">{uploadError}</p>
+                  </div>
+                )}
                 <div className="flex gap-3 mt-6">
                   <button onClick={() => { setShowUploadModal(false); resetModal() }} className="flex-1 rounded-[9999px] border border-[#e0e0e0] py-3 text-[14px] text-[#6e6e73] hover:bg-[#f5f5f7] transition-colors">취소</button>
                   <button
                     onClick={handleUpload}
-                    disabled={uploading || !form.store_name}
+                    disabled={uploading || !form.store_name || !fileName}
                     className="flex-1 rounded-[9999px] bg-[#0066cc] py-3 text-[14px] font-medium text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
                   >
                     {uploading ? '등록 중...' : '등록하기'}

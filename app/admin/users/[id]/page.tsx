@@ -8,7 +8,7 @@ import {
   PAYBACK_STATUSES,
   PAYBACK_STATUS_LABEL,
 } from '@/lib/hub'
-import type { AdAccount, AdAccountMonthlySpend, BusinessVerification } from '@/types/database'
+import type { AdAccount, BusinessVerification } from '@/types/database'
 
 interface VerificationDetail extends BusinessVerification {
   certificate_url: string | null
@@ -443,175 +443,24 @@ function PaybackRateEditor({ account, onSaved }: { account: AdAccount; onSaved: 
   )
 }
 
-function useMonthlySpendHistory(adAccountId: string) {
-  const [entries, setEntries] = useState<AdAccountMonthlySpend[]>([])
-  const [loaded, setLoaded] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetch(`/api/ad-accounts/${adAccountId}/monthly-spend`)
-      .then(res => (res.ok ? res.json() : Promise.reject(res)))
-      .then((body: { entries: AdAccountMonthlySpend[] }) => {
-        if (cancelled) return
-        setEntries(body.entries)
-        setLoaded(true)
-      })
-      .catch(() => {
-        if (!cancelled) setError('월별 소진액 내역을 불러오지 못했습니다')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [adAccountId])
-
-  return { entries, setEntries, loaded, error }
-}
-
-function MonthlySpendHistory({
-  entries,
-  loaded,
-  error,
-}: {
-  entries: AdAccountMonthlySpend[]
-  loaded: boolean
-  error: string | null
-}) {
-  if (error) return <p className="text-[12px] text-red-600">{error}</p>
-  if (!loaded) return <p className="text-[12px] text-muted-light">불러오는 중...</p>
-  if (entries.length === 0) return <p className="text-[12px] text-muted-light">입력된 월별 소진액 없음</p>
-
-  return (
-    <ul className="space-y-1 text-[12px]">
-      {entries.map(entry => (
-        <li key={entry.id} className="flex justify-between text-ink">
-          <span>{entry.period}</span>
-          <span className="font-medium">{entry.spend_vat_excluded.toLocaleString('ko-KR')}원</span>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-function upsertEntryByPeriod(entries: AdAccountMonthlySpend[], entry: AdAccountMonthlySpend): AdAccountMonthlySpend[] {
-  const withoutSamePeriod = entries.filter(e => e.period !== entry.period)
-  return [entry, ...withoutSamePeriod].sort((a, b) => b.period.localeCompare(a.period))
-}
-
-function MonthlySpendPanel({ adAccountId }: { adAccountId: string }) {
-  const { entries, setEntries, loaded, error } = useMonthlySpendHistory(adAccountId)
-  const [period, setPeriod] = useState(previousMonthPeriod())
-  const [amount, setAmount] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
-
-  async function save() {
-    const parsedAmount = Number(amount)
-    if (!Number.isInteger(parsedAmount) || parsedAmount < 0) {
-      setSaveError('광고비는 0 이상의 정수로 입력하세요')
-      return
-    }
-    setSaving(true)
-    setSaveError(null)
-    try {
-      const res = await fetch(`/api/ad-accounts/${adAccountId}/monthly-spend`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ period, spend_vat_excluded: parsedAmount }),
-      })
-      const body = await res.json()
-      if (!res.ok) {
-        setSaveError(body.error ?? '월별 광고비 저장에 실패했습니다')
-        return
-      }
-      setEntries(prev => upsertEntryByPeriod(prev, body.entry as AdAccountMonthlySpend))
-      setAmount('')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="space-y-3 px-2">
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col text-[11px] text-muted">
-          기간
-          <input
-            type="month"
-            value={period}
-            onChange={e => setPeriod(e.target.value)}
-            disabled={saving}
-            className="rounded-md border border-hairline px-2 py-1 text-[12px]"
-          />
-        </label>
-        <label className="flex flex-col text-[11px] text-muted">
-          실 소진액 (VAT 제외, 원)
-          <input
-            type="number"
-            min={0}
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            disabled={saving}
-            placeholder="예: 1500000"
-            className="w-36 rounded-md border border-hairline px-2 py-1 text-[12px]"
-          />
-        </label>
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving || !amount}
-          className="rounded-pill bg-primary px-3 py-1.5 text-[12px] font-medium text-ink disabled:opacity-40"
-        >
-          {saving ? '저장 중' : '저장'}
-        </button>
-      </div>
-      <p className="text-[11px] text-muted-light">VAT 제외 금액입니다. 동일한 기간을 다시 저장하면 기존 값을 덮어씁니다.</p>
-      {saveError && <p className="text-[12px] text-red-600">{saveError}</p>}
-      <MonthlySpendHistory entries={entries} loaded={loaded} error={error} />
-    </div>
-  )
-}
-
 function AdAccountRow({
   account,
-  expanded,
-  onToggleExpand,
   onAccountUpdate,
 }: {
   account: AdAccount
-  expanded: boolean
-  onToggleExpand: () => void
   onAccountUpdate: (updated: AdAccount) => void
 }) {
   return (
-    <>
-      <tr>
-        <td className="py-2 font-medium">{platformLabel(account.platform)}</td>
-        <td className="py-2">{account.account_name}</td>
-        <td className="py-2">{money(account.monthly_spend)}</td>
-        <td className="py-2">
-          <PaybackRateEditor account={account} onSaved={onAccountUpdate} />
-        </td>
-        <td className="py-2">{connectionLabel(account.connection_status)}</td>
-        <td className="py-2">{TRANSFER_STATUS_LABEL[account.transfer_status] ?? account.transfer_status}</td>
-        <td className="py-2">
-          <button
-            type="button"
-            onClick={onToggleExpand}
-            className="rounded-pill border border-hairline px-3 py-1 text-[12px] text-muted hover:text-ink"
-          >
-            {expanded ? '접기' : '입력/이력'}
-          </button>
-        </td>
-      </tr>
-      {expanded && (
-        <tr>
-          <td colSpan={7} className="bg-[#fafafa] py-3">
-            <MonthlySpendPanel adAccountId={account.id} />
-          </td>
-        </tr>
-      )}
-    </>
+    <tr>
+      <td className="py-2 font-medium">{platformLabel(account.platform)}</td>
+      <td className="py-2">{account.account_name}</td>
+      <td className="py-2">{money(account.monthly_spend)}</td>
+      <td className="py-2">
+        <PaybackRateEditor account={account} onSaved={onAccountUpdate} />
+      </td>
+      <td className="py-2">{connectionLabel(account.connection_status)}</td>
+      <td className="py-2">{TRANSFER_STATUS_LABEL[account.transfer_status] ?? account.transfer_status}</td>
+    </tr>
   )
 }
 
@@ -622,17 +471,15 @@ function AdAccountsCard({
   accounts: AdAccount[]
   onAccountUpdate: (updated: AdAccount) => void
 }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-
   if (accounts.length === 0) {
     return (
-      <Card title="광고 매체 연동 현황">
+      <Card title="연동현황">
         <p className="text-[13px] text-[#6e6e73]">연동된 광고 계정이 없습니다</p>
       </Card>
     )
   }
   return (
-    <Card title="광고 매체 연동 현황">
+    <Card title="연동현황">
       <table className="w-full text-[13px]">
         <thead className="text-left text-[#6e6e73]">
           <tr>
@@ -642,21 +489,214 @@ function AdAccountsCard({
             <th className="pb-2">수수료율</th>
             <th className="pb-2">연동 상태</th>
             <th className="pb-2">이관 상태</th>
-            <th className="pb-2">월별 실 소진액</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#f0f0f2]">
           {accounts.map(a => (
-            <AdAccountRow
-              key={a.id}
-              account={a}
-              expanded={expandedId === a.id}
-              onToggleExpand={() => setExpandedId(expandedId === a.id ? null : a.id)}
-              onAccountUpdate={onAccountUpdate}
-            />
+            <AdAccountRow key={a.id} account={a} onAccountUpdate={onAccountUpdate} />
           ))}
         </tbody>
       </table>
+    </Card>
+  )
+}
+
+interface AdvertiserSpendAccount {
+  id: string
+  account_name: string
+  platform: string
+}
+
+interface AdvertiserSpendEntry {
+  id: string
+  ad_account_id: string
+  account_name: string
+  platform: string
+  period: string
+  spend_vat_excluded: number
+  updated_at: string
+}
+
+function useSpendHistoryMatrix(userId: string) {
+  const [accounts, setAccounts] = useState<AdvertiserSpendAccount[]>([])
+  const [entries, setEntries] = useState<AdvertiserSpendEntry[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/admin/users/${userId}/monthly-spend`)
+      .then(res => (res.ok ? res.json() : Promise.reject(res)))
+      .then((body: { accounts: AdvertiserSpendAccount[]; entries: AdvertiserSpendEntry[] }) => {
+        if (cancelled) return
+        setAccounts(body.accounts)
+        setEntries(body.entries)
+        setLoaded(true)
+      })
+      .catch(() => {
+        if (!cancelled) setError('월별 소진액 이력을 불러오지 못했습니다')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  function upsertEntry(next: AdvertiserSpendEntry) {
+    setEntries(prev => [next, ...prev.filter(e => !(e.ad_account_id === next.ad_account_id && e.period === next.period))])
+  }
+
+  return { accounts, entries, upsertEntry, loaded, error }
+}
+
+function SpendCell({
+  account,
+  period,
+  entry,
+  onSaved,
+}: {
+  account: AdvertiserSpendAccount
+  period: string
+  entry: AdvertiserSpendEntry | undefined
+  onSaved: (entry: AdvertiserSpendEntry) => void
+}) {
+  const [value, setValue] = useState(entry ? String(entry.spend_vat_excluded) : '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setValue(entry ? String(entry.spend_vat_excluded) : '')
+  }, [entry])
+
+  async function save() {
+    if (value === '' && !entry) return
+    const parsed = Number(value)
+    if (!Number.isInteger(parsed) || parsed < 0) {
+      setError('0 이상 정수')
+      return
+    }
+    if (entry && parsed === entry.spend_vat_excluded) return
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/ad-accounts/${account.id}/monthly-spend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ period, spend_vat_excluded: parsed }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        setError(body.error ?? '저장 실패')
+        return
+      }
+      const saved = body.entry as { id: string; ad_account_id: string; period: string; spend_vat_excluded: number; updated_at: string }
+      onSaved({ ...saved, account_name: account.account_name, platform: account.platform })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <td className="px-2 py-1.5 border-l border-hairline">
+      <input
+        type="number"
+        min={0}
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        onBlur={save}
+        disabled={saving}
+        placeholder="미입력"
+        className={`w-24 rounded-md border px-2 py-1 text-[12px] outline-none focus:border-primary disabled:opacity-50 ${error ? 'border-red-400' : 'border-hairline'} ${entry ? 'text-ink' : 'text-muted-light'}`}
+      />
+      {error && <p className="text-[10px] text-red-600 mt-0.5">{error}</p>}
+    </td>
+  )
+}
+
+function SpendHistoryMatrix({ userId }: { userId: string }) {
+  const { accounts, entries, upsertEntry, loaded, error } = useSpendHistoryMatrix(userId)
+  const [newPeriod, setNewPeriod] = useState(previousMonthPeriod())
+  const [extraPeriods, setExtraPeriods] = useState<string[]>([])
+
+  if (error) return <p className="text-[13px] text-red-600">{error}</p>
+  if (!loaded) return <p className="text-[13px] text-muted-light">불러오는 중...</p>
+  if (accounts.length === 0) return <p className="text-[13px] text-[#6e6e73]">연동된 광고 계정이 없어 이력을 관리할 수 없습니다</p>
+
+  const periods = Array.from(new Set([...entries.map(e => e.period), ...extraPeriods])).sort((a, b) => b.localeCompare(a))
+  const entryByKey = new Map(entries.map(e => [`${e.ad_account_id}:${e.period}`, e]))
+
+  function addPeriodRow() {
+    if (!periods.includes(newPeriod)) setExtraPeriods(prev => [...prev, newPeriod])
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex flex-col text-[11px] text-muted">
+          월 추가
+          <input
+            type="month"
+            value={newPeriod}
+            onChange={e => setNewPeriod(e.target.value)}
+            className="rounded-md border border-hairline px-2 py-1 text-[12px]"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={addPeriodRow}
+          className="rounded-pill border border-hairline px-3 py-1.5 text-[12px] text-muted hover:text-ink"
+        >
+          + 이번 달 행 추가
+        </button>
+      </div>
+
+      {periods.length === 0 ? (
+        <p className="text-[12px] text-muted-light">입력된 월별 실 소진액이 없습니다. 위에서 월을 추가해 입력을 시작하세요.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-md border border-hairline">
+          <table className="text-[12px]">
+            <thead>
+              <tr className="bg-[#fafafa] text-left text-muted">
+                <th className="px-2 py-2 sticky left-0 bg-[#fafafa]">월</th>
+                {accounts.map(a => (
+                  <th key={a.id} className="px-2 py-2 border-l border-hairline whitespace-nowrap">
+                    {platformLabel(a.platform)} · {a.account_name}
+                  </th>
+                ))}
+                <th className="px-2 py-2 border-l border-hairline">합계</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#f0f0f2]">
+              {periods.map(period => {
+                const rowTotal = accounts.reduce((sum, a) => sum + (entryByKey.get(`${a.id}:${period}`)?.spend_vat_excluded ?? 0), 0)
+                return (
+                  <tr key={period}>
+                    <td className="px-2 py-1.5 font-medium text-ink sticky left-0 bg-white">{period}</td>
+                    {accounts.map(a => (
+                      <SpendCell
+                        key={a.id}
+                        account={a}
+                        period={period}
+                        entry={entryByKey.get(`${a.id}:${period}`)}
+                        onSaved={upsertEntry}
+                      />
+                    ))}
+                    <td className="px-2 py-1.5 border-l border-hairline font-medium text-ink">{money(rowTotal)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="text-[11px] text-muted-light">VAT 제외 실 소진액입니다. 이 값이 입력된 (계정, 월) 조합만 정산 생성 대상이 됩니다 — 사장님이 등록 시 제출한 신고값으로는 정산이 생성되지 않습니다.</p>
+    </div>
+  )
+}
+
+function SpendHistoryCard({ userId }: { userId: string }) {
+  return (
+    <Card title="이력관리 — 월별 실 소진액">
+      <SpendHistoryMatrix userId={userId} />
     </Card>
   )
 }
@@ -782,6 +822,7 @@ export default function AdminUserDetailPage() {
             onBusinessInfoSaved={handleBusinessInfoSaved}
           />
           <AdAccountsCard accounts={detail.ad_accounts} onAccountUpdate={handleAccountUpdate} />
+          <SpendHistoryCard userId={detail.user.id} />
           <PaybacksCard paybacks={detail.paybacks} />
           <BudgetCard accounts={detail.ad_accounts} totalMonthlySpend={detail.budget.total_monthly_spend} />
         </div>

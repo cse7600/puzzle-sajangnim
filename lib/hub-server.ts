@@ -103,7 +103,11 @@ export async function fetchMonthlySpendMap(
   return new Map((data ?? []).map(row => [row.ad_account_id, row.spend_vat_excluded]));
 }
 
-/** 확인된 광고비가 있으면 그 값을 쓰고 cost_basis='verified', 없으면 신고값을 쓰고 'submitted'. */
+/**
+ * 확인된 광고비가 있으면 그 값을 쓰고 cost_basis='verified', 없으면 신고값을 쓰고 'submitted'.
+ * 이미 생성된 payback을 화면에 표시(PDF/목록)할 때만 쓰는 헬퍼다 — 새 정산을 만들 때는
+ * (paybacks/generate) 어드민이 입력한 값이 없는 계정은 아예 건너뛰어야 하므로 여기로 폴백하면 안 된다.
+ */
 export function resolveSpendBasis(
   monthlySpendMap: Map<string, number>,
   adAccountId: string,

@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-08-26T02:45:44.411Z",
+  "lastUpdated": "2026-08-26T04:57:10.785Z",
   "activeFeatures": [
     "puzzle-sajangnim",
     "login",
@@ -70,9 +70,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:32:00.677Z",
-        "lastUpdated": "2026-08-26T02:42:38.010Z"
+        "lastUpdated": "2026-08-26T04:27:03.901Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/middleware.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/lib/hub-server.ts"
     },
     "login": {
       "phase": "do",
@@ -135,7 +135,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:40:02.570Z",
-        "lastUpdated": "2026-08-26T01:54:03.759Z"
+        "lastUpdated": "2026-08-26T04:27:28.504Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/paybacks/route.ts"
     },
@@ -161,7 +161,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:42:05.265Z",
-        "lastUpdated": "2026-08-25T17:57:46.075Z"
+        "lastUpdated": "2026-08-26T04:57:10.785Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/receipts/route.ts"
     },
@@ -200,7 +200,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:43:11.356Z",
-        "lastUpdated": "2026-06-18T15:52:18.383Z"
+        "lastUpdated": "2026-08-26T04:56:15.210Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/rewards/page.tsx"
     },
@@ -304,9 +304,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:30:44.852Z",
-        "lastUpdated": "2026-08-26T02:11:20.520Z"
+        "lastUpdated": "2026-08-26T04:55:31.168Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/users/[id]/page.tsx"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/receipts/[id]/route.ts"
     },
     "questions": {
       "phase": "do",
@@ -616,7 +616,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-08-25T15:50:15.968Z",
-        "lastUpdated": "2026-08-26T01:52:49.062Z"
+        "lastUpdated": "2026-08-26T04:26:57.729Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/paybacks/generate/route.ts"
     },
@@ -668,7 +668,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-08-25T15:56:12.426Z",
-        "lastUpdated": "2026-08-26T02:12:35.505Z"
+        "lastUpdated": "2026-08-26T04:52:24.527Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/settlement/page.tsx"
     },
@@ -785,7 +785,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-08-26T01:52:20.730Z",
-        "lastUpdated": "2026-08-26T01:56:04.311Z"
+        "lastUpdated": "2026-08-26T04:52:18.734Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/ad-accounts/[id]/monthly-spend/route.ts"
     }
@@ -798,7 +798,7 @@
   "session": {
     "startedAt": "2026-06-18T07:25:20.070Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-08-26T02:45:44.411Z"
+    "lastActivity": "2026-08-26T04:57:10.785Z"
   },
   "history": [
     {
@@ -3678,6 +3678,150 @@
     {
       "timestamp": "2026-08-26T02:45:44.411Z",
       "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:26:57.729Z",
+      "feature": "generate",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:27:03.901Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:27:10.204Z",
+      "feature": "settlement",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:27:28.504Z",
+      "feature": "paybacks",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:28:20.074Z",
+      "feature": "settlement",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:28:32.415Z",
+      "feature": "settlement",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:28:53.622Z",
+      "feature": "settlement",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:28:59.448Z",
+      "feature": "settlement",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:29:11.510Z",
+      "feature": "monthly-spend",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:30:16.843Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:30:24.183Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:30:30.116Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:52:05.122Z",
+      "feature": "monthly-spend",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:52:14.080Z",
+      "feature": "monthly-spend",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:52:18.734Z",
+      "feature": "monthly-spend",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:52:24.527Z",
+      "feature": "settlement",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:55:24.593Z",
+      "feature": "receipts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:55:31.168Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:55:53.698Z",
+      "feature": "receipts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:56:01.043Z",
+      "feature": "rewards",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:56:07.854Z",
+      "feature": "rewards",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:56:15.210Z",
+      "feature": "rewards",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:57:06.818Z",
+      "feature": "receipts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T04:57:10.785Z",
+      "feature": "receipts",
       "phase": "do",
       "action": "updated"
     }
