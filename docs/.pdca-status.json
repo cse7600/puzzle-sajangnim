@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-08-26T09:48:23.455Z",
+  "lastUpdated": "2026-08-26T13:28:57.069Z",
   "activeFeatures": [
     "puzzle-sajangnim",
     "login",
@@ -67,7 +67,9 @@
     "upload",
     "my",
     "survey",
-    "survey-upload"
+    "survey-upload",
+    "crawler",
+    "my-link"
   ],
   "primaryFeature": "puzzle-sajangnim",
   "features": {
@@ -928,6 +930,32 @@
         "lastUpdated": "2026-08-26T09:35:34.713Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/team-deals/survey-upload/route.ts"
+    },
+    "crawler": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T13:09:51.627Z",
+        "lastUpdated": "2026-08-26T13:28:57.068Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/crawler/main.py"
+    },
+    "my-link": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T13:18:50.105Z",
+        "lastUpdated": "2026-08-26T13:19:03.858Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/my-link/page.tsx"
     }
   },
   "pipeline": {
@@ -938,7 +966,7 @@
   "session": {
     "startedAt": "2026-06-18T07:25:20.070Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-08-26T09:48:23.455Z"
+    "lastActivity": "2026-08-26T13:28:57.069Z"
   },
   "history": [
     {
@@ -5654,6 +5682,66 @@
     {
       "timestamp": "2026-08-26T09:48:23.455Z",
       "feature": "members",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T13:09:51.627Z",
+      "feature": "crawler",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T13:10:00.807Z",
+      "feature": "crawler",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T13:10:04.556Z",
+      "feature": "crawler",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T13:18:50.105Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T13:18:54.964Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T13:18:58.901Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T13:19:03.858Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T13:28:30.703Z",
+      "feature": "crawler",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T13:28:42.125Z",
+      "feature": "crawler",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T13:28:57.069Z",
+      "feature": "crawler",
       "phase": "do",
       "action": "updated"
     }
