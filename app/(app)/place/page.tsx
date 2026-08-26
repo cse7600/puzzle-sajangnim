@@ -22,6 +22,7 @@ import type {
   KeywordWithRank,
   RankingTrendResponse,
   RegisterResponse,
+  CollectResponse,
   KeywordCard,
   ChartLine,
 } from './types';
@@ -34,6 +35,7 @@ import {
   RegisterModal,
   RankChart,
   PhotoGallery,
+  CompetitorHoverCard,
 } from './components';
 
 type ModalRole = 'mine' | 'competitor';
@@ -46,18 +48,69 @@ export default function PlacePage() {
   const [chartLabels, setChartLabels] = useState<string[]>([]);
   const [chartLines, setChartLines] = useState<ChartLine[]>([]);
 
-  const [isUpdating, setIsUpdating] = useState(false);
+  // 등록 직후 / 새로고침 시 "네이버 정보 수집 중"인 registration id 집합과 실패 메시지.
+  // 화면 전체를 리로드하지 않고 해당 행만 갱신하기 위한 상태 — "새로고침되는 느낌"의
+  // 원인이 등록 하나에 최대 24s 동기 요청을 태운 것이었다는 사용자 리포트를 반영.
+  const [collectingIds, setCollectingIds] = useState<Set<string>>(new Set());
+  const [collectErrors, setCollectErrors] = useState<Record<string, string>>({});
   const [updated, setUpdated] = useState(false);
-  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   const [modalRole, setModalRole] = useState<ModalRole | null>(null);
   const [registerUrl, setRegisterUrl] = useState('');
   const [registerError, setRegisterError] = useState<string | null>(null);
-  const [registerNotice, setRegisterNotice] = useState<string | null>(null);
   const [registerSubmitting, setRegisterSubmitting] = useState(false);
 
   const [newKeyword, setNewKeyword] = useState('');
   const [keywordError, setKeywordError] = useState<string | null>(null);
+
+  // registration 하나의 네이버 기본정보를 비동기로 수집한다. 성공하면 해당 행의
+  // latest_snapshot 만 patch — mine/competitors 전체를 다시 불러오지 않는다.
+  const collectSnapshot = useCallback(async (registrationId: string): Promise<boolean> => {
+    setCollectingIds((prev) => new Set(prev).add(registrationId));
+    setCollectErrors((prev) => {
+      if (!(registrationId in prev)) return prev;
+      const next = { ...prev };
+      delete next[registrationId];
+      return next;
+    });
+
+    const res = await fetch('/api/place/collect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ registration_id: registrationId }),
+    }).catch(() => null);
+    const payload: (CollectResponse & { error?: string }) | null = res
+      ? await res.json().catch(() => null)
+      : null;
+
+    setCollectingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(registrationId);
+      return next;
+    });
+
+    if (!res || !res.ok || !payload) {
+      setCollectErrors((prev) => ({
+        ...prev,
+        [registrationId]: payload?.error ?? '정보 수집에 실패했습니다. 잠시 후 다시 시도해주세요.',
+      }));
+      return false;
+    }
+
+    const patch = (row: PlaceRegistration): PlaceRegistration =>
+      row.id === registrationId
+        ? {
+            ...row,
+            name: payload.name,
+            address: payload.address,
+            category: payload.category,
+            latest_snapshot: payload.snapshot,
+          }
+        : row;
+    setMine((prev) => (prev ? patch(prev) : prev));
+    setCompetitors((prev) => prev.map(patch));
+    return true;
+  }, []);
 
   // registration 의 키워드 + 순위 시계열을 불러와 카드/차트 state 갱신.
   const loadKeywordData = useCallback(async (registrationId: string) => {
@@ -77,28 +130,39 @@ export default function PlacePage() {
     setChartLines(toChartLines(series));
   }, []);
 
-  // 내 가게 + 경쟁자 목록을 불러온다. 내 가게가 있으면 키워드 데이터까지 로드.
+  // 내 가게 + 경쟁자 목록을 불러온다. 스냅샷이 아직 없는 항목(등록 직후 새로고침했거나
+  // 이전 수집이 끊긴 경우)은 자동으로 재수집을 건다 — 사용자가 다시 등록할 필요 없게.
   const loadRegistrations = useCallback(async () => {
     setLoading(true);
     const res = await fetch('/api/place/register').catch(() => null);
     const payload: PlaceRegistrationsResponse = res
       ? await res.json()
       : { mine: null, competitors: [] };
-    setMine(payload.mine ?? null);
-    setCompetitors(Array.isArray(payload.competitors) ? payload.competitors : []);
-    if (payload.mine) await loadKeywordData(payload.mine.id);
+    const nextMine = payload.mine ?? null;
+    const nextCompetitors = Array.isArray(payload.competitors) ? payload.competitors : [];
+    setMine(nextMine);
+    setCompetitors(nextCompetitors);
+    if (nextMine) await loadKeywordData(nextMine.id);
     setLoading(false);
-  }, [loadKeywordData]);
 
+    const pending = [nextMine, ...nextCompetitors].filter(
+      (row): row is PlaceRegistration => row !== null && row.latest_snapshot === null
+    );
+    pending.forEach((row) => {
+      void collectSnapshot(row.id);
+    });
+  }, [loadKeywordData, collectSnapshot]);
+
+  // 마운트 시 1회만 실행 — loadRegistrations 는 useCallback 이지만 매 렌더 재생성될 수
+  // 있는 의존값을 갖고 있어 deps 에 넣으면 재실행 루프가 생긴다.
   useEffect(() => {
     loadRegistrations();
-  }, [loadRegistrations]);
+  }, []);
 
   function openRegisterModal(role: ModalRole) {
     setModalRole(role);
     setRegisterUrl(role === 'mine' && mine ? mine.place_url : '');
     setRegisterError(null);
-    setRegisterNotice(null);
   }
 
   async function submitRegister() {
@@ -108,7 +172,6 @@ export default function PlacePage() {
     }
     setRegisterSubmitting(true);
     setRegisterError(null);
-    setRegisterNotice(null);
     const res = await fetch('/api/place/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -124,26 +187,59 @@ export default function PlacePage() {
       .json()
       .catch(() => null);
     if (!payload) {
-      setRegisterError('서버 응답을 처리하지 못했습니다. 네이버 정보 수집이 지연되고 있을 수 있어요 — 잠시 후 다시 시도해주세요.');
+      setRegisterError('서버 응답을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.');
       return;
     }
     if (!res.ok) {
       setRegisterError(payload.error ?? '등록에 실패했습니다.');
       return;
     }
-    if (payload.fetch_failed) {
-      setRegisterNotice('기본정보 수집 대기중입니다. 등록은 완료되었습니다.');
+
+    // 등록은 즉시 완료 — 화면을 다시 불러오는 대신 낙관적으로 목록에 꽂고 모달을 바로 닫는다.
+    // 기본정보 수집은 이어서 백그라운드로 돌며 "분석 중" 상태로 표시된다.
+    if (modalRole === 'mine') {
+      // 같은 가게 재등록(가게 정보 수정)이면 collect 끝나기 전까지 기존 스냅샷을 유지한다 —
+      // 안 그러면 방금 잘 보이던 체크리스트·사진이 "수집 대기중"으로 잠깐 사라진다.
+      setMine((prev) => ({
+        ...payload.registration,
+        latest_snapshot: prev?.id === payload.registration.id ? prev.latest_snapshot : null,
+      }));
+    } else {
+      // upsert라 같은 가게를 다시 등록하면 서버는 같은 id를 돌려준다 — 무조건 append하면
+      // 화면에 같은 행이 중복된다.
+      setCompetitors((prev) => {
+        const exists = prev.some((row) => row.id === payload.registration.id);
+        if (exists) {
+          return prev.map((row) =>
+            row.id === payload.registration.id ? { ...payload.registration, latest_snapshot: row.latest_snapshot } : row
+          );
+        }
+        return [...prev, { ...payload.registration, latest_snapshot: null }];
+      });
     }
     setRegisterUrl('');
     setModalRole(null);
-    loadRegistrations();
+    void collectSnapshot(payload.registration.id);
   }
 
   async function removeCompetitor(registrationId: string) {
     const res = await fetch(`/api/place/register?registration_id=${registrationId}`, {
       method: 'DELETE',
     }).catch(() => null);
-    if (res?.ok) loadRegistrations();
+    if (!res?.ok) return;
+    setCompetitors((prev) => prev.filter((row) => row.id !== registrationId));
+    setCollectingIds((prev) => {
+      if (!prev.has(registrationId)) return prev;
+      const next = new Set(prev);
+      next.delete(registrationId);
+      return next;
+    });
+    setCollectErrors((prev) => {
+      if (!(registrationId in prev)) return prev;
+      const next = { ...prev };
+      delete next[registrationId];
+      return next;
+    });
   }
 
   async function addKeyword() {
@@ -184,25 +280,14 @@ export default function PlacePage() {
     else setKeywordError('키워드 삭제에 실패했습니다.');
   }
 
-  // 등록된 placeId 로 register 재호출(upsert) → 순위·기본정보 재수집.
   async function handleRefresh() {
-    if (isUpdating || !mine) return;
-    setIsUpdating(true);
+    if (!mine || collectingIds.has(mine.id)) return;
     setUpdated(false);
-    setRefreshError(null);
-    const res = await fetch('/api/place/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ place_url: mine.place_url, role: 'mine' }),
-    }).catch(() => null);
-    setIsUpdating(false);
-    if (res?.ok) {
+    const ok = await collectSnapshot(mine.id);
+    if (ok) {
       setUpdated(true);
       setTimeout(() => setUpdated(false), 3000);
-      loadRegistrations();
-      return;
     }
-    setRefreshError('업데이트에 실패했습니다. 네이버 응답이 지연되고 있을 수 있어요 — 잠시 후 다시 시도해주세요.');
   }
 
   const modal = modalRole && (
@@ -210,14 +295,13 @@ export default function PlacePage() {
       url={registerUrl}
       setUrl={setRegisterUrl}
       error={registerError}
-      notice={registerNotice}
       submitting={registerSubmitting}
       onClose={() => setModalRole(null)}
       onSubmit={submitRegister}
       title={modalRole === 'mine' ? '네이버 플레이스 등록' : '경쟁 가게 등록'}
       description={
         modalRole === 'mine'
-          ? '내 가게의 네이버 플레이스 URL을 붙여넣어 주세요. 순위·기본정보를 다시 수집합니다.'
+          ? '내 가게의 네이버 플레이스 URL을 붙여넣어 주세요. 등록 즉시 반영되고, 정보 수집은 뒤이어 진행됩니다.'
           : '비교하고 싶은 경쟁 가게의 네이버 플레이스 URL을 붙여넣어 주세요.'
       }
     />
@@ -234,6 +318,8 @@ export default function PlacePage() {
     );
   }
 
+  const mineCollecting = collectingIds.has(mine.id);
+  const mineError = collectErrors[mine.id];
   const checklist = mine.latest_snapshot ? buildChecklist(mine.latest_snapshot) : null;
 
   const compareRows = [mine, ...competitors].sort(
@@ -259,14 +345,21 @@ export default function PlacePage() {
         </div>
         <button
           onClick={handleRefresh}
-          disabled={isUpdating}
+          disabled={mineCollecting}
           className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#0055aa] disabled:opacity-60"
         >
-          <RefreshCw className={`h-4 w-4 ${isUpdating ? 'animate-spin' : ''}`} />
-          {isUpdating ? '업데이트 중...' : updated ? '업데이트 완료' : '순위 업데이트'}
+          <RefreshCw className={`h-4 w-4 ${mineCollecting ? 'animate-spin' : ''}`} />
+          {mineCollecting ? '분석 중...' : updated ? '업데이트 완료' : '순위 업데이트'}
         </button>
       </div>
-      {refreshError && <p className="text-sm font-medium text-red-600">{refreshError}</p>}
+      {mineError && (
+        <p className="text-sm font-medium text-red-600">
+          {mineError}{' '}
+          <button onClick={handleRefresh} className="underline underline-offset-2">
+            다시 시도
+          </button>
+        </p>
+      )}
 
       {/* 가게 정보 BAR */}
       <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -286,7 +379,12 @@ export default function PlacePage() {
             {mine.category}
           </div>
         )}
-        {mine.latest_snapshot ? (
+        {mineCollecting ? (
+          <div className="flex items-center gap-2 text-sm font-medium text-blue-600">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            네이버 정보 분석 중...
+          </div>
+        ) : mine.latest_snapshot ? (
           <div className="flex items-center gap-2 text-sm font-medium text-emerald-600">
             <CheckCircle2 className="h-4 w-4" />
             네이버 연동 완료
@@ -460,6 +558,11 @@ export default function PlacePage() {
                 &lsquo;순위 업데이트&rsquo;로 최신 데이터를 다시 수집할 수 있습니다.
               </div>
             </>
+          ) : mineCollecting ? (
+            <div className="mt-5 flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-200 py-10 text-center">
+              <RefreshCw className="h-5 w-5 animate-spin text-blue-400" />
+              <p className="text-sm text-gray-500">네이버 정보 분석 중...</p>
+            </div>
           ) : (
             <div className="mt-5 flex flex-1 items-center justify-center rounded-lg border border-dashed border-gray-200 py-10 text-center text-sm text-gray-400">
               기본정보 수집 대기중입니다. &lsquo;순위 업데이트&rsquo;를 눌러 다시 시도해보세요.
@@ -467,7 +570,7 @@ export default function PlacePage() {
           )}
         </div>
 
-        {/* 내 가게 vs 경쟁자 — 실제 등록된 경쟁자만 표시 */}
+        {/* 내 가게 vs 경쟁자 — 실제 등록된 경쟁자만 표시. 이름에 마우스를 올리면 상세 비교 */}
         <div className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-gray-900">내 가게 vs 경쟁자</h2>
@@ -487,8 +590,8 @@ export default function PlacePage() {
             </div>
           ) : (
             <>
-              <p className="mt-1 text-xs text-gray-400">리뷰수 기준 정렬</p>
-              <div className="mt-3 overflow-hidden">
+              <p className="mt-1 text-xs text-gray-400">리뷰수 기준 정렬 · 가게명에 마우스를 올리면 상세 비교</p>
+              <div className="mt-3">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-400">
@@ -505,6 +608,8 @@ export default function PlacePage() {
                     {compareRows.map((row, index) => {
                       const isMine = row.id === mine.id;
                       const snapshot = row.latest_snapshot;
+                      const isCollecting = collectingIds.has(row.id);
+                      const rowError = collectErrors[row.id];
                       return (
                         <tr
                           key={row.id}
@@ -520,30 +625,59 @@ export default function PlacePage() {
                             <span className="font-semibold text-gray-700">{index + 1}</span>
                           </td>
                           <td className="py-3 pr-2">
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className={`truncate ${
-                                  isMine ? 'font-bold text-[#0066cc]' : 'font-medium text-gray-800'
-                                }`}
-                              >
-                                {row.name}
-                              </span>
-                              {isMine && (
-                                <span className="shrink-0 rounded bg-[#0066cc] px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                                  내 가게
+                            <div className={`group relative inline-block ${isMine ? '' : 'cursor-default'}`}>
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={`truncate ${
+                                    isMine ? 'font-bold text-[#0066cc]' : 'font-medium text-gray-800'
+                                  }`}
+                                >
+                                  {row.name}
                                 </span>
+                                {isMine && (
+                                  <span className="shrink-0 rounded bg-[#0066cc] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                    내 가게
+                                  </span>
+                                )}
+                                {isCollecting && (
+                                  <RefreshCw className="h-3 w-3 shrink-0 animate-spin text-blue-400" />
+                                )}
+                              </div>
+                              {!isMine && (
+                                <CompetitorHoverCard
+                                  competitor={row}
+                                  mine={mine}
+                                  openUpward={index >= Math.ceil(compareRows.length / 2)}
+                                />
                               )}
                             </div>
                           </td>
-                          <td className="py-3 text-right tabular-nums text-gray-600">
-                            {snapshot?.visitor_review_count?.toLocaleString() ?? '—'}
-                          </td>
-                          <td className="py-3 text-right tabular-nums text-gray-600">
-                            {snapshot?.photo_count ?? '—'}
-                          </td>
-                          <td className="py-3 text-right tabular-nums text-gray-600">
-                            {snapshot?.keyword_count ?? '—'}
-                          </td>
+                          {isCollecting ? (
+                            <td colSpan={3} className="py-3 text-right text-xs text-blue-500">
+                              분석 중...
+                            </td>
+                          ) : rowError ? (
+                            <td colSpan={3} className="py-3 text-right">
+                              <button
+                                onClick={() => collectSnapshot(row.id)}
+                                className="text-xs font-medium text-red-500 underline underline-offset-2"
+                              >
+                                수집 실패 · 재시도
+                              </button>
+                            </td>
+                          ) : (
+                            <>
+                              <td className="py-3 text-right tabular-nums text-gray-600">
+                                {snapshot?.visitor_review_count?.toLocaleString() ?? '—'}
+                              </td>
+                              <td className="py-3 text-right tabular-nums text-gray-600">
+                                {snapshot?.photo_count ?? '—'}
+                              </td>
+                              <td className="py-3 text-right tabular-nums text-gray-600">
+                                {snapshot?.keyword_count ?? '—'}
+                              </td>
+                            </>
+                          )}
                           <td className="py-3 pr-1 text-right">
                             {snapshot?.rating !== null && snapshot?.rating !== undefined ? (
                               <span className="inline-flex items-center gap-0.5 font-medium tabular-nums text-gray-800">

@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowUp, ArrowDown, Minus, X } from 'lucide-react';
-import type { Signal, Trend, ChartLine } from './types';
+import type { Signal, Trend, ChartLine, PlaceRegistration } from './types';
 
 export const SIGNAL_STYLES: Record<Signal, { dot: string; ring: string; text: string }> = {
   green: { dot: 'bg-emerald-500', ring: 'ring-emerald-100', text: 'text-emerald-600' },
@@ -96,12 +96,92 @@ export function PhotoGallery({
   );
 }
 
+// 경쟁자 이름에 마우스 올렸을 때 뜨는 비교 카드 — 클릭 없이 대표 키워드 실목록·소개글·
+// 예약연동·메뉴수를 내 가게와 나란히 보여준다. 부모(.group)에 relative 를 걸고 그 안에서 쓴다.
+function CompareField({
+  label,
+  mineValue,
+  theirValue,
+  unit = '',
+}: {
+  label: string;
+  mineValue: boolean | number | null | undefined;
+  theirValue: boolean | number | null | undefined;
+  unit?: string;
+}) {
+  const fmt = (value: boolean | number | null | undefined) => {
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'boolean') return value ? '완료' : '미완료';
+    return `${value}${unit}`;
+  };
+  return (
+    <div className="flex items-center justify-between text-xs">
+      <span className="text-gray-500">{label}</span>
+      <span className="flex items-center gap-1.5 font-medium">
+        <span className="text-gray-800">{fmt(theirValue)}</span>
+        <span className="text-gray-300">vs 내</span>
+        <span className="text-gray-500">{fmt(mineValue)}</span>
+      </span>
+    </div>
+  );
+}
+
+export function CompetitorHoverCard({
+  competitor,
+  mine,
+  openUpward = false,
+}: {
+  competitor: PlaceRegistration;
+  mine: PlaceRegistration;
+  openUpward?: boolean;
+}) {
+  const theirs = competitor.latest_snapshot;
+  const mines = mine.latest_snapshot;
+  const positionClass = openUpward ? 'bottom-full mb-2 -translate-y-1' : 'top-full mt-2 -translate-y-1';
+  return (
+    <div
+      className={`pointer-events-none invisible absolute left-0 ${positionClass} z-30 w-72 rounded-xl border border-gray-200 bg-white p-4 text-left opacity-0 shadow-lg transition duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100`}
+    >
+      <p className="truncate text-xs font-semibold text-gray-900">{competitor.name}</p>
+      {theirs ? (
+        <div className="mt-3 space-y-3">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400">대표 키워드</p>
+            {theirs.keyword_list === null ? (
+              <p className="mt-1 text-xs text-gray-400">다시 수집하면 표시됩니다</p>
+            ) : theirs.keyword_list.length === 0 ? (
+              <p className="mt-1 text-xs text-gray-400">설정 안 함</p>
+            ) : (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {theirs.keyword_list.map((keyword, index) => (
+                  <span
+                    key={`${keyword}-${index}`}
+                    className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-[#0066cc]"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="space-y-1.5 border-t border-gray-100 pt-2.5">
+            <CompareField label="소개글" mineValue={mines?.has_description} theirValue={theirs.has_description} />
+            <CompareField label="예약 연동" mineValue={mines?.has_reservation} theirValue={theirs.has_reservation} />
+            <CompareField label="메뉴 등록" mineValue={mines?.menu_count} theirValue={theirs.menu_count} unit="개" />
+          </div>
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-gray-400">아직 수집된 정보가 없습니다.</p>
+      )}
+    </div>
+  );
+}
+
 // 네이버 플레이스 URL 등록 모달 (내 가게 / 경쟁자 공용 — title/description 으로 구분)
 export function RegisterModal(props: {
   url: string;
   setUrl: (value: string) => void;
   error: string | null;
-  notice: string | null;
   submitting: boolean;
   onClose: () => void;
   onSubmit: () => void;
@@ -112,7 +192,6 @@ export function RegisterModal(props: {
     url,
     setUrl,
     error,
-    notice,
     submitting,
     onClose,
     onSubmit,
@@ -143,7 +222,6 @@ export function RegisterModal(props: {
             className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:outline-none"
           />
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
-          {notice && <p className="text-sm font-medium text-amber-600">{notice}</p>}
         </div>
         <div className="flex justify-end gap-2 border-t border-gray-100 p-5">
           <button

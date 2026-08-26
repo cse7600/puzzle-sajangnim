@@ -14,6 +14,7 @@ export interface PlaceSnapshot {
   photo_count: number | null;
   has_reservation: boolean | null; // null = 판별 불가
   keyword_count: number | null; // null = 못 읽음, 0 = 진짜 미설정
+  keyword_list: string[] | null; // 대표 키워드 실제 목록(호버 비교 카드용)
   has_description: boolean | null;
   menu_count: number | null;
   photo_urls: string[] | null;
@@ -42,10 +43,17 @@ export interface PlaceRegistrationsResponse {
   competitors: PlaceRegistration[];
 }
 
+// register 는 등록 행만 즉시 반환 — 기본정보 수집은 /api/place/collect 가 담당한다.
 export interface RegisterResponse {
   registration: PlaceRegistration;
-  snapshot: PlaceSnapshot | null;
-  fetch_failed?: boolean;
+}
+
+// collect 는 등록된 placeId 로 네이버 기본정보를 수집해 스냅샷을 만든다.
+export interface CollectResponse {
+  snapshot: PlaceSnapshot;
+  name: string;
+  address: string | null;
+  category: string | null;
 }
 
 export interface KeywordWithRank {

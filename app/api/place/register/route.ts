@@ -1,25 +1,19 @@
 export const dynamic = 'force-dynamic'
-// naver.me 리다이렉트(최대 8s) + information 페이지 fetch(재시도 포함 최대 16s)가
-// 직렬로 걸릴 수 있어(최악 24s) Vercel 기본 서버리스 타임아웃을 넘을 수 있다.
-// 여유를 두고 늘려서 504로 죽는 대신 정상적으로 fetch_failed 폴백을 타게 한다.
-export const maxDuration = 30
+// naver.me 리다이렉트 해석(최대 8s)만 여기서 한다. information 페이지 수집(최대 16s)은
+// /api/place/collect 로 분리했다 — 등록 하나에 최대 24s 동기 요청을 태우면 화면이
+// "새로고침처럼 멈춘" 것처럼 보이는 문제가 있었다(사용자 리포트, 2026-08-26).
+export const maxDuration = 15
 
 import { NextResponse } from 'next/server'
-import { supabaseAdmin, supabaseAdminCached } from '@/lib/supabase-admin'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
-import {
-  parsePlaceId,
-  resolveShortUrl,
-  fetchPlaceInfo,
-  type PlaceBasicInfo,
-} from '@/lib/naver-place'
+import { parsePlaceId, resolveShortUrl } from '@/lib/naver-place'
 
 const db = supabaseAdmin as any
-const dbRead = supabaseAdminCached as any
-
-function todayDate(): string {
-  return new Date().toISOString().slice(0, 10) // YYYY-MM-DD
-}
+// 등록/삭제 직후 화면을 즉시 새로고침해도 최신 상태가 보여야 한다 — 캐시된 클라이언트를
+// 쓰면 등록 후 30초 안에 새로고침 시 방금 등록한 게 안 보여서 "등록이 안 된다"로
+// 보였을 것(사용자 리포트, 2026-08-26). 개인 대시보드 목록이라 DB 왕복 비용보다 정확성이 우선.
+const dbRead = supabaseAdmin as any
 
 // place_url 에서 placeId 추출. naver.me 단축 URL 은 먼저 리다이렉트 해석.
 async function extractPlaceId(placeUrl: string): Promise<string> {
@@ -34,26 +28,8 @@ async function extractPlaceId(placeUrl: string): Promise<string> {
   return parsePlaceId(target).placeId
 }
 
-// 네이버 기본정보를 snapshot row 로 변환.
-function toSnapshotRow(registrationId: string, info: PlaceBasicInfo) {
-  return {
-    registration_id: registrationId,
-    snapshot_date: todayDate(),
-    review_count: info.reviewCount,
-    visitor_review_count: info.visitorReviewCount,
-    blog_review_count: info.blogReviewCount,
-    rating: info.rating,
-    photo_count: info.photoCount,
-    has_reservation: info.hasReservation,
-    keyword_count: info.keywordList?.length ?? null,
-    has_description: info.description !== null,
-    menu_count: info.menuCount,
-    photo_urls: info.photoUrls,
-    raw_data: info.raw,
-  }
-}
-
 const VALID_ROLES = new Set(['mine', 'competitor'])
+const MAX_COMPETITORS = 10
 
 // postgres unique_violation. 'mine' 은 유저당 1개로 부분 유니크 인덱스가 걸려있다
 // (migrations/013) — onConflict 대상(user_id,naver_place_id)과 다른 제약이라 upsert가
@@ -82,13 +58,43 @@ export async function POST(req: Request) {
     )
   }
 
-  // 네이버 기본정보 수집 — 실패해도 등록은 진행 (graceful degradation)
-  let placeInfo: PlaceBasicInfo | null = null
-  let fetchFailed = false
-  try {
-    placeInfo = await fetchPlaceInfo(placeId)
-  } catch {
-    fetchFailed = true
+  // 기본정보 수집은 /api/place/collect 가 별도로 담당한다. 여기선 등록 행만 즉시
+  // 만들어서 빠르게 응답한다 — 단, 이미 등록된 가게를 재등록(가게 정보 수정 등)하는
+  // 경우엔 기존 name/address/category 를 유지해서 collect 완료 전까지 화면에 잠깐
+  // "플레이스 12345" 같은 placeholder 가 뜨는 걸 막는다.
+  const { data: existing } = await db
+    .from('puzl_place_registrations')
+    .select('name, address, category, role')
+    .eq('user_id', sessionUser.id)
+    .eq('naver_place_id', placeId)
+    .maybeSingle()
+
+  // 이미 다른 용도(내 가게 ↔ 경쟁자)로 등록된 가게를 그대로 upsert하면 role 이 조용히
+  // 뒤바뀐다 — 특히 경쟁자 추가 모달에 실수로 내 가게 URL을 넣으면 "내 가게"가 사라진다.
+  if (existing?.role && existing.role !== role) {
+    return NextResponse.json(
+      {
+        error:
+          existing.role === 'mine'
+            ? '이미 내 가게로 등록된 곳입니다.'
+            : '이미 경쟁자로 등록된 곳입니다. 내 가게로 등록하려면 먼저 경쟁자 목록에서 삭제해주세요.',
+      },
+      { status: 409 }
+    )
+  }
+
+  if (role === 'competitor' && !existing) {
+    const { count } = await db
+      .from('puzl_place_registrations')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', sessionUser.id)
+      .eq('role', 'competitor')
+    if ((count ?? 0) >= MAX_COMPETITORS) {
+      return NextResponse.json(
+        { error: `경쟁자는 최대 ${MAX_COMPETITORS}개까지 등록할 수 있습니다.` },
+        { status: 409 }
+      )
+    }
   }
 
   const { data: registration, error: regError } = await db
@@ -98,9 +104,9 @@ export async function POST(req: Request) {
         user_id: sessionUser.id,
         naver_place_id: placeId,
         place_url: place_url.trim(),
-        name: placeInfo?.name ?? `플레이스 ${placeId}`,
-        address: placeInfo?.address ?? null,
-        category: placeInfo?.category ?? null,
+        name: existing?.name ?? `플레이스 ${placeId}`,
+        address: existing?.address ?? null,
+        category: existing?.category ?? null,
         role,
         updated_at: new Date().toISOString(),
       },
@@ -122,29 +128,7 @@ export async function POST(req: Request) {
     )
   }
 
-  if (!placeInfo) {
-    return NextResponse.json(
-      { registration, snapshot: null, fetch_failed: true },
-      { status: 201 }
-    )
-  }
-
-  const { data: snapshot, error: snapError } = await db
-    .from('puzl_place_snapshots')
-    .upsert(toSnapshotRow(registration.id, placeInfo), {
-      onConflict: 'registration_id,snapshot_date',
-    })
-    .select('*')
-    .single()
-
-  if (snapError || !snapshot) {
-    return NextResponse.json(
-      { registration, snapshot: null, fetch_failed: true },
-      { status: 201 }
-    )
-  }
-
-  return NextResponse.json({ registration, snapshot, fetch_failed: fetchFailed }, { status: 201 })
+  return NextResponse.json({ registration }, { status: 201 })
 }
 
 export async function GET() {
@@ -160,7 +144,7 @@ export async function GET() {
   if (error || !registrations) {
     return NextResponse.json(
       { mine: null, competitors: [] },
-      { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+      { headers: { 'Cache-Control': 'private, no-store' } }
     )
   }
 
