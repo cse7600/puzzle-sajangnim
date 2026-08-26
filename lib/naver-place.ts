@@ -7,6 +7,9 @@
 //
 // 모든 네트워크 함수는 실패 시 throw 한다 — graceful degradation(등록은 성공, 스냅샷은
 // 비움)은 호출부의 try/catch 책임이다.
+//
+// keywordList/description/naverBooking/menus/hasCoupon 필드는 restaurant 업종으로만
+// 실측 검증했다(2026-08-26). hairshop/hospital 등 다른 업종은 필드명이 다를 수 있어 미검증.
 
 export interface ParsedPlace {
   placeId: string;
@@ -22,6 +25,12 @@ export interface PlaceBasicInfo {
   blogReviewCount: number | null;
   rating: number | null;
   photoCount: number | null;
+  keywordList: string[] | null; // 정보 탭 대표 키워드. [] = 미설정 확인됨, null = 못 읽음
+  description: string | null; // 소개글 (placeDetail.description)
+  hasReservation: boolean | null; // 네이버 예약 연동 여부. null = naverBooking 노드 자체를 못 찾음(판별 불가)
+  hasSmartOrder: boolean | null; // 스마트주문 연동 여부. null = 판별 불가
+  menuCount: number | null; // LOW 신뢰도 — Apollo State 에 메뉴 전체가 아니라 미리보기만 박제될 가능성 있음(미검증)
+  couponCount: number | null;
   raw: unknown; // 원본 응답 → snapshots.raw_data
 }
 
@@ -47,6 +56,14 @@ const DEFAULT_SEARCH_COORD: SearchCoord = {
 const MOBILE_USER_AGENT =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ' +
   '(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+
+// naver.me 리다이렉트 전용. 모바일 UA로 따라가면 네이버가 앱 설치 유도 페이지
+// (m.map.naver.com/appLink.naver?pinId=...)까지 리다이렉트를 계속 밀어붙여서
+// parsePlaceId 가 못 읽는 URL로 끝난다(실측 확인). 데스크톱 UA는 map.naver.com/p/entry/place/{id}
+// 에서 멈춘다.
+const DESKTOP_USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 const FETCH_TIMEOUT_MS = 8000;
 
@@ -110,7 +127,7 @@ export async function resolveShortUrl(url: string): Promise<string> {
     const response = await fetch(url, {
       method: 'GET',
       redirect: 'follow',
-      headers: { 'User-Agent': MOBILE_USER_AGENT },
+      headers: { 'User-Agent': DESKTOP_USER_AGENT },
       signal: controller.signal,
     });
     if (!response.url) {
@@ -164,11 +181,32 @@ async function fetchJsonWithRetry(
 }
 
 /**
+ * Apollo 정규화 참조({"__ref": "Type:id"})면 apolloState 에서 실제 엔티티로 바꿔치기한다.
+ * ref 가 아니면 그대로 반환. apolloState 를 안 넘기면 역참조를 안 한다(기존 호출부 하위호환).
+ */
+function derefIfApolloRef(
+  node: unknown,
+  apolloState: Record<string, unknown> | undefined,
+): unknown {
+  if (!apolloState || !node || typeof node !== 'object') return node;
+  const ref = (node as Record<string, unknown>).__ref;
+  return typeof ref === 'string' ? apolloState[ref] : node;
+}
+
+/**
  * unknown 응답에서 점(.)으로 구분된 경로를 따라 값을 안전하게 읽는다.
  * 네이버 스키마가 LOW 신뢰도라 모든 접근을 이 헬퍼로 방어한다.
+ * apolloState 를 넘기면 경로 중간에 나오는 Apollo ref({"__ref": "..."})도 역참조한다 —
+ * 어떤 필드가 인라인 객체로 오는지 정규화된 참조로 오는지는 네이버 쪽 조건(업종 등)에
+ * 따라 달라질 수 있어 방어적으로 항상 시도한다.
  */
-function readPath(source: unknown, path: string): unknown {
-  return path.split('.').reduce<unknown>((node, key) => {
+function readPath(
+  source: unknown,
+  path: string,
+  apolloState?: Record<string, unknown>,
+): unknown {
+  return path.split('.').reduce<unknown>((rawNode, key) => {
+    const node = derefIfApolloRef(rawNode, apolloState);
     if (node && typeof node === 'object' && key in node) {
       return (node as Record<string, unknown>)[key];
     }
@@ -195,6 +233,18 @@ function asNumber(value: unknown): number | null {
  */
 function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value : null;
+}
+
+/**
+ * unknown 값을 string[] 로(배열이면). 배열 자체가 없으면(필드 부재/파싱 실패) null,
+ * 배열은 있는데 비어있으면(진짜로 키워드 미설정) 빈 배열을 그대로 반환한다 —
+ * "설정 안 함"과 "못 읽음"을 구분해야 체크리스트 진단이 정확하다.
+ */
+function asStringArray(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  return value.filter(
+    (entry): entry is string => typeof entry === 'string' && entry.trim() !== '',
+  );
 }
 
 // 네이버 GraphQL 엔드포인트는 스키마 변경으로 동작 불가
@@ -247,12 +297,40 @@ function extractApolloState(html: string): Record<string, unknown> {
 /**
  * Apollo State 전체 키 중 PlaceDetailTopPhotoItem: 접두사 키 개수를 센다.
  * 키가 하나도 없으면(섹션 미렌더) null 로 둔다.
+ * placeDetail.topPhotos.total 을 못 읽었을 때만 쓰는 폴백 — 이 방식은 초기 상태에
+ * 박제된 미리보기 항목(보통 10개 안팎)만 세므로 실제 전체 사진 수보다 적게 나온다.
  */
 function countPhotoItems(apolloState: Record<string, unknown>): number | null {
   const count = Object.keys(apolloState).filter((key) =>
     key.startsWith(PHOTO_ITEM_PREFIX),
   ).length;
   return count > 0 ? count : null;
+}
+
+const PLACE_DETAIL_QUERY_PREFIX = 'placeDetail(';
+
+/**
+ * Apollo State 의 ROOT_QUERY 에서 placeDetail(...) 쿼리 결과를 찾는다.
+ * 키 이름에 쿼리 변수가 JSON 문자열로 그대로 붙으므로(예: placeDetail({"input":...}))
+ * 정확한 키를 하드코딩하지 않고 접두사로 탐색한다.
+ * 대표 키워드·소개글·예약 연동 여부 등은 PlaceDetailBase 엔티티가 아니라 여기 있다.
+ *
+ * placeDetail( 접두사 키가 여러 개일 수 있으므로(연관 장소 프리페치 등) placeId 가 쿼리
+ * input 에 그대로 박혀있는 걸 이용해 id 일치 키를 우선한다 — base 는 이미
+ * `PlaceDetailBase:${placeId}` 로 id-정합 조회하는데 placeDetail 만 아무거나 집으면
+ * 둘이 다른 가게를 가리키는 조용한 실패가 날 수 있다.
+ */
+function findPlaceDetailRoot(
+  apolloState: Record<string, unknown>,
+  placeId: string,
+): unknown {
+  const rootQuery = apolloState.ROOT_QUERY;
+  if (!rootQuery || typeof rootQuery !== 'object') return undefined;
+  const keys = Object.keys(rootQuery as Record<string, unknown>).filter((k) =>
+    k.startsWith(PLACE_DETAIL_QUERY_PREFIX),
+  );
+  const key = keys.find((k) => k.includes(`"id":"${placeId}"`)) ?? keys[0];
+  return key ? (rootQuery as Record<string, unknown>)[key] : undefined;
 }
 
 /**
@@ -265,13 +343,33 @@ function normalizeRating(score: unknown): number | null {
 }
 
 /**
- * Apollo State 의 PlaceDetailBase:{placeId} 노드를 PlaceBasicInfo 로 매핑한다.
+ * Apollo State 의 PlaceDetailBase:{placeId} 노드 + ROOT_QUERY.placeDetail(...) 노드를
+ * 합쳐 PlaceBasicInfo 로 매핑한다. 대표 키워드/소개글/예약 연동/메뉴 수/쿠폰 수는
+ * PlaceDetailBase 가 아니라 placeDetail 루트 아래(informationTab, naverBooking 등)에
+ * 있어 별도로 찾아야 한다(실측 확인, 2026-08-26).
+ *
+ * raw_data 포맷 변경 주의: 이전엔 raw={base 단일 객체}였고 이번부터 raw={base, placeDetail}이다.
+ * puzl_place_snapshots.raw_data 에는 두 포맷이 혼재하니 과거 raw_data 를 마이닝할 땐 분기할 것.
  */
 function mapPlaceBasicInfo(
   apolloState: Record<string, unknown>,
   placeId: string,
 ): PlaceBasicInfo {
   const base = apolloState[`PlaceDetailBase:${placeId}`];
+  const placeDetail = findPlaceDetailRoot(apolloState, placeId);
+
+  const topPhotosTotal = asNumber(readPath(placeDetail, 'topPhotos.total', apolloState));
+  const menus = readPath(placeDetail, 'menus', apolloState);
+
+  // naverBooking 노드 자체가 없으면(스키마 변경 등) "미연동"이 아니라 "판별 불가" —
+  // 이 진단으로 "예약 미연동" 경고를 낼 예정이므로 못 읽은 걸 미연동으로 잘못 알리면 안 된다.
+  const naverBooking = readPath(placeDetail, 'naverBooking', apolloState);
+  const hasNaverBookingNode = naverBooking !== undefined && naverBooking !== null;
+  const hasBookingUrl =
+    asString(readPath(placeDetail, 'naverBooking.naverBookingUrl', apolloState)) !== null;
+  const hasBookingBusinessId =
+    asString(readPath(placeDetail, 'naverBooking.bookingBusinessId', apolloState)) !== null;
+
   return {
     name: asString(readPath(base, 'name')) ?? `플레이스 ${placeId}`,
     address:
@@ -282,8 +380,16 @@ function mapPlaceBasicInfo(
     visitorReviewCount: asNumber(readPath(base, 'visitorReviewsTotal')),
     blogReviewCount: asNumber(readPath(base, 'cafeBlogReviewsTotal')),
     rating: normalizeRating(readPath(base, 'visitorReviewsScore')),
-    photoCount: countPhotoItems(apolloState),
-    raw: base,
+    photoCount: topPhotosTotal ?? countPhotoItems(apolloState),
+    keywordList: asStringArray(readPath(placeDetail, 'informationTab.keywordList', apolloState)),
+    description: asString(readPath(placeDetail, 'description', apolloState)),
+    hasReservation: hasNaverBookingNode ? hasBookingUrl || hasBookingBusinessId : null,
+    hasSmartOrder: hasNaverBookingNode
+      ? readPath(placeDetail, 'naverBooking.hasSmartOrder', apolloState) === true
+      : null,
+    menuCount: Array.isArray(menus) ? menus.length : null,
+    couponCount: asNumber(readPath(placeDetail, 'hasCoupon.count', apolloState)),
+    raw: { base, placeDetail },
   };
 }
 
