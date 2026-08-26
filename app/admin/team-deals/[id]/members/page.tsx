@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronDown, ChevronLeft } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronDown, ChevronLeft, Plus, Trash2 } from 'lucide-react'
 import {
   AdminDealMemberDetail,
   AdminDealMembersPayload,
@@ -13,8 +13,10 @@ import {
   MEMBER_STATUS_LABEL,
   MEMBER_STATUS_STYLE,
   QUESTION_TYPE_LABEL,
+  QUESTION_TYPE_OPTIONS,
   SURVEY_STATUS_LABEL,
   SURVEY_STATUS_STYLE,
+  SurveyQuestionType,
 } from '@/components/admin/team-deal-types'
 
 function formatDateTime(iso: string): string {
@@ -128,6 +130,211 @@ function SurveyAnswers({ member, questions }: { member: AdminDealMemberDetail; q
           </div>
         )
       })}
+    </div>
+  )
+}
+
+interface DraftQuestion {
+  id?: string
+  label: string
+  question_type: SurveyQuestionType
+  required: boolean
+}
+
+function DraftQuestionRow({
+  draft,
+  index,
+  total,
+  onChange,
+  onMove,
+  onRemove,
+}: {
+  draft: DraftQuestion
+  index: number
+  total: number
+  onChange: (patch: Partial<DraftQuestion>) => void
+  onMove: (delta: -1 | 1) => void
+  onRemove: () => void
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex flex-col">
+        <button
+          onClick={() => onMove(-1)}
+          disabled={index === 0}
+          className="text-[#6e6e73] hover:text-[#1d1d1f] disabled:opacity-30 transition-colors"
+          aria-label="위로 이동"
+        >
+          <ArrowUp className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={() => onMove(1)}
+          disabled={index === total - 1}
+          className="text-[#6e6e73] hover:text-[#1d1d1f] disabled:opacity-30 transition-colors"
+          aria-label="아래로 이동"
+        >
+          <ArrowDown className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <select
+        value={draft.question_type}
+        onChange={e => onChange({ question_type: e.target.value as SurveyQuestionType })}
+        className="rounded-[9px] border border-[#e0e0e0] px-2 py-1.5 text-[12px] text-[#1d1d1f] bg-white"
+      >
+        {QUESTION_TYPE_OPTIONS.map(option => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+      <input
+        value={draft.label}
+        onChange={e => onChange({ label: e.target.value })}
+        placeholder="질문을 입력하세요 (예: 매장 네이버 플레이스 링크를 알려주세요)"
+        className="flex-1 rounded-[9px] border border-[#e0e0e0] px-3 py-1.5 text-[13px] text-[#1d1d1f] focus:border-[#0066cc] focus:outline-none"
+      />
+      <label className="flex items-center gap-1 text-[12px] text-[#6e6e73] whitespace-nowrap cursor-pointer">
+        <input
+          type="checkbox"
+          checked={draft.required}
+          onChange={e => onChange({ required: e.target.checked })}
+          className="accent-[#0066cc]"
+        />
+        필수
+      </label>
+      <button
+        onClick={onRemove}
+        className="text-[#6e6e73] hover:text-red-600 transition-colors"
+        aria-label="문항 삭제"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </div>
+  )
+}
+
+function SurveyQuestionManager({
+  dealId,
+  questions,
+  answeredQuestionIds,
+  onSaved,
+}: {
+  dealId: string
+  questions: AdminSurveyQuestion[]
+  answeredQuestionIds: Set<string>
+  onSaved: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [drafts, setDrafts] = useState<DraftQuestion[]>([])
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setDrafts(questions.map(({ id, label, question_type, required }) => ({ id, label, question_type, required })))
+  }, [questions])
+
+  function updateDraft(index: number, patch: Partial<DraftQuestion>) {
+    setDrafts(current => current.map((draft, i) => (i === index ? { ...draft, ...patch } : draft)))
+  }
+
+  function moveDraft(index: number, delta: -1 | 1) {
+    setDrafts(current => {
+      const next = [...current]
+      const [moved] = next.splice(index, 1)
+      next.splice(index + delta, 0, moved)
+      return next
+    })
+  }
+
+  function removeDraft(index: number) {
+    const draft = drafts[index]
+    if (draft.id && answeredQuestionIds.has(draft.id)) {
+      const confirmed = window.confirm(
+        '이미 답변이 제출된 문항입니다. 삭제하면 신청자들의 해당 답변도 함께 삭제됩니다. 계속할까요?'
+      )
+      if (!confirmed) return
+    }
+    setDrafts(current => current.filter((_, i) => i !== index))
+  }
+
+  async function save() {
+    setSaving(true)
+    setSaveError(null)
+    try {
+      const res = await fetch(`/api/admin/team-deals/${dealId}/questions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questions: drafts.map((draft, index) => ({ ...draft, position: index })),
+        }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        setSaveError(body.error ?? '문항 저장에 실패했습니다')
+        return
+      }
+      onSaved()
+    } catch {
+      setSaveError('문항 저장 중 네트워크 오류가 발생했습니다')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="rounded-[18px] bg-white border border-[#e0e0e0] mb-4 overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#f5f5f7] transition-colors"
+      >
+        <div className="text-left">
+          <p className="text-[14px] font-semibold text-[#1d1d1f]">설문 문항 관리</p>
+          <p className="text-[12px] text-[#6e6e73] mt-0.5">
+            신청자에게 요청할 이행 정보 · 현재 {questions.length}개 문항
+          </p>
+        </div>
+        <ChevronDown className={`h-4 w-4 text-[#6e6e73] transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="border-t border-[#e0e0e0] px-6 py-5 space-y-3">
+          {drafts.length === 0 && (
+            <p className="text-[13px] text-[#6e6e73]">
+              아직 문항이 없습니다. 문항을 추가하면 신청자의 &ldquo;내 팀구매&rdquo;에서 설문이 열립니다.
+            </p>
+          )}
+          {drafts.map((draft, index) => (
+            <DraftQuestionRow
+              key={draft.id ?? `new-${index}`}
+              draft={draft}
+              index={index}
+              total={drafts.length}
+              onChange={patch => updateDraft(index, patch)}
+              onMove={delta => moveDraft(index, delta)}
+              onRemove={() => removeDraft(index)}
+            />
+          ))}
+
+          {saveError && (
+            <p className="rounded-[11px] bg-red-50 px-4 py-2.5 text-[12px] font-medium text-red-600">{saveError}</p>
+          )}
+
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              onClick={() => setDrafts(current => [...current, { label: '', question_type: 'text', required: true }])}
+              className="inline-flex items-center gap-1 rounded-[9999px] border border-[#e0e0e0] px-4 py-1.5 text-[12px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              문항 추가
+            </button>
+            <button
+              onClick={save}
+              disabled={saving}
+              className="rounded-[9999px] bg-[#0066cc] px-5 py-1.5 text-[12px] font-semibold text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+            >
+              {saving ? '저장 중...' : '문항 저장'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -374,6 +581,15 @@ export default function AdminTeamDealMembersPage() {
               {payload.deal.current_count}/{payload.deal.target_count}개 · 신청자 {payload.members.length}명
             </p>
           </div>
+
+          <SurveyQuestionManager
+            dealId={dealId}
+            questions={payload.questions}
+            answeredQuestionIds={
+              new Set(payload.members.flatMap(member => member.responses.map(response => response.question_id)))
+            }
+            onSaved={load}
+          />
 
           {actionError && (
             <p className="mb-4 rounded-[11px] bg-red-50 px-4 py-2.5 text-[12px] font-medium text-red-600">
