@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { DEMO_USER_ID } from '@/lib/auth';
+import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/auth-server';
 import { PLATFORM_INFO, Platform } from '@/lib/hub';
 import { checkDuplicateAccount, attachBusinessNumbers } from '@/lib/hub-server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return unauthorizedResponse();
+
   const scope = req.nextUrl.searchParams.get('scope');
+  if (scope === 'all' && !sessionUser.isAdmin) return forbiddenResponse();
+
   let query = supabaseAdmin.from('ad_accounts').select('*').order('created_at', { ascending: false });
   if (scope !== 'all') {
-    query = query.eq('user_id', DEMO_USER_ID);
+    query = query.eq('user_id', sessionUser.id);
   }
   const { data, error } = await query;
 
@@ -24,6 +29,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return unauthorizedResponse();
+
   const body = await req.json() as {
     platform: Platform;
     account_id: string;
@@ -39,12 +47,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '지원하지 않는 플랫폼입니다' }, { status: 400 });
   }
 
-  const { isDuplicate, duplicateOfId } = await checkDuplicateAccount(platform, account_id, DEMO_USER_ID);
+  const { isDuplicate, duplicateOfId } = await checkDuplicateAccount(platform, account_id, sessionUser.id);
 
   const { data, error } = await supabaseAdmin
     .from('ad_accounts')
     .insert({
-      user_id: DEMO_USER_ID,
+      user_id: sessionUser.id,
       platform,
       account_id,
       account_name,

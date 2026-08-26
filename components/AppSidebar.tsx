@@ -1,8 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getCurrentUser } from '@/lib/auth';
+import { useUser } from '@/lib/hooks/useUser';
+import { createBrowserSupabase } from '@/lib/supabase/client';
 
 type NavItem = { icon: string; label: string; href: string };
 type NavSection = { label: string; items: NavItem[] };
@@ -42,9 +43,18 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+async function handleLogout(router: ReturnType<typeof useRouter>) {
+  const supabase = createBrowserSupabase();
+  await supabase.auth.signOut();
+  router.push('/login');
+}
+
 export default function AppSidebar() {
   const pathname = usePathname();
-  const user = getCurrentUser();
+  const router = useRouter();
+  const { user } = useUser();
+  const displayName = user?.profile.name?.trim() || '사장님';
+  const businessName = user?.profile.business_name?.trim() || '';
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-[240px] flex-col bg-[#111827]">
@@ -92,20 +102,21 @@ export default function AppSidebar() {
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 rounded-lg px-2 py-2">
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0066cc] text-[13px] font-semibold text-white">
-            {user.name[0]}
+            {displayName[0]}
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#111827] bg-green-500" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-medium text-white">
-              {user.name} 사장님
+              {displayName} 사장님
             </p>
             <p className="truncate text-[11px] text-gray-500">
-              {user.business_name}
+              {businessName}
             </p>
           </div>
         </div>
         <button
           type="button"
+          onClick={() => handleLogout(router)}
           className="mt-1 w-full rounded-lg px-2 py-1.5 text-left text-[12px] text-gray-500 transition hover:bg-white/5 hover:text-gray-300"
         >
           로그아웃

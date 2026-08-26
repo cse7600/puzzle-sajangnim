@@ -10,6 +10,9 @@ type VerificationResponse = {
   reviewer_note?: string | null
   submitted_at?: string
   reviewed_at?: string | null
+  tax_invoice_email?: string | null
+  business_address?: string | null
+  naver_place_url?: string | null
 }
 
 function SettingsSkeleton() {
@@ -203,6 +206,148 @@ function VerificationCardBody({ verification, onSubmitted }: { verification: Ver
   return <BusinessVerificationForm onSubmitted={onSubmitted} submitLabel="사업자 정보 등록하기" />
 }
 
+type BusinessInfoField = 'tax_invoice_email' | 'business_address' | 'naver_place_url'
+
+// 서버는 단일 error 메시지만 돌려주므로, 문구를 보고 어느 필드 문제인지 추정해 그 아래에 붙인다.
+// 매칭되지 않으면(예: 404/500) 폼 상단 배너로 표시한다.
+function classifyPatchError(message: string): BusinessInfoField | 'general' {
+  if (message.includes('이메일')) return 'tax_invoice_email'
+  if (message.includes('네이버 플레이스')) return 'naver_place_url'
+  return 'general'
+}
+
+async function patchBusinessInfo(body: {
+  tax_invoice_email: string
+  business_address: string
+  naver_place_url: string
+}): Promise<{ error?: string; field?: BusinessInfoField | 'general' }> {
+  const res = await fetch('/api/business-verification', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (res.ok) return {}
+  const responseBody = await res.json().catch(() => null)
+  const message = typeof responseBody?.error === 'string' ? responseBody.error : '사업장 부가 정보 저장에 실패했습니다'
+  return { error: message, field: classifyPatchError(message) }
+}
+
+function BusinessInfoSection({ verification }: { verification: VerificationResponse }) {
+  const [email, setEmail] = useState(verification.tax_invoice_email ?? '')
+  const [address, setAddress] = useState(verification.business_address ?? '')
+  const [naverUrl, setNaverUrl] = useState(verification.naver_place_url ?? '')
+  const [saving, setSaving] = useState(false)
+  const [savedAt, setSavedAt] = useState<number | null>(null)
+  const [fieldError, setFieldError] = useState<Partial<Record<BusinessInfoField, string>>>({})
+  const [generalError, setGeneralError] = useState<string | null>(null)
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    setFieldError({})
+    setGeneralError(null)
+    setSavedAt(null)
+    try {
+      const result = await patchBusinessInfo({
+        tax_invoice_email: email.trim(),
+        business_address: address.trim(),
+        naver_place_url: naverUrl.trim(),
+      })
+      if (result.error) {
+        if (result.field && result.field !== 'general') {
+          setFieldError({ [result.field]: result.error })
+        } else {
+          setGeneralError(result.error)
+        }
+      } else {
+        setSavedAt(Date.now())
+      }
+    } catch {
+      setGeneralError('네트워크 오류로 저장하지 못했습니다')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-6 mt-4">
+      <p className="text-[15px] font-semibold text-[#1d1d1f] mb-1">사업장 부가 정보</p>
+      <p className="text-[12px] text-[#6e6e73] mb-5">이 정보를 수정해도 사업자 승인 상태는 그대로 유지돼요.</p>
+
+      <form onSubmit={handleSave} className="space-y-4">
+        {generalError && (
+          <div className="rounded-[11px] bg-red-50 border border-red-200 px-4 py-3 text-[13px] text-red-600">
+            {generalError}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">세금계산서 수신 메일</label>
+          <input
+            type="email"
+            placeholder="tax@company.com"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+          />
+          {fieldError.tax_invoice_email && (
+            <p className="mt-1.5 text-[12px] text-red-600">{fieldError.tax_invoice_email}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">사업장 정보</label>
+          <p className="text-[12px] text-[#6e6e73] mb-2">
+            네이버 플레이스 링크 또는 사업장 주소 중 하나만 입력해도 도움이 돼요. 둘 다 입력하면 더 정확해요.
+          </p>
+          <input
+            type="url"
+            placeholder="https://naver.me/xxxxxxx"
+            value={naverUrl}
+            onChange={e => setNaverUrl(e.target.value)}
+            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+          />
+          {fieldError.naver_place_url && (
+            <p className="mt-1.5 text-[12px] text-red-600">{fieldError.naver_place_url}</p>
+          )}
+          <input
+            type="text"
+            placeholder="사업장 주소"
+            value={address}
+            onChange={e => setAddress(e.target.value)}
+            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors mt-2"
+          />
+          {fieldError.business_address && (
+            <p className="mt-1.5 text-[12px] text-red-600">{fieldError.business_address}</p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-[9999px] bg-[#0066cc] px-5 py-2.5 text-[14px] font-medium text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+          >
+            {saving ? '저장 중...' : '저장'}
+          </button>
+          {savedAt && <span className="text-[12px] text-green-600">저장됐어요</span>}
+        </div>
+      </form>
+    </div>
+  )
+}
+
+function BusinessInfoUnavailableNote() {
+  return (
+    <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-6 mt-4">
+      <p className="text-[15px] font-semibold text-[#1d1d1f] mb-1">사업장 부가 정보</p>
+      <p className="text-[13px] text-[#6e6e73]">
+        사업자 정보를 먼저 등록해야 세금계산서 수신 메일과 사업장 정보를 입력할 수 있어요.
+      </p>
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const { verification, loadError, reload } = useVerification()
 
@@ -230,6 +375,12 @@ export default function SettingsPage() {
           </div>
           <VerificationCardBody verification={verification} onSubmitted={reload} />
         </div>
+      )}
+
+      {verification && (
+        verification.status === 'not_submitted'
+          ? <BusinessInfoUnavailableNote />
+          : <BusinessInfoSection key={verification.submitted_at ?? 'unknown'} verification={verification} />
       )}
     </div>
   )

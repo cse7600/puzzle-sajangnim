@@ -1,9 +1,9 @@
 'use client'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Platform, PLATFORM_INFO, ConnectionStatus } from '@/lib/hub'
 import AccountStatusBadges from '@/components/hub/AccountStatusBadges'
 import TransferGuide from '@/components/hub/TransferGuide'
-import StatementCard, { StatementSummary } from '@/components/hub/StatementCard'
+import SettlementTable, { PaybackLineItem } from '@/components/hub/SettlementTable'
 import NaverCredentialsModal from '@/components/hub/NaverCredentialsModal'
 
 interface AdAccount {
@@ -18,20 +18,11 @@ interface AdAccount {
   cost_verification_status: 'not_configured' | 'configured' | 'verified' | 'failed'
 }
 
-interface Payback {
-  id: string
-  amount: number
-  period: string
-  status: 'pending' | 'confirmed' | 'paid'
-  scheduled_pay_date: string | null
-  ad_accounts: { platform: string; account_name: string }
-}
-
 type Tab = 'accounts' | 'statements' | 'guide'
 
 export default function HubPage() {
   const [accounts, setAccounts] = useState<AdAccount[]>([])
-  const [paybacks, setPaybacks] = useState<Payback[]>([])
+  const [paybacks, setPaybacks] = useState<PaybackLineItem[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -64,24 +55,6 @@ export default function HubPage() {
     .filter(p => p.status !== 'paid')
     .reduce((sum, p) => sum + p.amount, 0)
   const confirmedPayback = paybacks.filter(p => p.status === 'confirmed').reduce((sum, p) => sum + p.amount, 0)
-
-  const statements: StatementSummary[] = useMemo(() => {
-    const byPeriod = new Map<string, Payback[]>()
-    for (const p of paybacks) {
-      const list = byPeriod.get(p.period) ?? []
-      list.push(p)
-      byPeriod.set(p.period, list)
-    }
-    return Array.from(byPeriod.entries())
-      .map(([period, rows]) => ({
-        period,
-        totalAmount: rows.reduce((sum, r) => sum + r.amount, 0),
-        scheduledPayDate: rows[0].scheduled_pay_date,
-        status: rows.every(r => r.status === 'paid') ? 'paid' : rows[0].status,
-        accountCount: rows.length,
-      }))
-      .sort((a, b) => b.period.localeCompare(a.period))
-  }, [paybacks])
 
   async function handleSubmit() {
     setSubmitting(true)
@@ -305,15 +278,7 @@ export default function HubPage() {
             <>
               <h3 className="text-[16px] font-semibold text-[#1d1d1f] mb-1">정산 내역</h3>
               <p className="text-[13px] text-[#6e6e73] mb-5">퍼즐코퍼레이션이 발행하는 월별 정산내역서예요. PDF로도 받아보실 수 있어요.</p>
-              {statements.length === 0 ? (
-                <div className="text-center py-12 text-[#6e6e73]">
-                  <p className="text-[15px]">아직 발행된 정산 내역이 없습니다</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  {statements.map(s => <StatementCard key={s.period} summary={s} />)}
-                </div>
-              )}
+              <SettlementTable paybacks={paybacks} />
             </>
           )}
 

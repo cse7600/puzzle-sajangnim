@@ -6,6 +6,7 @@ import { Bell, Menu, ChevronRight } from 'lucide-react';
 
 type AppTopBarProps = {
   title: string;
+  qaMode?: boolean;
 };
 
 type PointBreakdown = {
@@ -25,7 +26,12 @@ function formatP(amount: number) {
   return `${amount.toLocaleString('ko-KR')}P`;
 }
 
-export default function AppTopBar({ title }: AppTopBarProps) {
+async function exitQaMode() {
+  await fetch('/api/admin/qa-mode', { method: 'DELETE' });
+  window.location.assign('/admin');
+}
+
+export default function AppTopBar({ title, qaMode }: AppTopBarProps) {
   const [, setMobileOpen] = useState(false);
   const [summary, setSummary] = useState<PointsSummary | null>(null);
   const [pointsOpen, setPointsOpen] = useState(false);
@@ -76,6 +82,19 @@ export default function AppTopBar({ title }: AppTopBarProps) {
       </div>
 
       <div className="flex items-center gap-4">
+        {qaMode && (
+          <div className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[12px] font-semibold text-amber-700">
+            <span>QA 모드 — 관리자</span>
+            <button
+              type="button"
+              onClick={exitQaMode}
+              className="rounded-full bg-amber-600 px-2 py-0.5 text-[11px] font-medium text-white transition hover:bg-amber-700"
+            >
+              종료
+            </button>
+          </div>
+        )}
+
         <button
           type="button"
           aria-label="알림"

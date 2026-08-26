@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin, supabaseAdminCached } from '@/lib/supabase-admin'
-import { DEMO_USER_ID } from '@/lib/auth'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 import { awardPoints } from '@/lib/points'
 
 const db = supabaseAdmin as any
@@ -29,6 +29,9 @@ async function findBannedWord(text: string): Promise<string | null> {
 }
 
 export async function GET(req: Request) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const category = new URL(req.url).searchParams.get('category')
 
   let query = dbRead
@@ -70,6 +73,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const { title, body, category = 'general' } = await req.json()
   if (!body || !body.trim()) {
     return NextResponse.json({ error: '내용을 입력해주세요.' }, { status: 400 })
@@ -86,7 +92,7 @@ export async function POST(req: Request) {
   const cleanCategory = VALID_CATEGORIES.includes(category) ? category : 'general'
   const { data: post, error } = await db
     .from('puzl_community_posts')
-    .insert({ user_id: DEMO_USER_ID, title: title?.trim() || null, body: body.trim(), category: cleanCategory })
+    .insert({ user_id: sessionUser.id, title: title?.trim() || null, body: body.trim(), category: cleanCategory })
     .select('id,title,body,category,likes,created_at')
     .single()
 
@@ -95,7 +101,7 @@ export async function POST(req: Request) {
   }
 
   const { awarded, capped } = await awardPoints({
-    userId: DEMO_USER_ID,
+    userId: sessionUser.id,
     requestedAmount: POST_POINTS,
     type: 'community',
     description: '사장님 모임 글 작성',

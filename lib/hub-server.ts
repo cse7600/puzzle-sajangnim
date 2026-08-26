@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { Platform } from '@/lib/hub';
+import { Platform, CostBasis } from '@/lib/hub';
 import type { Database, Json } from '@/types/database';
 
 type AdAccountRow = Database['public']['Tables']['ad_accounts']['Row'];
@@ -82,4 +82,34 @@ export async function attachBusinessNumbers(
   }
 
   return accounts.map(a => ({ ...a, business_number: latestByUser.get(a.user_id) ?? null }));
+}
+
+/**
+ * (ad_account_id, period) 단위로 확인된 광고비(ad_account_monthly_spend)를 한 번에 조회해 Map으로 만든다.
+ * generate/paybacks GET/statement 라우트가 각자 N+1로 조회하지 않도록 공용으로 둔다.
+ */
+export async function fetchMonthlySpendMap(
+  period: string,
+  adAccountIds: string[]
+): Promise<Map<string, number>> {
+  if (adAccountIds.length === 0) return new Map();
+
+  const { data } = await supabaseAdmin
+    .from('ad_account_monthly_spend')
+    .select('ad_account_id, spend_vat_excluded')
+    .eq('period', period)
+    .in('ad_account_id', adAccountIds);
+
+  return new Map((data ?? []).map(row => [row.ad_account_id, row.spend_vat_excluded]));
+}
+
+/** 확인된 광고비가 있으면 그 값을 쓰고 cost_basis='verified', 없으면 신고값을 쓰고 'submitted'. */
+export function resolveSpendBasis(
+  monthlySpendMap: Map<string, number>,
+  adAccountId: string,
+  fallbackSpend: number
+): { spend: number; costBasis: CostBasis } {
+  const verified = monthlySpendMap.get(adAccountId);
+  if (verified !== undefined) return { spend: verified, costBasis: 'verified' };
+  return { spend: fallbackSpend, costBasis: 'submitted' };
 }

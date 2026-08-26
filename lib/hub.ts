@@ -33,6 +33,36 @@ export const CONNECTION_STATUS_LABEL: Record<ConnectionStatus, string> = {
   connected: '연동 완료',
 };
 
+export type PaybackStatus = 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid';
+
+export const PAYBACK_STATUSES: PaybackStatus[] = ['draft', 'review_1', 'review_2', 'confirmed', 'paid'];
+
+// 어드민용 5단계 라벨
+export const PAYBACK_STATUS_LABEL: Record<PaybackStatus, string> = {
+  draft: '초안',
+  review_1: '1차검토',
+  review_2: '2차검토',
+  confirmed: '확정',
+  paid: '지급완료',
+};
+
+// 사장님(사용자) 노출용 — 내부 검토 단계는 뭉뚱그려 "처리중"
+export const PAYBACK_USER_STATUS_LABEL: Record<PaybackStatus, string> = {
+  draft: '처리중',
+  review_1: '처리중',
+  review_2: '처리중',
+  confirmed: '확정',
+  paid: '지급완료',
+};
+
+export type CostBasis = 'submitted' | 'verified' | 'manual';
+
+export const COST_BASIS_LABEL: Record<CostBasis, string> = {
+  submitted: '제출값',
+  verified: '확인됨',
+  manual: '수동 조정',
+};
+
 /** period("YYYY-MM")에 대한 기본 지급 예정일 = 다음 달의 settlementDay일. */
 export function computeScheduledPayDate(period: string, settlementDay: number): string {
   const [year, month] = period.split('-').map(Number);

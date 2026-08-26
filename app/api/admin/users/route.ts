@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { usersReadOnlyAdmin, resolveBusinessName } from '@/lib/admin-users'
+import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/auth-server'
 
 export const runtime = 'nodejs'
 
@@ -28,6 +29,10 @@ async function fetchLatestVerificationStatusByUser(): Promise<Map<string, Verifi
 }
 
 export async function GET() {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+  if (!sessionUser.isAdmin) return forbiddenResponse()
+
   const { data: users, error } = await usersReadOnlyAdmin
     .from('users')
     .select('id, email, profile_data, created_at')

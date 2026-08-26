@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { DEMO_USER_ID } from '@/lib/auth'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
 const db = supabaseAdmin as any
 
@@ -35,10 +35,13 @@ function buildEmptySummary() {
 }
 
 export async function GET() {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const { data, error } = await db
     .from('point_transactions')
     .select('amount, type')
-    .eq('user_id', DEMO_USER_ID)
+    .eq('user_id', sessionUser.id)
 
   if (error) return NextResponse.json(buildEmptySummary(), { status: 200 })
 

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { analyzeReceiptImage } from '@/lib/claude'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const formData = await req.formData()
   const imageFile = formData.get('image')
 

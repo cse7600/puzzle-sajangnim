@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { DEMO_USER_ID } from '@/lib/auth';
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server';
 
 /**
  * 비용 자동 확인용 네이버 검색광고 API 키 등록.
  * 지금은 저장만 한다 — 실제로 이 키로 비용을 폴링해오는 배치는 별도 후속 작업(OAuth 연동과 함께).
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return unauthorizedResponse();
+
   const body = await req.json() as { customerId?: string; apiKey?: string; secretKey?: string };
   const { customerId, apiKey, secretKey } = body;
 
@@ -18,7 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .from('ad_accounts')
     .select('id, user_id, platform')
     .eq('id', params.id)
-    .eq('user_id', DEMO_USER_ID)
+    .eq('user_id', sessionUser.id)
     .single();
 
   if (fetchError || !account) {

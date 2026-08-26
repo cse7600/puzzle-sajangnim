@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { DEMO_USER_ID } from '@/lib/auth'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
 const db = supabaseAdmin as any
 
@@ -40,10 +40,13 @@ async function buildRefereeNameMap(refereeIds: string[]): Promise<Map<string, st
 }
 
 export async function GET() {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const { data: earningRows, error } = await db
     .from('referral_earnings')
     .select('id, referee_id, source_type, source_amount, earned_amount, earning_rate, is_paid, created_at')
-    .eq('referrer_id', DEMO_USER_ID)
+    .eq('referrer_id', sessionUser.id)
     .order('created_at', { ascending: false })
     .limit(30)
 

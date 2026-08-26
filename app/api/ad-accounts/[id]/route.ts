@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import type { Database } from '@/types/database';
 import { TRANSFER_STATUSES, CONNECTION_STATUSES, TransferStatus, ConnectionStatus } from '@/lib/hub';
 import { maskAdAccountCredentials } from '@/lib/hub-server';
+import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/auth-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,15 @@ function validateConnectionStatus(update: AdAccountUpdate, value: unknown): stri
   return null;
 }
 
+function validatePaybackRate(update: AdAccountUpdate, value: unknown): string | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 100) {
+    return '수수료율은 0에서 100 사이의 숫자여야 합니다';
+  }
+  // column이 numeric이므로 소수 둘째 자리까지만 유지한다.
+  update.payback_rate = Math.round(value * 100) / 100;
+  return null;
+}
+
 // 화이트리스트에 없는 키는 무시한다 — 요청 본문을 그대로 spread하지 않아 mass-assignment를 막는다.
 const FIELD_VALIDATORS: Record<string, (update: AdAccountUpdate, value: unknown) => string | null> = {
   contact_email: validateContactEmail,
@@ -57,6 +67,7 @@ const FIELD_VALIDATORS: Record<string, (update: AdAccountUpdate, value: unknown)
   tax_invoice_direct: validateTaxInvoiceDirect,
   transfer_status: validateTransferStatus,
   connection_status: validateConnectionStatus,
+  payback_rate: validatePaybackRate,
 };
 
 function buildAdAccountUpdate(body: Record<string, unknown>): { update: AdAccountUpdate; error: string | null } {
@@ -77,8 +88,12 @@ async function parseJsonBody(req: NextRequest): Promise<{ body: unknown; error: 
   }
 }
 
-// 어드민 전용. 현재 앱 전체에 로그인 인증이 없어 이 라우트도 미인증 상태 — 감사 로드맵 Sprint 2(인증)에서 해소 예정.
+// 어드민 전용 — 담당자 연락처/이관 상태 등을 직접 조정하는 관리자 도구.
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return unauthorizedResponse();
+  if (!sessionUser.isAdmin) return forbiddenResponse();
+
   const { body: rawBody, error: parseError } = await parseJsonBody(req);
   if (parseError) {
     return NextResponse.json({ error: parseError }, { status: 400 });
@@ -115,7 +130,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json(maskAdAccountCredentials(data));
 }
 
+// 어드민 전용 — 관리자 상세 화면에서만 사용하며, 소유자 무관하게 단건 계정을 조회한다.
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return unauthorizedResponse();
+  if (!sessionUser.isAdmin) return forbiddenResponse();
+
   const { data, error } = await supabaseAdmin
     .from('ad_accounts')
     .select('*')

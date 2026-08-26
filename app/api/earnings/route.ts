@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { DEMO_USER_ID } from '@/lib/auth'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
 const db = supabaseAdmin as any
 
@@ -36,11 +36,11 @@ function buildSection(
   return { key, label, amount, items }
 }
 
-async function fetchPaybacks(status: 'pending' | 'paid'): Promise<EarningItem[]> {
+async function fetchPaybacks(userId: string, status: 'pending' | 'paid'): Promise<EarningItem[]> {
   const { data } = await db
     .from('paybacks')
     .select('amount, period, created_at')
-    .eq('user_id', DEMO_USER_ID)
+    .eq('user_id', userId)
     .eq('status', status)
     .order('created_at', { ascending: false })
   return (data ?? []).map((row: { amount: number; period: string | null; created_at: string }) => ({
@@ -50,11 +50,11 @@ async function fetchPaybacks(status: 'pending' | 'paid'): Promise<EarningItem[]>
   }))
 }
 
-async function fetchReceipts(status: 'pending' | 'approved'): Promise<EarningItem[]> {
+async function fetchReceipts(userId: string, status: 'pending' | 'approved'): Promise<EarningItem[]> {
   const { data } = await db
     .from('receipts')
     .select('store_name, points_earned, created_at')
-    .eq('user_id', DEMO_USER_ID)
+    .eq('user_id', userId)
     .eq('status', status)
     .order('created_at', { ascending: false })
   return (data ?? []).map((row: { store_name: string | null; points_earned: number; created_at: string }) => ({
@@ -64,11 +64,11 @@ async function fetchReceipts(status: 'pending' | 'approved'): Promise<EarningIte
   }))
 }
 
-async function fetchReferrals(isPaid: boolean): Promise<EarningItem[]> {
+async function fetchReferrals(userId: string, isPaid: boolean): Promise<EarningItem[]> {
   const { data } = await db
     .from('referral_earnings')
     .select('source_type, earned_amount, created_at')
-    .eq('referrer_id', DEMO_USER_ID)
+    .eq('referrer_id', userId)
     .eq('is_paid', isPaid)
     .order('created_at', { ascending: false })
   return (data ?? []).map((row: { source_type: string | null; earned_amount: number; created_at: string }) => ({
@@ -78,11 +78,11 @@ async function fetchReferrals(isPaid: boolean): Promise<EarningItem[]> {
   }))
 }
 
-async function fetchRewards(): Promise<EarningItem[]> {
+async function fetchRewards(userId: string): Promise<EarningItem[]> {
   const { data } = await db
     .from('point_transactions')
     .select('description, amount, created_at')
-    .eq('user_id', DEMO_USER_ID)
+    .eq('user_id', userId)
     .eq('type', 'reward')
     .order('created_at', { ascending: false })
   return (data ?? []).map((row: { description: string | null; amount: number; created_at: string }) => ({
@@ -92,11 +92,11 @@ async function fetchRewards(): Promise<EarningItem[]> {
   }))
 }
 
-async function buildExpected(): Promise<EarningSection[]> {
+async function buildExpected(userId: string): Promise<EarningSection[]> {
   const [payback, receipt, referral] = await Promise.all([
-    fetchPaybacks('pending'),
-    fetchReceipts('pending'),
-    fetchReferrals(false),
+    fetchPaybacks(userId, 'pending'),
+    fetchReceipts(userId, 'pending'),
+    fetchReferrals(userId, false),
   ])
   return [
     buildSection('payback', '광고 페이백 (예상)', payback),
@@ -105,11 +105,11 @@ async function buildExpected(): Promise<EarningSection[]> {
   ]
 }
 
-async function buildConfirmed(): Promise<EarningSection[]> {
+async function buildConfirmed(userId: string): Promise<EarningSection[]> {
   const [payback, receipt, referral] = await Promise.all([
-    fetchPaybacks('paid'),
-    fetchReceipts('approved'),
-    fetchReferrals(true),
+    fetchPaybacks(userId, 'paid'),
+    fetchReceipts(userId, 'approved'),
+    fetchReferrals(userId, true),
   ])
   return [
     buildSection('payback', '광고 페이백 (지급 완료)', payback),
@@ -118,20 +118,23 @@ async function buildConfirmed(): Promise<EarningSection[]> {
   ]
 }
 
-async function buildRewards(): Promise<EarningSection[]> {
-  const rewards = await fetchRewards()
+async function buildRewards(userId: string): Promise<EarningSection[]> {
+  const rewards = await fetchRewards(userId)
   return [buildSection('reward', '리워드 적립', rewards)]
 }
 
 export async function GET(req: Request) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const { searchParams } = new URL(req.url)
   const tab = searchParams.get('tab') ?? 'expected'
 
   try {
     let sections: EarningSection[]
-    if (tab === 'confirmed') sections = await buildConfirmed()
-    else if (tab === 'rewards') sections = await buildRewards()
-    else sections = await buildExpected()
+    if (tab === 'confirmed') sections = await buildConfirmed(sessionUser.id)
+    else if (tab === 'rewards') sections = await buildRewards(sessionUser.id)
+    else sections = await buildExpected(sessionUser.id)
 
     const total = sections.reduce((sum, section) => sum + section.amount, 0)
     const body: EarningsResponse = { tab, total, sections }

@@ -1,7 +1,7 @@
 import path from 'path';
 import { Document, Page, View, Text, StyleSheet, Font } from '@react-pdf/renderer';
 import { COMPANY_INFO } from '@/lib/company-info';
-import { PLATFORM_INFO, Platform } from '@/lib/hub';
+import { PLATFORM_INFO, Platform, CostBasis, COST_BASIS_LABEL, PAYBACK_USER_STATUS_LABEL } from '@/lib/hub';
 
 const FONTS_DIR = path.join(process.cwd(), 'assets', 'fonts');
 
@@ -41,17 +41,11 @@ const styles = StyleSheet.create({
   docFooter: { position: 'absolute', bottom: 30, left: 40, right: 40, textAlign: 'center', fontSize: 7, color: '#a1a1a6' },
 });
 
-const PAYBACK_STATUS_LABEL: Record<string, string> = {
-  pending: '처리중',
-  confirmed: '확정',
-  paid: '지급완료',
-};
-
 export interface StatementRow {
   platform: string;
   accountName: string;
   spend: number;
-  costBasis: 'submitted' | 'verified';
+  costBasis: CostBasis;
   paybackRate: number;
   amount: number;
 }
@@ -118,7 +112,9 @@ export function SettlementStatementDocument({ data }: { data: StatementData }) {
           </View>
           <View>
             <Text style={styles.metaLabel}>지급 상태</Text>
-            <Text style={styles.metaValue}>{PAYBACK_STATUS_LABEL[data.status] ?? data.status}</Text>
+            <Text style={styles.metaValue}>
+              {PAYBACK_USER_STATUS_LABEL[data.status as keyof typeof PAYBACK_USER_STATUS_LABEL] ?? data.status}
+            </Text>
           </View>
         </View>
 
@@ -135,7 +131,7 @@ export function SettlementStatementDocument({ data }: { data: StatementData }) {
               <Text style={styles.colPlatform}>{PLATFORM_INFO[row.platform as Platform]?.name ?? row.platform}</Text>
               <Text style={styles.colAccount}>{row.accountName}</Text>
               <Text style={styles.colSpend}>
-                {formatWon(row.spend)} ({row.costBasis === 'verified' ? '확인됨' : '제출값'})
+                {formatWon(row.spend)} ({COST_BASIS_LABEL[row.costBasis]})
               </Text>
               <Text style={styles.colRate}>{row.paybackRate}%</Text>
               <Text style={styles.colAmount}>{formatPoint(row.amount)}</Text>

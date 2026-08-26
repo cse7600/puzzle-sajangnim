@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/auth-server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return unauthorizedResponse();
+
   const { data, error } = await supabaseAdmin
     .from('settlement_settings')
     .select('*')
@@ -18,6 +22,10 @@ export async function GET() {
 
 // 어드민 전용 — 정산 마감일(기본 10일) 변경.
 export async function PATCH(req: NextRequest) {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return unauthorizedResponse();
+  if (!sessionUser.isAdmin) return forbiddenResponse();
+
   const body = await req.json() as { settlement_day?: number };
   const day = body.settlement_day;
 

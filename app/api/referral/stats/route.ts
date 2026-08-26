@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { DEMO_USER_ID } from '@/lib/auth'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
 const db = supabaseAdmin as any
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://puzzle.kr'
@@ -55,10 +55,13 @@ function sumEarnings(rows: { earned_amount: number | null; is_paid: boolean }[])
 }
 
 export async function GET() {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const { data: me } = await db
     .from('users')
     .select('profile_data')
-    .eq('id', DEMO_USER_ID)
+    .eq('id', sessionUser.id)
     .single()
 
   const referralCode = (me?.profile_data as ProfileData | null)?.referral_code ?? ''
@@ -66,7 +69,7 @@ export async function GET() {
   const { data: friendRows, error: friendError } = await db
     .from('users')
     .select('id, profile_data, created_at')
-    .eq('profile_data->>referred_by', DEMO_USER_ID)
+    .eq('profile_data->>referred_by', sessionUser.id)
     .order('created_at', { ascending: false })
 
   if (friendError) return NextResponse.json(EMPTY, { status: 200 })
@@ -76,7 +79,7 @@ export async function GET() {
   const { data: earningRows, error: earningError } = await db
     .from('referral_earnings')
     .select('earned_amount, is_paid')
-    .eq('referrer_id', DEMO_USER_ID)
+    .eq('referrer_id', sessionUser.id)
 
   if (earningError) {
     return NextResponse.json(

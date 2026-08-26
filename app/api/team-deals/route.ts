@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
-const DEMO_USER_ID = 'demo-user-001'
+// 목 데이터 표시용 플레이스홀더 — 실제 유저 UUID가 아니며 DB에 쓰이지 않는다.
+const MOCK_CREATOR_ID = 'mock-deal-creator'
 
 const DEAL_1_HTML = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
   <h2 style="font-size: 20px; font-weight: 700; color: #1d1d1f; margin-bottom: 16px;">AI 블로그 프리미엄 공동구매 패키지</h2>
@@ -54,7 +56,7 @@ const DEAL_1_HTML = `<div style="font-family: sans-serif; max-width: 600px; marg
 const MOCK_DEALS = [
   {
     id: 'deal-1',
-    creator_id: DEMO_USER_ID,
+    creator_id: MOCK_CREATOR_ID,
     title: 'AI 블로그 프리미엄 6개월',
     description: '키워드 자동화 + 원클릭 발행 포함',
     category: 'blog',
@@ -103,6 +105,9 @@ const MOCK_DEALS = [
 ]
 
 export async function GET() {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   try {
     const { data, error } = await supabase
       .from('team_deals')
@@ -120,13 +125,16 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const body = await req.json()
   const { title, description, category, original_price, deal_price, leader_price, target_count, deadline_hours = 24 } = body
 
   const deadline = new Date(Date.now() + deadline_hours * 60 * 60 * 1000).toISOString()
 
   const newDealInsert = {
-    creator_id: DEMO_USER_ID,
+    creator_id: sessionUser.id,
     title,
     description,
     category,
@@ -146,7 +154,7 @@ export async function POST(req: NextRequest) {
     // 방장 자동 참여
     await supabase.from('team_deal_members').insert({
       deal_id: data.id,
-      user_id: DEMO_USER_ID,
+      user_id: sessionUser.id,
       is_leader: true,
       price_paid: Number(leader_price),
     })

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin, supabaseAdminCached } from '@/lib/supabase-admin'
-import { DEMO_USER_ID } from '@/lib/auth'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 import {
   parsePlaceId,
   resolveShortUrl,
@@ -45,6 +45,9 @@ function toSnapshotRow(registrationId: string, info: PlaceBasicInfo) {
 }
 
 export async function POST(req: Request) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const { place_url } = await req.json()
   if (!place_url || !place_url.trim()) {
     return NextResponse.json({ error: '플레이스 URL을 입력해주세요.' }, { status: 400 })
@@ -73,7 +76,7 @@ export async function POST(req: Request) {
     .from('puzl_place_registrations')
     .upsert(
       {
-        user_id: DEMO_USER_ID,
+        user_id: sessionUser.id,
         naver_place_id: placeId,
         place_url: place_url.trim(),
         name: placeInfo?.name ?? `플레이스 ${placeId}`,
@@ -119,10 +122,13 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const { data: registrations, error } = await dbRead
     .from('puzl_place_registrations')
     .select('*')
-    .eq('user_id', DEMO_USER_ID)
+    .eq('user_id', sessionUser.id)
     .order('created_at', { ascending: false })
 
   if (error || !registrations) {

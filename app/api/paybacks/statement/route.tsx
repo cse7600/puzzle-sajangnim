@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { DEMO_USER_ID, getCurrentUser } from '@/lib/auth';
-import { getSettlementDay } from '@/lib/hub-server';
+import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/auth-server';
+import { getSettlementDay, fetchMonthlySpendMap, resolveSpendBasis } from '@/lib/hub-server';
 import { SettlementStatementDocument, StatementData } from '@/lib/pdf/settlement-statement';
+import type { UserProfileData } from '@/lib/profile';
 
 export const dynamic = 'force-dynamic';
 
 const PERIOD_PATTERN = /^\d{4}-\d{2}$/;
 
 export async function GET(req: NextRequest) {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return unauthorizedResponse();
+
   const period = req.nextUrl.searchParams.get('period');
-  const userId = req.nextUrl.searchParams.get('user_id') ?? DEMO_USER_ID;
+  const requestedUserId = req.nextUrl.searchParams.get('user_id');
+  // user_id 쿼리 파라미터는 관리자가 타 사용자 정산서를 조회할 때만 허용한다.
+  // 일반 사용자가 이 값을 임의로 지정해 타인의 정산 PDF를 받아가지 못하도록 세션 유저로 강제한다.
+  if (requestedUserId && !sessionUser.isAdmin) return forbiddenResponse();
+  const userId = requestedUserId ?? sessionUser.id;
   if (!period || !PERIOD_PATTERN.test(period)) {
     return NextResponse.json({ error: 'period 쿼리 파라미터는 YYYY-MM 형식이어야 합니다' }, { status: 400 });
   }
@@ -19,7 +27,7 @@ export async function GET(req: NextRequest) {
   const [{ data: paybacks, error }, settlementDay] = await Promise.all([
     supabaseAdmin
       .from('paybacks')
-      .select('*, ad_accounts(platform, account_name, monthly_spend, payback_rate, verified_spend)')
+      .select('*, ad_accounts(platform, account_name, monthly_spend, payback_rate)')
       .eq('user_id', userId)
       .eq('period', period),
     getSettlementDay(),
@@ -32,20 +40,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: '해당 기간의 정산 내역이 없습니다' }, { status: 404 });
   }
 
-  // 데모 유저는 로컬 상수에서 이름을 채우고, 그 외 유저는 인증 붙기 전까지 일반 명칭으로 표기(Sprint 2에서 users 조회로 교체)
-  const isDemoUser = userId === DEMO_USER_ID;
-  const demoUser = getCurrentUser();
-  const recipientName = isDemoUser ? demoUser.name : '사장님';
-  const businessName = isDemoUser ? demoUser.business_name : '등록된 사업장';
+  const { data: userRow } = await supabaseAdmin
+    .from('users')
+    .select('profile_data')
+    .eq('id', userId)
+    .maybeSingle();
+  const profile = (userRow?.profile_data ?? null) as UserProfileData | null;
+  const recipientName = profile?.name ?? '사장님';
+  const businessName = profile?.business_name ?? '등록된 사업장';
 
+  const monthlySpendMap = await fetchMonthlySpendMap(period, paybacks.map(p => p.ad_account_id));
   const rows = paybacks.map(p => {
     const account = p.ad_accounts as unknown as {
-      platform: string; account_name: string; monthly_spend: number; payback_rate: number; verified_spend: number | null;
+      platform: string; account_name: string; monthly_spend: number; payback_rate: number;
     };
+    // 실제 표시용 광고비는 확인값 우선(resolveSpendBasis)이되, 기준(costBasis) 라벨은
+    // 관리자가 amount를 수동 조정했을 수 있는 payback 자체의 cost_basis를 신뢰한다.
+    const { spend } = resolveSpendBasis(monthlySpendMap, p.ad_account_id, account.monthly_spend);
     return {
       platform: account.platform,
       accountName: account.account_name,
-      spend: account.verified_spend ?? account.monthly_spend,
+      spend,
       costBasis: p.cost_basis,
       paybackRate: account.payback_rate,
       amount: p.amount,

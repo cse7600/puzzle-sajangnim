@@ -6,6 +6,9 @@ export interface Database {
       users: {
         Row: {
           id: string
+          email: string
+          role: string | null
+          profile_data: Json
           kakao_id: string | null
           name: string
           phone: string | null
@@ -18,6 +21,9 @@ export interface Database {
           updated_at: string
         }
         Insert: {
+          email?: string
+          role?: string | null
+          profile_data?: Json
           kakao_id?: string | null
           name: string
           phone?: string | null
@@ -27,6 +33,9 @@ export interface Database {
           referred_by?: string | null
         }
         Update: {
+          email?: string
+          role?: string | null
+          profile_data?: Json
           kakao_id?: string | null
           name?: string
           phone?: string | null
@@ -35,6 +44,7 @@ export interface Database {
           referral_code?: string
           referred_by?: string | null
           total_points?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -110,6 +120,9 @@ export interface Database {
           reviewer_note: string | null
           submitted_at: string
           reviewed_at: string | null
+          tax_invoice_email: string | null
+          business_address: string | null
+          naver_place_url: string | null
         }
         Insert: {
           user_id: string
@@ -119,6 +132,9 @@ export interface Database {
           reviewer_note?: string | null
           submitted_at?: string
           reviewed_at?: string | null
+          tax_invoice_email?: string | null
+          business_address?: string | null
+          naver_place_url?: string | null
         }
         Update: {
           user_id?: string
@@ -128,6 +144,9 @@ export interface Database {
           reviewer_note?: string | null
           submitted_at?: string
           reviewed_at?: string | null
+          tax_invoice_email?: string | null
+          business_address?: string | null
+          naver_place_url?: string | null
         }
         Relationships: [
           {
@@ -146,35 +165,86 @@ export interface Database {
           ad_account_id: string
           amount: number
           period: string
-          status: 'pending' | 'confirmed' | 'paid'
+          status: 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid'
           processed_at: string | null
           created_at: string
           scheduled_pay_date: string | null
-          cost_basis: 'submitted' | 'verified'
+          cost_basis: 'submitted' | 'verified' | 'manual'
+          reviewed_by_1: string | null
+          reviewed_at_1: string | null
+          reviewed_by_2: string | null
+          reviewed_at_2: string | null
+          confirmed_by: string | null
+          confirmed_at: string | null
         }
         Insert: {
           user_id: string
           ad_account_id: string
           amount: number
           period: string
-          status: 'pending' | 'confirmed' | 'paid'
+          status: 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid'
           processed_at?: string | null
           scheduled_pay_date?: string | null
-          cost_basis?: 'submitted' | 'verified'
+          cost_basis?: 'submitted' | 'verified' | 'manual'
+          reviewed_by_1?: string | null
+          reviewed_at_1?: string | null
+          reviewed_by_2?: string | null
+          reviewed_at_2?: string | null
+          confirmed_by?: string | null
+          confirmed_at?: string | null
         }
         Update: {
           user_id?: string
           ad_account_id?: string
           amount?: number
           period?: string
-          status?: 'pending' | 'confirmed' | 'paid'
+          status?: 'draft' | 'review_1' | 'review_2' | 'confirmed' | 'paid'
           processed_at?: string | null
           scheduled_pay_date?: string | null
-          cost_basis?: 'submitted' | 'verified'
+          cost_basis?: 'submitted' | 'verified' | 'manual'
+          reviewed_by_1?: string | null
+          reviewed_at_1?: string | null
+          reviewed_by_2?: string | null
+          reviewed_at_2?: string | null
+          confirmed_by?: string | null
+          confirmed_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: 'paybacks_ad_account_id_fkey'
+            columns: ['ad_account_id']
+            isOneToOne: false
+            referencedRelation: 'ad_accounts'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      ad_account_monthly_spend: {
+        Row: {
+          id: string
+          ad_account_id: string
+          period: string
+          spend_vat_excluded: number
+          entered_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          ad_account_id: string
+          period: string
+          spend_vat_excluded: number
+          entered_by?: string | null
+        }
+        Update: {
+          ad_account_id?: string
+          period?: string
+          spend_vat_excluded?: number
+          entered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'ad_account_monthly_spend_ad_account_id_fkey'
             columns: ['ad_account_id']
             isOneToOne: false
             referencedRelation: 'ad_accounts'
@@ -355,6 +425,7 @@ export type User = Database['public']['Tables']['users']['Row']
 export type AdAccount = Database['public']['Tables']['ad_accounts']['Row']
 export type BusinessVerification = Database['public']['Tables']['business_verifications']['Row']
 export type Payback = Database['public']['Tables']['paybacks']['Row']
+export type AdAccountMonthlySpend = Database['public']['Tables']['ad_account_monthly_spend']['Row']
 export type Receipt = Database['public']['Tables']['receipts']['Row']
 export type TeamDeal = Database['public']['Tables']['team_deals']['Row']
 export type TeamDealMember = Database['public']['Tables']['team_deal_members']['Row']

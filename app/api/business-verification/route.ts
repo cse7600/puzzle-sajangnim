@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { DEMO_USER_ID } from '@/lib/auth'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
+import { validateBusinessInfoPatch, BusinessInfoPatchBody } from '@/lib/business-info'
 
 export const runtime = 'nodejs'
 
@@ -57,19 +58,19 @@ async function readAndValidateCertificate(
   return { buffer, extension: signature.extension, contentType: signature.contentType }
 }
 
-async function uploadCertificate(buffer: Buffer, extension: string, contentType: string) {
-  const storagePath = `${DEMO_USER_ID}/${Date.now()}-${randomUUID()}.${extension}`
+async function uploadCertificate(userId: string, buffer: Buffer, extension: string, contentType: string) {
+  const storagePath = `${userId}/${Date.now()}-${randomUUID()}.${extension}`
   const { error } = await supabaseAdmin.storage
     .from('business-certificates')
     .upload(storagePath, buffer, { contentType, upsert: false })
   return { storagePath, error }
 }
 
-async function insertVerificationRow(businessNumber: string, storagePath: string) {
+async function insertVerificationRow(userId: string, businessNumber: string, storagePath: string) {
   const { data, error } = await supabaseAdmin
     .from('business_verifications')
     .insert({
-      user_id: DEMO_USER_ID,
+      user_id: userId,
       business_number: businessNumber,
       certificate_path: storagePath,
       status: 'pending',
@@ -85,6 +86,9 @@ async function insertVerificationRow(businessNumber: string, storagePath: string
 }
 
 export async function POST(req: NextRequest) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const formData = await req.formData()
   const businessNumber = formData.get('business_number')
 
@@ -101,7 +105,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { buffer, extension, contentType } = certificateCheck
-  const { storagePath, error: uploadError } = await uploadCertificate(buffer, extension, contentType)
+  const { storagePath, error: uploadError } = await uploadCertificate(sessionUser.id, buffer, extension, contentType)
   if (uploadError) {
     return NextResponse.json(
       { error: `사업자 등록증 업로드에 실패했습니다: ${uploadError.message}` },
@@ -109,7 +113,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const inserted = await insertVerificationRow(businessNumber, storagePath)
+  const inserted = await insertVerificationRow(sessionUser.id, businessNumber, storagePath)
   if ('error' in inserted) {
     return NextResponse.json(
       { error: `사업자 정보 등록에 실패했습니다: ${inserted.error}` },
@@ -124,10 +128,13 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const { data, error } = await supabaseAdmin
     .from('business_verifications')
     .select('*')
-    .eq('user_id', DEMO_USER_ID)
+    .eq('user_id', sessionUser.id)
     .order('submitted_at', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -146,5 +153,59 @@ export async function GET() {
     reviewer_note: data.reviewer_note,
     submitted_at: data.submitted_at,
     reviewed_at: data.reviewed_at,
+    tax_invoice_email: data.tax_invoice_email,
+    business_address: data.business_address,
+    naver_place_url: data.naver_place_url,
   })
+}
+
+// 사장님 본인이 부가 정보(세금계산서 이메일/사업장 주소/네이버 플레이스 URL)만 수정한다.
+// status/reviewer_note 등 심사 관련 컬럼은 validateBusinessInfoPatch가 화이트리스트로 걸러
+// 절대 건드리지 않으므로, 이 PATCH로는 승인(approved) 상태가 되돌아가지 않는다.
+export async function PATCH(req: NextRequest) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
+  let body: BusinessInfoPatchBody
+  try {
+    body = (await req.json()) as BusinessInfoPatchBody
+  } catch {
+    return NextResponse.json({ error: '요청 본문이 올바른 JSON 형식이 아닙니다' }, { status: 400 })
+  }
+
+  const { data: latest, error: latestError } = await supabaseAdmin
+    .from('business_verifications')
+    .select('id')
+    .eq('user_id', sessionUser.id)
+    .order('submitted_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (latestError) {
+    return NextResponse.json({ error: '사업자 인증 정보를 불러오지 못했습니다' }, { status: 500 })
+  }
+  if (!latest) {
+    return NextResponse.json({ error: '등록된 사업자 인증 정보가 없습니다' }, { status: 404 })
+  }
+
+  const { update, error: validationError } = validateBusinessInfoPatch(body)
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 })
+  }
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json({ error: '변경할 값이 없습니다' }, { status: 400 })
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('business_verifications')
+    .update(update)
+    .eq('id', latest.id)
+    .select('tax_invoice_email, business_address, naver_place_url')
+    .single()
+
+  if (error || !data) {
+    return NextResponse.json({ error: '사업자 부가 정보 수정에 실패했습니다' }, { status: 500 })
+  }
+
+  return NextResponse.json(data)
 }

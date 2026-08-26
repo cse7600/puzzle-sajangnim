@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { DEMO_USER_ID } from '@/lib/auth'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 import { awardPoints } from '@/lib/points'
 
 const db = supabaseAdmin as any
@@ -15,6 +15,9 @@ async function findBannedWord(text: string): Promise<string | null> {
 }
 
 export async function GET(req: Request) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const postId = new URL(req.url).searchParams.get('post_id')
   if (!postId) return NextResponse.json({ error: 'post_id가 필요합니다.' }, { status: 400 })
 
@@ -30,6 +33,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const { post_id, body } = await req.json()
   if (!post_id || !body || !body.trim()) {
     return NextResponse.json({ error: '댓글 내용을 입력해주세요.' }, { status: 400 })
@@ -45,7 +51,7 @@ export async function POST(req: Request) {
 
   const { data: comment, error } = await db
     .from('puzl_community_comments')
-    .insert({ post_id, user_id: DEMO_USER_ID, body: body.trim() })
+    .insert({ post_id, user_id: sessionUser.id, body: body.trim() })
     .select('id,post_id,body,created_at')
     .single()
 
@@ -54,7 +60,7 @@ export async function POST(req: Request) {
   }
 
   const { awarded } = await awardPoints({
-    userId: DEMO_USER_ID,
+    userId: sessionUser.id,
     requestedAmount: COMMENT_POINTS,
     type: 'community',
     description: '댓글 작성',

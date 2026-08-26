@@ -1,23 +1,36 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import type { UserProfileData } from '@/lib/profile'
 
-// 임시 더미 사용자 (카카오 로그인 구현 전)
-const DEMO_USER = {
-  id: 'demo-user-001',
-  name: '김테스트',
-  business_name: '강남 치킨집',
-  business_type: '외식업',
-  total_points: 23400,
-  referral_code: 'PUZZLE01',
-  kakao_id: null,
-  phone: '010-1234-5678',
-  referred_by: null,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
+export type CurrentUser = {
+  id: string
+  email: string
+  profile: UserProfileData
 }
 
 export function useUser() {
-  const [user, setUser] = useState(DEMO_USER)
-  const [loading, setLoading] = useState(false)
-  return { user, loading, setUser }
+  const [user, setUser] = useState<CurrentUser | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+
+    fetch('/api/users/me')
+      .then((res) => (res.ok ? (res.json() as Promise<CurrentUser>) : null))
+      .then((body) => {
+        if (!cancelled) setUser(body)
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return { user, loading }
 }

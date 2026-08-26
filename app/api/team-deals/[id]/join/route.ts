@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-
-// 유효한 UUID 형식 데모 사용자 (Auth 연동 전 시드값)
-const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
 const MOCK_DEALS: Record<string, { current_count: number; target_count: number; deal_price: number }> = {
   'deal-1': { current_count: 4, target_count: 5, deal_price: 297000 },
@@ -11,6 +9,9 @@ const MOCK_DEALS: Record<string, { current_count: number; target_count: number; 
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   try {
     const { data: deal } = await supabase
       .from('team_deals')

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { DEMO_USER_ID } from '@/lib/auth'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
 const db = supabaseAdmin as any
 
@@ -22,11 +22,14 @@ const MOCK_RECEIPTS = [
 ]
 
 export async function GET() {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   try {
     const { data, error } = await db
       .from('receipts')
       .select('*')
-      .eq('user_id', DEMO_USER_ID)
+      .eq('user_id', sessionUser.id)
       .order('created_at', { ascending: false })
     if (error) throw error
     return NextResponse.json(data?.length ? data : MOCK_RECEIPTS)
@@ -45,6 +48,9 @@ function parseOcrData(raw: FormDataEntryValue | null): Record<string, unknown> |
 }
 
 export async function POST(req: NextRequest) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const formData = await req.formData()
   const storeName = formData.get('store_name') as string
   const amount = Number(formData.get('amount') || 0)
@@ -61,7 +67,7 @@ export async function POST(req: NextRequest) {
   const imageUrl = `https://nbfoifegbamvtwffbuxv.supabase.co/storage/v1/object/public/receipts/demo-${Date.now()}.jpg`
 
   const insertFields: Record<string, unknown> = {
-    user_id: DEMO_USER_ID,
+    user_id: sessionUser.id,
     image_url: imageUrl,
     store_name: storeName,
     amount,

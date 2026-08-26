@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { computeScheduledPayDate } from '@/lib/hub';
-import { getSettlementDay } from '@/lib/hub-server';
+import { computeScheduledPayDate, PaybackStatus } from '@/lib/hub';
+import { getSettlementDay, fetchMonthlySpendMap, resolveSpendBasis } from '@/lib/hub-server';
+import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/auth-server';
 
 const PERIOD_PATTERN = /^\d{4}-\d{2}$/;
 
@@ -10,6 +11,10 @@ const PERIOD_PATTERN = /^\d{4}-\d{2}$/;
  * 이미 그 기간에 생성된 계정은 건너뛴다(중복 정산 방지). 어드민 전용.
  */
 export async function POST(req: NextRequest) {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return unauthorizedResponse();
+  if (!sessionUser.isAdmin) return forbiddenResponse();
+
   const body = await req.json() as { period?: string };
   const period = body.period;
 
@@ -22,7 +27,7 @@ export async function POST(req: NextRequest) {
       getSettlementDay(),
       supabaseAdmin
         .from('ad_accounts')
-        .select('id, user_id, monthly_spend, payback_rate, verified_spend')
+        .select('id, user_id, monthly_spend, payback_rate')
         .eq('transfer_status', 'completed'),
       supabaseAdmin.from('paybacks').select('ad_account_id').eq('period', period),
     ]);
@@ -38,17 +43,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ created: 0, skipped: (accounts ?? []).length });
   }
 
+  const monthlySpendMap = await fetchMonthlySpendMap(period, targets.map(a => a.id));
   const scheduledPayDate = computeScheduledPayDate(period, settlementDay);
+  const initialStatus: PaybackStatus = 'draft';
   const rows = targets.map(account => {
-    const spend = account.verified_spend ?? account.monthly_spend;
+    const { spend, costBasis } = resolveSpendBasis(monthlySpendMap, account.id, account.monthly_spend);
     return {
       user_id: account.user_id,
       ad_account_id: account.id,
       amount: Math.round((spend * account.payback_rate) / 100),
       period,
-      status: 'pending' as const,
+      status: initialStatus,
       scheduled_pay_date: scheduledPayDate,
-      cost_basis: (account.verified_spend != null ? 'verified' : 'submitted') as 'verified' | 'submitted',
+      cost_basis: costBasis,
     };
   });
 

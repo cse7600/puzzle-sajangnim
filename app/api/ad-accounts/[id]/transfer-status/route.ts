@@ -3,11 +3,16 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import type { Database } from '@/types/database';
 import { TRANSFER_STATUSES, CONNECTION_STATUSES, TransferStatus, ConnectionStatus } from '@/lib/hub';
 import { maskAdAccountCredentials } from '@/lib/hub-server';
+import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/auth-server';
 
 type AdAccountUpdate = Database['public']['Tables']['ad_accounts']['Update'];
 
-// 어드민 전용. 현재 앱 전체에 로그인 인증이 없어 이 라우트도 미인증 상태 — 감사 로드맵 Sprint 2(인증)에서 해소 예정.
+// 어드민 전용 — 이관/연동 상태를 관리자가 직접 조정.
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) return unauthorizedResponse();
+  if (!sessionUser.isAdmin) return forbiddenResponse();
+
   let body: { transfer_status?: string; connection_status?: string };
   try {
     body = await req.json();

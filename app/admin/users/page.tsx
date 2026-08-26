@@ -33,20 +33,41 @@ function UsersTableSkeleton() {
   )
 }
 
-function useAdminUsers() {
+async function describeFetchFailure(res: Response | null, thrown: unknown): Promise<string> {
+  if (!res) {
+    const reason = thrown instanceof Error ? thrown.message : String(thrown)
+    return `사용자 목록을 불러오지 못했습니다 (네트워크 오류: ${reason})`
+  }
+  const body = await res.text().catch(() => '')
+  return `사용자 목록을 불러오지 못했습니다 (HTTP ${res.status}${body ? ` — ${body.slice(0, 200)}` : ''})`
+}
+
+function useAdminUsers(router: ReturnType<typeof useRouter>) {
   const [users, setUsers] = useState<AdminUserListItem[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/admin/users')
-      .then(res => (res.ok ? res.json() : Promise.reject(new Error('불러오기 실패'))))
-      .then((data: AdminUserListItem[]) => !cancelled && setUsers(data))
-      .catch(() => !cancelled && setLoadError('사용자 목록을 불러오지 못했습니다'))
+    ;(async () => {
+      let res: Response | null = null
+      try {
+        res = await fetch('/api/admin/users')
+        if (res.status === 401 || res.status === 403) {
+          // 관리자 세션 만료(또는 QA 쿠키 잔여 등 인가 실패) — 데이터 문제로 오해하지 않도록 재로그인으로 보낸다.
+          router.replace('/admin/login?next=%2Fadmin%2Fusers')
+          return
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = (await res.json()) as AdminUserListItem[]
+        if (!cancelled) setUsers(data)
+      } catch (thrown) {
+        if (!cancelled) setLoadError(await describeFetchFailure(res, thrown))
+      }
+    })()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [router])
 
   return { users, loadError }
 }
@@ -98,7 +119,7 @@ function UsersTable({ users, onSelect }: { users: AdminUserListItem[]; onSelect:
 
 export default function AdminUsersPage() {
   const router = useRouter()
-  const { users, loadError } = useAdminUsers()
+  const { users, loadError } = useAdminUsers(router)
 
   return (
     <div>

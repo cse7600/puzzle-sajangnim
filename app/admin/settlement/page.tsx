@@ -1,23 +1,182 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { PAYBACK_STATUSES, PAYBACK_STATUS_LABEL, COST_BASIS_LABEL, PaybackStatus, CostBasis } from '@/lib/hub'
+
+interface AdAccountSummary {
+  platform: string
+  account_name: string
+  monthly_spend: number
+  payback_rate: number
+  verified_spend: number | null
+}
 
 interface Payback {
   id: string
   user_id: string
+  ad_account_id: string
   amount: number
   period: string
-  status: 'pending' | 'confirmed' | 'paid'
+  status: PaybackStatus
+  cost_basis: CostBasis
   scheduled_pay_date: string | null
-  cost_basis: 'submitted' | 'verified'
-  ad_accounts: { platform: string; account_name: string }
+  processed_at: string | null
+  created_at: string
+  reviewed_by_1: string | null
+  reviewed_at_1: string | null
+  reviewed_by_2: string | null
+  reviewed_at_2: string | null
+  confirmed_by: string | null
+  confirmed_at: string | null
+  spend_basis_amount: number
+  ad_accounts: AdAccountSummary | null
 }
-
-const STATUS_OPTIONS = ['pending', 'confirmed', 'paid'] as const
-const STATUS_LABEL: Record<string, string> = { pending: '처리중', confirmed: '확정', paid: '지급완료' }
 
 function currentPeriod(): string {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
+function formatDate(value: string | null): string {
+  return value ? new Date(value).toLocaleDateString('ko-KR') : '-'
+}
+
+function shortActor(id: string | null): string {
+  return id ? `${id.slice(0, 8)}…` : '-'
+}
+
+function CostBasisBadge({ payback }: { payback: Payback }) {
+  const rate = payback.ad_accounts?.payback_rate ?? 0
+  const computed = Math.round(payback.spend_basis_amount * (rate / 100))
+  const delta = payback.amount - computed
+
+  if (payback.cost_basis === 'manual') {
+    return (
+      <div className="space-y-0.5">
+        <span className="inline-block rounded-pill bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+          {COST_BASIS_LABEL.manual}
+        </span>
+        <p className="text-[11px] text-muted-light">
+          계산값 {computed.toLocaleString()}P ({delta >= 0 ? '+' : ''}{delta.toLocaleString()}P 차이)
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-0.5">
+      <span className="text-[12px] text-muted">{COST_BASIS_LABEL[payback.cost_basis]}</span>
+      <p className="text-[11px] text-muted-light">{payback.spend_basis_amount.toLocaleString()}원 기준 · {rate}%</p>
+    </div>
+  )
+}
+
+function AuditTrail({ payback }: { payback: Payback }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="text-[12px]">
+      <button type="button" onClick={() => setOpen(prev => !prev)} className="text-muted underline decoration-dotted">
+        {open ? '접기' : '이력 보기'}
+      </button>
+      {open && (
+        <dl className="mt-1 space-y-0.5 text-[11px] text-muted-light">
+          <div className="flex justify-between gap-3">
+            <dt>1차검토</dt>
+            <dd>{formatDate(payback.reviewed_at_1)} · {shortActor(payback.reviewed_by_1)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt>2차검토</dt>
+            <dd>{formatDate(payback.reviewed_at_2)} · {shortActor(payback.reviewed_by_2)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt>확정</dt>
+            <dd>{formatDate(payback.confirmed_at)} · {shortActor(payback.confirmed_by)}</dd>
+          </div>
+        </dl>
+      )}
+    </div>
+  )
+}
+
+function AmountEditor({ payback, onSaved }: { payback: Payback; onSaved: (updated: Partial<Payback>) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(String(payback.amount))
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function startEdit() {
+    setValue(String(payback.amount))
+    setError(null)
+    setEditing(true)
+  }
+
+  async function save() {
+    const parsed = Number(value)
+    if (!Number.isInteger(parsed) || parsed < 0) {
+      setError('0 이상의 정수를 입력하세요')
+      return
+    }
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/paybacks/${payback.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: parsed }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        setError(body.error ?? '금액 저장에 실패했습니다')
+        return
+      }
+      onSaved(body as Partial<Payback>)
+      setEditing(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={startEdit}
+        className="font-medium text-[#0066cc] underline decoration-dotted underline-offset-2"
+      >
+        {payback.amount.toLocaleString()}P
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          min={0}
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          disabled={saving}
+          className="w-24 rounded-[7px] border border-hairline px-2 py-1 text-[12px] outline-none focus:border-primary"
+        />
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="rounded-pill bg-primary px-2 py-1 text-[11px] font-medium text-ink disabled:opacity-40"
+        >
+          {saving ? '저장 중' : '저장'}
+        </button>
+        <button type="button" onClick={() => setEditing(false)} disabled={saving} className="text-[11px] text-muted-light">
+          취소
+        </button>
+      </div>
+      {error && <p className="text-[11px] text-red-600">{error}</p>}
+    </div>
+  )
+}
+
+function updatePaybackInList(prev: Payback[], id: string, patch: Partial<Payback>): Payback[] {
+  return prev.map(p => (p.id === id ? { ...p, ...patch } : p))
 }
 
 export default function AdminSettlementPage() {
@@ -81,15 +240,22 @@ export default function AdminSettlementPage() {
     }
   }
 
-  async function updateRecord(id: string, patch: { scheduled_pay_date?: string; status?: string }) {
+  async function updateRecord(id: string, patch: { scheduled_pay_date?: string; status?: PaybackStatus }) {
     const res = await fetch(`/api/paybacks/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patch),
     })
+    const body = await res.json()
     if (res.ok) {
-      setPaybacks(prev => prev.map(p => p.id === id ? { ...p, ...patch } as Payback : p))
+      setPaybacks(prev => updatePaybackInList(prev, id, body as Partial<Payback>))
+    } else {
+      showToast(body.error ?? '정산 내역 수정에 실패했습니다')
     }
+  }
+
+  function handleAmountSaved(id: string, patch: Partial<Payback>) {
+    setPaybacks(prev => updatePaybackInList(prev, id, patch))
   }
 
   return (
@@ -153,6 +319,7 @@ export default function AdminSettlementPage() {
         ) : paybacks.length === 0 ? (
           <div className="p-8 text-center text-[#6e6e73] text-[14px]">생성된 정산 내역이 없습니다</div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead className="bg-[#f5f5f7] border-b border-[#e0e0e0]">
               <tr>
@@ -162,16 +329,19 @@ export default function AdminSettlementPage() {
                 <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">금액</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">지급 예정일</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">상태</th>
+                <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">검토 이력</th>
                 <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">PDF</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e0e0e0]">
               {paybacks.map(p => (
-                <tr key={p.id} className="hover:bg-[#f5f5f7] transition-colors">
+                <tr key={p.id} className="hover:bg-[#f5f5f7] transition-colors align-top">
                   <td className="px-4 py-3 text-[#1d1d1f]">{p.period}</td>
                   <td className="px-4 py-3 text-[#1d1d1f]">{p.ad_accounts?.account_name}</td>
-                  <td className="px-4 py-3 text-[#6e6e73]">{p.cost_basis === 'verified' ? '확인됨' : '제출값'}</td>
-                  <td className="px-4 py-3 font-medium text-[#0066cc]">{p.amount.toLocaleString()}P</td>
+                  <td className="px-4 py-3"><CostBasisBadge payback={p} /></td>
+                  <td className="px-4 py-3">
+                    <AmountEditor payback={p} onSaved={patch => handleAmountSaved(p.id, patch)} />
+                  </td>
                   <td className="px-4 py-3">
                     <input
                       type="date"
@@ -183,12 +353,13 @@ export default function AdminSettlementPage() {
                   <td className="px-4 py-3">
                     <select
                       value={p.status}
-                      onChange={e => updateRecord(p.id, { status: e.target.value })}
+                      onChange={e => updateRecord(p.id, { status: e.target.value as PaybackStatus })}
                       className="rounded-[7px] border border-[#e0e0e0] px-2 py-1 text-[12px] outline-none focus:border-[#0066cc]"
                     >
-                      {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+                      {PAYBACK_STATUSES.map(s => <option key={s} value={s}>{PAYBACK_STATUS_LABEL[s]}</option>)}
                     </select>
                   </td>
+                  <td className="px-4 py-3"><AuditTrail payback={p} /></td>
                   <td className="px-4 py-3">
                     <a
                       href={`/api/paybacks/statement?period=${p.period}&user_id=${p.user_id}`}
@@ -203,6 +374,7 @@ export default function AdminSettlementPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

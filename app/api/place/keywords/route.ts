@@ -2,23 +2,37 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin, supabaseAdminCached } from '@/lib/supabase-admin'
-import { DEMO_USER_ID } from '@/lib/auth'
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
 const db = supabaseAdmin as any
 const dbRead = supabaseAdminCached as any
 
-// registration 이 데모 유저 소유인지 확인 (타 유저 키워드 조작 차단)
-async function ownsRegistration(registrationId: string): Promise<boolean> {
+// registration 이 요청자 소유인지 확인 (타 유저 키워드 조작 차단)
+async function ownsRegistration(registrationId: string, userId: string): Promise<boolean> {
   const { data: registration } = await db
     .from('puzl_place_registrations')
     .select('id')
     .eq('id', registrationId)
-    .eq('user_id', DEMO_USER_ID)
+    .eq('user_id', userId)
     .maybeSingle()
   return Boolean(registration)
 }
 
+// 키워드가 속한 registration이 요청자 소유인지 확인 (타 유저 키워드 조회/삭제 차단)
+async function ownsKeyword(keywordId: string, userId: string): Promise<boolean> {
+  const { data: keywordRow } = await db
+    .from('puzl_place_keywords')
+    .select('registration_id')
+    .eq('id', keywordId)
+    .maybeSingle()
+  if (!keywordRow) return false
+  return ownsRegistration(keywordRow.registration_id, userId)
+}
+
 export async function POST(req: Request) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const { registration_id, keyword } = await req.json()
   if (!registration_id) {
     return NextResponse.json({ error: '등록된 플레이스를 선택해주세요.' }, { status: 400 })
@@ -26,7 +40,7 @@ export async function POST(req: Request) {
   if (!keyword || !keyword.trim()) {
     return NextResponse.json({ error: '키워드를 입력해주세요.' }, { status: 400 })
   }
-  if (!(await ownsRegistration(registration_id))) {
+  if (!(await ownsRegistration(registration_id, sessionUser.id))) {
     return NextResponse.json({ error: '등록된 플레이스를 찾을 수 없습니다.' }, { status: 404 })
   }
 
@@ -47,9 +61,15 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const id = new URL(req.url).searchParams.get('id')
   if (!id) {
     return NextResponse.json({ error: '삭제할 키워드 id가 필요합니다.' }, { status: 400 })
+  }
+  if (!(await ownsKeyword(id, sessionUser.id))) {
+    return NextResponse.json({ error: '삭제할 키워드를 찾을 수 없습니다.' }, { status: 404 })
   }
 
   const { error } = await db.from('puzl_place_keywords').delete().eq('id', id)
@@ -80,9 +100,15 @@ async function attachLatestRank(keywordRow: { id: string; keyword: string; is_ac
 }
 
 export async function GET(req: Request) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
   const registrationId = new URL(req.url).searchParams.get('registration_id')
   if (!registrationId) {
     return NextResponse.json({ error: 'registration_id가 필요합니다.' }, { status: 400 })
+  }
+  if (!(await ownsRegistration(registrationId, sessionUser.id))) {
+    return NextResponse.json({ error: '등록된 플레이스를 찾을 수 없습니다.' }, { status: 404 })
   }
 
   const { data: keywords, error } = await dbRead
