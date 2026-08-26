@@ -17,6 +17,12 @@ type VerificationResponse = {
   account_number?: string | null
   account_holder?: string | null
   bankbook_copy_url?: string | null
+  industry_category?: string | null
+  founded_date?: string | null
+  annual_revenue_krw?: number | null
+  employee_count?: number | null
+  region_sido?: string | null
+  region_sigungu?: string | null
 }
 
 function SettingsSkeleton() {
@@ -433,6 +439,238 @@ function BankbookUpload({ initialUrl }: { initialUrl: string | null }) {
   )
 }
 
+const SIDO_OPTIONS = [
+  '서울특별시', '부산광역시', '대구광역시', '인천광역시', '광주광역시', '대전광역시', '울산광역시',
+  '세종특별자치시', '경기도', '강원특별자치도', '충청북도', '충청남도', '전북특별자치도', '전라남도',
+  '경상북도', '경상남도', '제주특별자치도',
+]
+
+type BusinessProfileField =
+  | 'industry_category'
+  | 'founded_date'
+  | 'annual_revenue_krw'
+  | 'employee_count'
+  | 'region_sido'
+  | 'region_sigungu'
+
+// classifyPatchError와 같은 방식 — 서버의 단일 error 문구로 필드를 추정한다.
+function classifyProfilePatchError(message: string): BusinessProfileField | 'general' {
+  if (message.includes('설립일')) return 'founded_date'
+  if (message.includes('연매출')) return 'annual_revenue_krw'
+  if (message.includes('직원 수')) return 'employee_count'
+  if (message.includes('시/도')) return 'region_sido'
+  return 'general'
+}
+
+async function patchBusinessProfile(body: {
+  industry_category: string
+  founded_date: string
+  annual_revenue_krw: number | null
+  employee_count: number | null
+  region_sido: string
+  region_sigungu: string
+}): Promise<{ error?: string; field?: BusinessProfileField | 'general' }> {
+  const res = await fetch('/api/business-verification', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (res.ok) return {}
+  const responseBody = await res.json().catch(() => null)
+  const message = typeof responseBody?.error === 'string' ? responseBody.error : '사업 프로필 저장에 실패했습니다'
+  return { error: message, field: classifyProfilePatchError(message) }
+}
+
+// 사용자는 "만원" 단위로 입력하고 서버엔 원 단위 정수로 보낸다 (예: 5000 → 50000000)
+function parseRevenueManwon(raw: string): { value: number | null } | { error: string } {
+  if (raw.trim() === '') return { value: null }
+  const manwon = Number(raw)
+  if (!Number.isFinite(manwon) || manwon < 0) return { error: '연매출은 0 이상의 숫자(만원 단위)로 입력해주세요' }
+  return { value: Math.round(manwon * 10000) }
+}
+
+function parseEmployeeCount(raw: string): { value: number | null } | { error: string } {
+  if (raw.trim() === '') return { value: null }
+  const count = Number(raw)
+  if (!Number.isInteger(count) || count < 0) return { error: '직원 수는 0 이상의 정수로 입력해주세요' }
+  return { value: count }
+}
+
+const profileInputClass =
+  'w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors'
+
+function ProfileFieldError({ message }: { message?: string }) {
+  if (!message) return null
+  return <p className="mt-1.5 text-[12px] text-red-600">{message}</p>
+}
+
+function BusinessProfileSection({ verification }: { verification: VerificationResponse }) {
+  const [industry, setIndustry] = useState(verification.industry_category ?? '')
+  const [foundedDate, setFoundedDate] = useState(verification.founded_date ?? '')
+  const [revenueManwon, setRevenueManwon] = useState(
+    verification.annual_revenue_krw != null ? String(verification.annual_revenue_krw / 10000) : ''
+  )
+  const [employees, setEmployees] = useState(
+    verification.employee_count != null ? String(verification.employee_count) : ''
+  )
+  const [sido, setSido] = useState(verification.region_sido ?? '')
+  const [sigungu, setSigungu] = useState(verification.region_sigungu ?? '')
+  const [saving, setSaving] = useState(false)
+  const [savedAt, setSavedAt] = useState<number | null>(null)
+  const [fieldError, setFieldError] = useState<Partial<Record<BusinessProfileField, string>>>({})
+  const [generalError, setGeneralError] = useState<string | null>(null)
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    setFieldError({})
+    setGeneralError(null)
+    setSavedAt(null)
+
+    const revenue = parseRevenueManwon(revenueManwon)
+    if ('error' in revenue) {
+      setFieldError({ annual_revenue_krw: revenue.error })
+      return
+    }
+    const employeeCount = parseEmployeeCount(employees)
+    if ('error' in employeeCount) {
+      setFieldError({ employee_count: employeeCount.error })
+      return
+    }
+
+    setSaving(true)
+    try {
+      const result = await patchBusinessProfile({
+        industry_category: industry.trim(),
+        founded_date: foundedDate,
+        annual_revenue_krw: revenue.value,
+        employee_count: employeeCount.value,
+        region_sido: sido,
+        region_sigungu: sigungu.trim(),
+      })
+      if (result.error) {
+        if (result.field && result.field !== 'general') {
+          setFieldError({ [result.field]: result.error })
+        } else {
+          setGeneralError(result.error)
+        }
+      } else {
+        setSavedAt(Date.now())
+      }
+    } catch {
+      setGeneralError('네트워크 오류로 저장하지 못했습니다')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-6 mt-4">
+      <p className="text-[15px] font-semibold text-[#1d1d1f] mb-1">사업 프로필</p>
+      <p className="text-[12px] text-[#6e6e73] mb-5">
+        업종·설립일·매출·지역 정보를 입력하면 나에게 맞는 정부지원사업 매칭 정확도가 올라가요.
+      </p>
+
+      <form onSubmit={handleSave} className="space-y-4">
+        {generalError && (
+          <div className="rounded-[11px] bg-red-50 border border-red-200 px-4 py-3 text-[13px] text-red-600">
+            {generalError}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">업종</label>
+          <input
+            type="text"
+            placeholder="예: 카페, 온라인 쇼핑몰, 소프트웨어 개발"
+            maxLength={50}
+            value={industry}
+            onChange={e => setIndustry(e.target.value)}
+            className={profileInputClass}
+          />
+          <ProfileFieldError message={fieldError.industry_category} />
+        </div>
+
+        <div className="flex gap-2">
+          <div className="w-1/2">
+            <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">설립일</label>
+            <input
+              type="date"
+              value={foundedDate}
+              onChange={e => setFoundedDate(e.target.value)}
+              className={profileInputClass}
+            />
+            <ProfileFieldError message={fieldError.founded_date} />
+          </div>
+          <div className="w-1/2">
+            <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">직원 수</label>
+            <input
+              type="number"
+              min={0}
+              step={1}
+              placeholder="예: 3"
+              value={employees}
+              onChange={e => setEmployees(e.target.value)}
+              className={profileInputClass}
+            />
+            <ProfileFieldError message={fieldError.employee_count} />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">연매출 (만원)</label>
+          <p className="text-[12px] text-[#6e6e73] mb-2">만원 단위로 입력해주세요. 예: 연매출 5천만원이면 5000</p>
+          <input
+            type="number"
+            min={0}
+            placeholder="예: 5000"
+            value={revenueManwon}
+            onChange={e => setRevenueManwon(e.target.value)}
+            className={profileInputClass}
+          />
+          <ProfileFieldError message={fieldError.annual_revenue_krw} />
+        </div>
+
+        <div>
+          <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">사업장 지역</label>
+          <div className="flex gap-2">
+            <select
+              value={sido}
+              onChange={e => setSido(e.target.value)}
+              className={`${profileInputClass} w-1/2 bg-white`}
+            >
+              <option value="">시/도 선택</option>
+              {SIDO_OPTIONS.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="시군구 (예: 강남구)"
+              maxLength={30}
+              value={sigungu}
+              onChange={e => setSigungu(e.target.value)}
+              className={`${profileInputClass} w-1/2`}
+            />
+          </div>
+          <ProfileFieldError message={fieldError.region_sido} />
+          <ProfileFieldError message={fieldError.region_sigungu} />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-[9999px] bg-[#0066cc] px-5 py-2.5 text-[14px] font-medium text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+          >
+            {saving ? '저장 중...' : '저장'}
+          </button>
+          {savedAt && <span className="text-[12px] text-green-600">저장됐어요</span>}
+        </div>
+      </form>
+    </div>
+  )
+}
+
 function BusinessInfoUnavailableNote() {
   return (
     <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-6 mt-4">
@@ -476,7 +714,12 @@ export default function SettingsPage() {
       {verification && (
         verification.status === 'not_submitted'
           ? <BusinessInfoUnavailableNote />
-          : <BusinessInfoSection key={verification.submitted_at ?? 'unknown'} verification={verification} />
+          : (
+            <>
+              <BusinessInfoSection key={verification.submitted_at ?? 'unknown'} verification={verification} />
+              <BusinessProfileSection key={`profile-${verification.submitted_at ?? 'unknown'}`} verification={verification} />
+            </>
+          )
       )}
     </div>
   )

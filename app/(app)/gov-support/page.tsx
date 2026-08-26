@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Building2, ExternalLink, MapPin, AlertCircle, BadgeCheck } from 'lucide-react'
+import { Building2, MapPin, AlertCircle, BadgeCheck, Search, ChevronRight } from 'lucide-react'
 
 interface MatchedListing {
   id: string
@@ -9,13 +9,13 @@ interface MatchedListing {
   org: string | null
   target: string | null
   deadline: string | null
-  url: string | null
   note?: string
 }
 
 interface MatchesResponse {
   profileComplete: boolean
   regionMissing?: boolean
+  searchQuery?: string
   totalCount?: number
   transactable?: MatchedListing[]
   directApply?: MatchedListing[]
@@ -28,7 +28,8 @@ function calcDday(deadline: string | null): { text: string; urgent: boolean } {
   today.setHours(0, 0, 0, 0)
   const end = new Date(`${deadline}T00:00:00`)
   const daysLeft = Math.round((end.getTime() - today.getTime()) / 86400000)
-  if (daysLeft <= 0) return { text: '오늘 마감', urgent: true }
+  if (daysLeft < 0) return { text: '마감됨', urgent: false }
+  if (daysLeft === 0) return { text: '오늘 마감', urgent: true }
   return { text: `D-${daysLeft}`, urgent: daysLeft <= 7 }
 }
 
@@ -58,27 +59,15 @@ function ListingMeta({ listing }: { listing: MatchedListing }) {
   )
 }
 
-function isSafeHttpUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url)
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
-  } catch {
-    return false
-  }
-}
-
-function ListingLink({ url }: { url: string | null }) {
-  if (!url || !isSafeHttpUrl(url)) return null
+function DetailLink({ listingId }: { listingId: string }) {
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="mt-3 inline-flex items-center gap-1.5 rounded-[9999px] border border-[#e0e0e0] px-3.5 py-1.5 text-[12px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition-colors"
+    <Link
+      href={`/gov-support/${listingId}`}
+      className="mt-3 inline-flex items-center gap-1 rounded-[9999px] border border-[#e0e0e0] px-3.5 py-1.5 text-[12px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition-colors"
     >
-      공고 원문 보기
-      <ExternalLink size={13} strokeWidth={1.8} />
-    </a>
+      자세히 보기
+      <ChevronRight size={13} strokeWidth={1.8} />
+    </Link>
   )
 }
 
@@ -101,7 +90,7 @@ function TransactableCard({ listing }: { listing: MatchedListing }) {
           <p className="text-[12px] text-[#1d1d1f]">{listing.note}</p>
         </div>
       )}
-      <ListingLink url={listing.url} />
+      <DetailLink listingId={listing.id} />
     </div>
   )
 }
@@ -116,7 +105,7 @@ function DirectApplyCard({ listing }: { listing: MatchedListing }) {
         </div>
         <DeadlineBadge deadline={listing.deadline} />
       </div>
-      <ListingLink url={listing.url} />
+      <DetailLink listingId={listing.id} />
     </div>
   )
 }
@@ -141,14 +130,45 @@ function ProfileMissingCard() {
 
 function RegionMissingBanner() {
   return (
-    <div className="mb-5 flex items-start gap-2.5 rounded-[11px] bg-amber-50 px-4 py-3">
-      <MapPin className="mt-0.5 shrink-0 text-amber-700" size={15} strokeWidth={2} />
-      <p className="text-[13px] text-amber-800">
-        지역 정보를 등록하면 우리 지역 지원사업까지 더 정확하게 매칭돼요.{' '}
-        <Link href="/settings" className="font-medium underline underline-offset-2">
-          지역 등록하기
-        </Link>
-      </p>
+    <div className="mb-5 flex items-start gap-3 rounded-[14px] border-2 border-amber-400 bg-amber-50 px-4 py-3.5">
+      <MapPin className="mt-0.5 shrink-0 text-amber-700" size={18} strokeWidth={2.2} />
+      <div>
+        <p className="text-[14px] font-semibold text-amber-900">
+          지역 정보가 없어서 정확한 매칭이 안 돼요
+        </p>
+        <p className="mt-0.5 text-[13px] text-amber-800">
+          지금은 전국 대상 공고만 보여드리고 있어요. 지역을 등록하면 우리 지역 지원사업까지
+          찾아드려요.{' '}
+          <Link href="/settings" className="font-semibold underline underline-offset-2">
+            지역 등록하기
+          </Link>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function SearchBox({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (nextValue: string) => void
+}) {
+  return (
+    <div className="relative mb-5">
+      <Search
+        size={16}
+        strokeWidth={2}
+        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6e6e73]"
+      />
+      <input
+        type="search"
+        value={value}
+        onChange={changeEvent => onChange(changeEvent.target.value)}
+        placeholder="전체 마케팅 지원사업에서 공고명으로 검색"
+        className="w-full rounded-[11px] border border-[#e0e0e0] bg-white py-2.5 pl-10 pr-4 text-[14px] text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-primary-dark focus:outline-none"
+      />
     </div>
   )
 }
@@ -176,39 +196,139 @@ function EmptyState({ regionMissing }: { regionMissing: boolean }) {
   )
 }
 
+function SearchResultSection({
+  matches,
+  query,
+}: {
+  matches: MatchesResponse
+  query: string
+}) {
+  const combined = [...(matches.transactable ?? []), ...(matches.directApply ?? [])]
+  if (combined.length === 0) {
+    return (
+      <div className="rounded-[18px] border border-[#e0e0e0] bg-white p-8 text-center">
+        <p className="text-[15px] font-medium text-[#1d1d1f]">
+          &lsquo;{query}&rsquo;에 해당하는 공고가 없어요
+        </p>
+        <p className="mt-1.5 text-[13px] text-[#6e6e73]">
+          다른 검색어로 시도해보세요. 마감된 공고는 검색 결과에 나오지 않아요.
+        </p>
+      </div>
+    )
+  }
+  return (
+    <section>
+      <h3 className="mb-3 text-[16px] font-semibold text-[#1d1d1f]">
+        &lsquo;{query}&rsquo; 검색결과 {matches.totalCount ?? combined.length}건
+      </h3>
+      <div className="space-y-3">
+        {(matches.transactable ?? []).map(listing => (
+          <TransactableCard key={listing.id} listing={listing} />
+        ))}
+        {(matches.directApply ?? []).map(listing => (
+          <DirectApplyCard key={listing.id} listing={listing} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function MatchedSections({ matches }: { matches: MatchesResponse }) {
+  const transactable = matches.transactable ?? []
+  const directApply = matches.directApply ?? []
+  const shownCount = transactable.length + directApply.length
+  const totalCount = matches.totalCount ?? 0
+
+  if (shownCount === 0) return <EmptyState regionMissing={Boolean(matches.regionMissing)} />
+
+  return (
+    <>
+      {transactable.length > 0 && (
+        <section className="mb-7">
+          <h3 className="mb-3 text-[16px] font-semibold text-[#1d1d1f]">
+            퍼즐이 바로 도와드릴 수 있어요
+          </h3>
+          <div className="space-y-3">
+            {transactable.map(listing => (
+              <TransactableCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        </section>
+      )}
+      {directApply.length > 0 && (
+        <section>
+          <h3 className="mb-1 text-[16px] font-semibold text-[#1d1d1f]">이런 지원사업도 있어요</h3>
+          <p className="mb-3 text-[12px] text-[#6e6e73]">
+            사장님이 직접 신청하는 사업이에요. 상세 내용에서 자격을 확인해보세요.
+          </p>
+          <div className="space-y-3">
+            {directApply.map(listing => (
+              <DirectApplyCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        </section>
+      )}
+      {totalCount > shownCount && (
+        <p className="mt-5 text-center text-[12px] text-[#6e6e73]">
+          매칭된 {totalCount}건 중 마감 임박순으로 {shownCount}건을 보여드리고 있어요
+        </p>
+      )}
+    </>
+  )
+}
+
 export default function GovSupportPage() {
   const [matches, setMatches] = useState<MatchesResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
-    fetch('/api/gov-support/matches')
+    const debounceTimer = setTimeout(() => setQuery(searchInput.trim()), 400)
+    return () => clearTimeout(debounceTimer)
+  }, [searchInput])
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setLoadError('')
+    const endpoint = query
+      ? `/api/gov-support/matches?q=${encodeURIComponent(query)}`
+      : '/api/gov-support/matches'
+    fetch(endpoint)
       .then(async res => {
         const body = (await res.json()) as MatchesResponse
         if (!res.ok) throw new Error(body.error || `지원사업 조회 실패 (HTTP ${res.status})`)
-        setMatches(body)
+        if (!cancelled) setMatches(body)
       })
       .catch((fetchError: unknown) => {
+        if (cancelled) return
         setLoadError(
           fetchError instanceof Error ? fetchError.message : '지원사업 목록을 불러오지 못했습니다'
         )
       })
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [query])
 
-  const transactable = matches?.transactable ?? []
-  const directApply = matches?.directApply ?? []
-  const shownCount = transactable.length + directApply.length
-  const totalCount = matches?.totalCount ?? 0
+  const profileComplete = Boolean(matches?.profileComplete)
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
+      <div className="mb-4">
         <h2 className="text-[22px] font-semibold text-[#1d1d1f]">정부지원사업 매칭</h2>
         <p className="mt-1 text-[13px] text-[#6e6e73]">
           사장님 사업 정보에 맞는 지원사업만 골라서 보여드려요
         </p>
       </div>
+
+      {matches?.regionMissing && <RegionMissingBanner />}
+      {profileComplete && <SearchBox value={searchInput} onChange={setSearchInput} />}
 
       {loading ? (
         <LoadingSkeleton />
@@ -219,48 +339,10 @@ export default function GovSupportPage() {
         </div>
       ) : !matches?.profileComplete ? (
         <ProfileMissingCard />
+      ) : query ? (
+        <SearchResultSection matches={matches} query={query} />
       ) : (
-        <>
-          {matches.regionMissing && <RegionMissingBanner />}
-          {shownCount === 0 ? (
-            <EmptyState regionMissing={Boolean(matches.regionMissing)} />
-          ) : (
-            <>
-              {transactable.length > 0 && (
-                <section className="mb-7">
-                  <h3 className="mb-3 text-[16px] font-semibold text-[#1d1d1f]">
-                    퍼즐이 바로 도와드릴 수 있어요
-                  </h3>
-                  <div className="space-y-3">
-                    {transactable.map(listing => (
-                      <TransactableCard key={listing.id} listing={listing} />
-                    ))}
-                  </div>
-                </section>
-              )}
-              {directApply.length > 0 && (
-                <section>
-                  <h3 className="mb-1 text-[16px] font-semibold text-[#1d1d1f]">
-                    이런 지원사업도 있어요
-                  </h3>
-                  <p className="mb-3 text-[12px] text-[#6e6e73]">
-                    사장님이 직접 신청하는 사업이에요. 공고 원문에서 자격을 확인해보세요.
-                  </p>
-                  <div className="space-y-3">
-                    {directApply.map(listing => (
-                      <DirectApplyCard key={listing.id} listing={listing} />
-                    ))}
-                  </div>
-                </section>
-              )}
-              {totalCount > shownCount && (
-                <p className="mt-5 text-center text-[12px] text-[#6e6e73]">
-                  매칭된 {totalCount}건 중 마감 임박순으로 {shownCount}건을 보여드리고 있어요
-                </p>
-              )}
-            </>
-          )}
-        </>
+        <MatchedSections matches={matches} />
       )}
     </div>
   )

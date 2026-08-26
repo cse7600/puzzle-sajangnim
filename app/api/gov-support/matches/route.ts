@@ -5,6 +5,9 @@ import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 export const runtime = 'nodejs'
 
 const MAX_MATCHES = 30
+const MAX_SEARCH_LENGTH = 100
+const LISTING_COLUMNS =
+  'pblanc_id, title, jrsdinsttnm, trgetnm, reqst_end_de, is_puzzle_transactable, puzzle_note'
 
 type MatchedListing = {
   id: string
@@ -12,12 +15,27 @@ type MatchedListing = {
   org: string | null
   target: string | null
   deadline: string | null
-  url: string | null
   note?: string
+}
+
+type ListingRow = {
+  pblanc_id: string
+  title: string
+  jrsdinsttnm: string | null
+  trgetnm: string | null
+  reqst_end_de: string | null
+  is_puzzle_transactable: boolean | null
+  puzzle_note: string | null
 }
 
 function todayInSeoul(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
+}
+
+function escapeLikePattern(raw: string): string {
+  // ilike 값은 독립된 쿼리 파라미터로 전달되므로 PostgREST 필터 문법(쉼표 등)에는 안전하지만,
+  // LIKE 와일드카드(% _)와 이스케이프 문자(\)는 사용자 입력 그대로 두면 패턴으로 해석된다.
+  return raw.replace(/[\\%_]/g, matched => `\\${matched}`)
 }
 
 async function fetchLatestRegion(userId: string) {
@@ -30,15 +48,16 @@ async function fetchLatestRegion(userId: string) {
     .maybeSingle()
 }
 
-async function fetchMatchingListings(regionSido: string | null) {
-  let query = supabaseAdmin
+function baseListingQuery() {
+  return supabaseAdmin
     .from('gov_support_listings')
-    .select(
-      'pblanc_id, title, url, jrsdinsttnm, trgetnm, reqst_end_de, is_puzzle_transactable, puzzle_note',
-      { count: 'exact' }
-    )
+    .select(LISTING_COLUMNS, { count: 'exact' })
     .eq('is_marketing', true)
     .or(`reqst_end_de.is.null,reqst_end_de.gte.${todayInSeoul()}`)
+}
+
+async function fetchMatchingListings(regionSido: string | null) {
+  let query = baseListingQuery()
 
   if (regionSido) {
     // region_sido는 lib/business-info.ts의 17개 시도 화이트리스트를 거쳐서만 저장되지만,
@@ -53,7 +72,36 @@ async function fetchMatchingListings(regionSido: string | null) {
     .limit(MAX_MATCHES)
 }
 
-export async function GET() {
+async function searchListings(searchTerm: string) {
+  return baseListingQuery()
+    .ilike('title', `%${escapeLikePattern(searchTerm)}%`)
+    .order('is_puzzle_transactable', { ascending: false })
+    .order('reqst_end_de', { ascending: true, nullsFirst: false })
+    .limit(MAX_MATCHES)
+}
+
+function splitByTransactable(listings: ListingRow[]) {
+  const transactable: MatchedListing[] = []
+  const directApply: MatchedListing[] = []
+  for (const listing of listings) {
+    const curated: MatchedListing = {
+      id: listing.pblanc_id,
+      title: listing.title,
+      org: listing.jrsdinsttnm,
+      target: listing.trgetnm,
+      deadline: listing.reqst_end_de,
+    }
+    if (listing.is_puzzle_transactable) {
+      if (listing.puzzle_note) curated.note = listing.puzzle_note
+      transactable.push(curated)
+    } else {
+      directApply.push(curated)
+    }
+  }
+  return { transactable, directApply }
+}
+
+export async function GET(request: Request) {
   const sessionUser = await getSessionUser()
   if (!sessionUser) return unauthorizedResponse()
 
@@ -65,33 +113,22 @@ export async function GET() {
     return NextResponse.json({ profileComplete: false })
   }
 
-  const { data: listings, error, count } = await fetchMatchingListings(profile.region_sido)
+  const rawQuery = new URL(request.url).searchParams.get('q') ?? ''
+  const searchTerm = rawQuery.trim().slice(0, MAX_SEARCH_LENGTH)
+
+  const { data: listings, error, count } = searchTerm
+    ? await searchListings(searchTerm)
+    : await fetchMatchingListings(profile.region_sido)
   if (error || !listings) {
     return NextResponse.json({ error: '지원사업 목록을 불러오지 못했습니다' }, { status: 500 })
   }
 
-  const transactable: MatchedListing[] = []
-  const directApply: MatchedListing[] = []
-  for (const listing of listings) {
-    const curated: MatchedListing = {
-      id: listing.pblanc_id,
-      title: listing.title,
-      org: listing.jrsdinsttnm,
-      target: listing.trgetnm,
-      deadline: listing.reqst_end_de,
-      url: listing.url,
-    }
-    if (listing.is_puzzle_transactable) {
-      if (listing.puzzle_note) curated.note = listing.puzzle_note
-      transactable.push(curated)
-    } else {
-      directApply.push(curated)
-    }
-  }
+  const { transactable, directApply } = splitByTransactable(listings as ListingRow[])
 
   return NextResponse.json({
     profileComplete: true,
     regionMissing: !profile.region_sido,
+    ...(searchTerm ? { searchQuery: searchTerm } : {}),
     totalCount: count ?? listings.length,
     transactable,
     directApply,

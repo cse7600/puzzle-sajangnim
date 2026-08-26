@@ -201,6 +201,9 @@ export interface Database {
           is_puzzle_transactable: boolean
           puzzle_note: string | null
           summary: string | null
+          apply_method: string | null
+          contact: string | null
+          source: string | null
         }
         Insert: {
           pblanc_id: string
@@ -214,6 +217,9 @@ export interface Database {
           is_puzzle_transactable?: boolean
           puzzle_note?: string | null
           summary?: string | null
+          apply_method?: string | null
+          contact?: string | null
+          source?: string | null
         }
         Update: {
           pblanc_id?: string
@@ -227,6 +233,9 @@ export interface Database {
           is_puzzle_transactable?: boolean
           puzzle_note?: string | null
           summary?: string | null
+          apply_method?: string | null
+          contact?: string | null
+          source?: string | null
         }
         Relationships: []
       }
