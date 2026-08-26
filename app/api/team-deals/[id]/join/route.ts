@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
+import { isUuid } from '@/lib/admin-users'
 
 const db = supabaseAdmin as any
 
 interface JoinResult {
   ok: boolean
-  reason?: 'not_found' | 'deal_not_active' | 'deal_expired' | 'deal_full' | 'already_joined' | 'insufficient_points'
+  reason?: 'invalid_quantity' | 'not_found' | 'deal_not_active' | 'deal_expired' | 'deal_full' | 'already_joined' | 'insufficient_points'
   balance?: number
+  remaining?: number
   new_count?: number
   completed?: boolean
   price_paid?: number
+  quantity?: number
 }
 
 const ERROR_STATUS: Record<NonNullable<JoinResult['reason']>, number> = {
+  invalid_quantity: 400,
   not_found: 404,
   deal_not_active: 409,
   deal_expired: 409,
@@ -23,10 +27,11 @@ const ERROR_STATUS: Record<NonNullable<JoinResult['reason']>, number> = {
 }
 
 const ERROR_MESSAGE: Record<NonNullable<JoinResult['reason']>, string> = {
+  invalid_quantity: '신청 수량이 올바르지 않습니다',
   not_found: '팀구매를 찾을 수 없습니다',
   deal_not_active: '진행 중인 팀구매가 아닙니다',
   deal_expired: '마감된 팀구매입니다',
-  deal_full: '이미 모집이 마감됐습니다',
+  deal_full: '남은 자리가 부족합니다',
   already_joined: '이미 참여한 팀구매입니다',
   insufficient_points: '포인트가 부족합니다',
 }
@@ -36,10 +41,20 @@ const ERROR_MESSAGE: Record<NonNullable<JoinResult['reason']>, string> = {
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const sessionUser = await getSessionUser()
   if (!sessionUser) return unauthorizedResponse()
+  if (!isUuid(params.id)) {
+    return NextResponse.json({ error: '팀구매를 찾을 수 없습니다' }, { status: 404 })
+  }
+
+  const body = await req.json().catch(() => ({}))
+  const quantity = body.quantity === undefined ? 1 : Number(body.quantity)
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    return NextResponse.json({ error: '신청 수량이 올바르지 않습니다' }, { status: 400 })
+  }
 
   const { data, error } = await db.rpc('join_team_deal', {
     p_deal_id: params.id,
     p_user_id: sessionUser.id,
+    p_quantity: quantity,
   })
 
   if (error) {
@@ -49,8 +64,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const result = data as JoinResult
   if (!result.ok) {
     const reason = result.reason ?? 'not_found'
+    const message = reason === 'deal_full' && result.remaining !== undefined
+      ? `남은 자리가 부족합니다 (잔여 ${result.remaining}개)`
+      : ERROR_MESSAGE[reason]
     return NextResponse.json(
-      { error: ERROR_MESSAGE[reason], reason, balance: result.balance },
+      { error: message, reason, balance: result.balance, remaining: result.remaining },
       { status: ERROR_STATUS[reason] }
     )
   }
@@ -60,5 +78,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     new_count: result.new_count,
     completed: result.completed,
     price_paid: result.price_paid,
+    quantity: result.quantity,
   })
 }
