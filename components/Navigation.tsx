@@ -5,9 +5,8 @@ import { Search, Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
   { label: '대시보드', href: '/dashboard' },
-  { label: 'AI블로그', href: '/ai-blog' },
   { label: '플레이스', href: '/place' },
-  { label: '체험단', href: '/creators' },
+  { label: '한끼 체험단', href: '/creators' },
   { label: '팀구매', href: '/team-purchase' },
   { label: '리워드', href: '/rewards' },
   { label: '오호라!', href: '/ohora' },
