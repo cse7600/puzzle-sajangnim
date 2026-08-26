@@ -55,13 +55,19 @@ public repo → Actions 무제한 무료)로 전환. `crawler/Dockerfile`, `craw
   수 있음(실측은 restaurant 기준) — 다른 업종 등록 시 전건 실패하면 이걸 의심할 것. GitHub은
   60일간 커밋 없으면 schedule 워크플로우를 자동 비활성화한다.
 
-## 미검증 — 다음 단계
+## 배포 완료 + GitHub Actions 실측 확인 (2026-08-26)
 
-- GitHub Actions 러너(보통 미국 Azure 데이터센터 IP)에서도 동일하게 ncaptcha를 우회하고 데이터가
-  나오는지는 미확인. 이번 실측은 로컬(한국 residential IP 추정) 기준이라 결과가 다를 수 있음 —
-  워크플로우 push 후 `gh workflow run`으로 수동 1회 실행해 로그를 반드시 확인할 것.
-- `SUPABASE_SERVICE_ROLE_KEY`를 GitHub repo secret으로 등록해야 실제 동작함 — 아직 미등록.
-- `SHOW_RANK_MONITORING` UI 플래그는 아직 `false` 유지(app/(app)/place). 크롤러가 실제로 매일
-  자동 수집을 시작한 뒤 켤 것.
-- 크론이 며칠간 안정적으로 도는지 확인 전까지는 알림(Slack 등) 연동 없음 — 실패 시 GitHub
-  Actions 탭 로그로만 확인 가능한 상태.
+- `SUPABASE_SERVICE_ROLE_KEY` repo secret 등록 완료, 워크플로우 커밋 `8c55e98` main push 완료.
+- **GitHub Actions 러너(미국 Azure 데이터센터 IP로 추정)에서 실측 성공** — 임시 키워드
+  "덕소대하구이"로 수동 실행(`gh workflow run`) 2회: 첫 회는 키워드 0개로 정상 종료(exit 0,
+  Fable 지적 버그 수정 확인), 둘째 회는 실 등록(mine)에 임시 키워드를 붙여 실행 → 로컬과 동일하게
+  `rank=1, is_ad=false, found_in=organic` 정확히 재현. 즉 로컬(한국 IP)뿐 아니라 실제 배포
+  환경에서도 ncaptcha 우회 + Apollo State 파싱이 정상 동작함을 확인했다 — 남아있던 최대 리스크
+  (Railway/GH Actions 리전 IP에서도 되는가)가 해소됨. 테스트 키워드는 실행 후 삭제, 잔여 0건.
+
+## 다음 단계 (남은 일)
+
+- `SHOW_RANK_MONITORING` UI 플래그는 아직 `false` 유지(app/(app)/place). 실사용 키워드로 며칠
+  안정적으로 도는 것 확인 후 켤 것 — 지금은 인프라만 검증됐고 사용자가 키워드를 아직 안 넣음.
+- 크론이 며칠간 안정적으로 도는지는 아직 미확인(오늘 수동 실행 2회만 함) — 알림(Slack 등) 연동
+  없이 GitHub Actions 탭 로그로만 확인 가능한 상태. 실패가 반복되면 알림 연동 고려.
