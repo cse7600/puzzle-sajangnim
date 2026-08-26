@@ -13,11 +13,14 @@ export interface PlaceSnapshot {
   rating: number | null;
   photo_count: number | null;
   has_reservation: boolean | null; // null = 판별 불가
+  has_smart_order: boolean | null;
+  coupon_count: number | null;
   keyword_count: number | null; // null = 못 읽음, 0 = 진짜 미설정
   keyword_list: string[] | null; // 대표 키워드 실제 목록(호버 비교 카드용)
   has_description: boolean | null;
   menu_count: number | null;
-  photo_urls: string[] | null;
+  business_photo_urls: string[] | null; // 업체 등록 사진 미리보기
+  review_photo_urls: string[] | null; // 방문자 리뷰 첨부 사진 미리보기
   created_at: string;
 }
 

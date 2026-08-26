@@ -26,7 +26,8 @@ export interface PlaceBasicInfo {
   rating: number | null;
   photoCount: number | null;
   keywordList: string[] | null; // 정보 탭 대표 키워드(DOM 실렌더 기준). []=미설정 확인, null=못 읽음
-  photoUrls: string[]; // 미리보기 사진 URL(최대 10장 안팎). 전체 장수는 photoCount 참고
+  businessPhotoUrls: string[]; // 업체 등록 사진 미리보기 URL
+  reviewPhotoUrls: string[]; // 방문자 리뷰 첨부 사진 미리보기 URL
   description: string | null; // 소개글 (placeDetail.description)
   hasReservation: boolean | null; // 네이버 예약 연동 여부. null = naverBooking 노드 자체를 못 찾음(판별 불가)
   hasSmartOrder: boolean | null; // 스마트주문 연동 여부. null = 판별 불가
@@ -342,13 +343,15 @@ function countPhotoItems(apolloState: Record<string, unknown>): number | null {
 }
 
 /**
- * 초기 상태에 박제된 미리보기 사진들의 실제 이미지 URL 목록(보통 10장 안팎 — 전체 사진 수는
+ * 초기 상태에 박제된 미리보기 사진들의 실제 이미지 URL 목록(보통 몇 장 안팎 — 전체 사진 수는
  * photoCount 를 봐야 한다). 동영상 항목(video 필드 있음)은 originalUrl 이 이미지가 아닐 수
- * 있어 제외한다.
+ * 있어 제외한다. 키가 `PlaceDetailTopPhotoItem:business_N`(업체 등록 사진) /
+ * `visitor_N`(방문자 리뷰 첨부 사진) / `video_N` 으로 구분되길래(실측 확인) kind 로 나눠 뽑는다
+ * — 체크리스트의 "사진" 항목엔 business, "리뷰" 항목엔 visitor 를 붙여 보여주기 위함.
  */
-function extractPhotoUrls(apolloState: Record<string, unknown>): string[] {
+function extractPhotoUrls(apolloState: Record<string, unknown>, kind: 'business' | 'visitor'): string[] {
   return Object.keys(apolloState)
-    .filter((key) => key.startsWith(PHOTO_ITEM_PREFIX))
+    .filter((key) => key.startsWith(PHOTO_ITEM_PREFIX) && key.includes(`:${kind}_`))
     .filter((key) => readPath(apolloState[key], 'video') == null)
     .map((key) => asString(readPath(apolloState[key], 'originalUrl')))
     .filter((url): url is string => url !== null);
@@ -430,7 +433,8 @@ function mapPlaceBasicInfo(
     rating: normalizeRating(readPath(base, 'visitorReviewsScore')),
     photoCount: topPhotosTotal ?? countPhotoItems(apolloState),
     keywordList: extractKeywordListFromDom(html),
-    photoUrls: extractPhotoUrls(apolloState),
+    businessPhotoUrls: extractPhotoUrls(apolloState, 'business'),
+    reviewPhotoUrls: extractPhotoUrls(apolloState, 'visitor'),
     description: asString(readPath(placeDetail, 'description', apolloState)),
     hasReservation: hasNaverBookingNode ? hasBookingUrl || hasBookingBusinessId : null,
     hasSmartOrder: hasNaverBookingNode

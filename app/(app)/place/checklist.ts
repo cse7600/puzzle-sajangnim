@@ -6,7 +6,21 @@ import type { PlaceSnapshot } from './types';
 
 export type ChecklistStatus = 'done' | 'warn' | 'fail';
 
+// label(화면 문구)은 나중에 언제든 바뀔 수 있다 — page.tsx가 "이 항목엔 사진 썸네일을
+// 붙여라" 같은 판단을 할 때 label 문자열을 비교하면, 문구만 바뀌어도 조용히 깨진다.
+// id 는 안 바뀌는 식별자로만 쓴다.
+export type ChecklistItemId =
+  | 'photo'
+  | 'keyword'
+  | 'description'
+  | 'menu'
+  | 'reservation'
+  | 'visitor_review'
+  | 'blog_review'
+  | 'rating';
+
 export interface ChecklistItem {
+  id: ChecklistItemId;
   status: ChecklistStatus;
   label: string;
   detail: string;
@@ -18,65 +32,73 @@ export interface ChecklistResult {
 }
 
 function photoCheck(photoCount: number | null): ChecklistItem {
+  const id = 'photo' as const;
   const label = '사진 20장 이상 등록';
-  if (photoCount === null) return { status: 'fail', label, detail: '수집된 사진 없음' };
-  if (photoCount >= 20) return { status: 'done', label, detail: `${photoCount}장` };
-  if (photoCount >= 5) return { status: 'warn', label, detail: `${photoCount}장 · 목표 20장` };
-  return { status: 'fail', label, detail: `${photoCount}장 · 목표 20장` };
+  if (photoCount === null) return { id, status: 'fail', label, detail: '수집된 사진 없음' };
+  if (photoCount >= 20) return { id, status: 'done', label, detail: `${photoCount}장` };
+  if (photoCount >= 5) return { id, status: 'warn', label, detail: `${photoCount}장 · 목표 20장` };
+  return { id, status: 'fail', label, detail: `${photoCount}장 · 목표 20장` };
 }
 
 function keywordCheck(keywordCount: number | null): ChecklistItem {
+  const id = 'keyword' as const;
   const label = '대표 키워드 설정';
-  if (keywordCount === null) return { status: 'fail', label, detail: '수집 실패 — 다음 갱신에서 재확인' };
-  if (keywordCount >= 5) return { status: 'done', label, detail: `${keywordCount}개` };
-  if (keywordCount > 0) return { status: 'warn', label, detail: `${keywordCount}개 · 최대 5개까지 등록 가능` };
-  return { status: 'fail', label, detail: '설정된 키워드 없음' };
+  if (keywordCount === null) return { id, status: 'fail', label, detail: '수집 실패 — 다음 갱신에서 재확인' };
+  if (keywordCount >= 5) return { id, status: 'done', label, detail: `${keywordCount}개` };
+  if (keywordCount > 0) return { id, status: 'warn', label, detail: `${keywordCount}개 · 최대 5개까지 등록 가능` };
+  return { id, status: 'fail', label, detail: '설정된 키워드 없음' };
 }
 
 function descriptionCheck(hasDescription: boolean | null): ChecklistItem {
+  const id = 'description' as const;
   const label = '소개글 작성';
-  if (hasDescription === null) return { status: 'fail', label, detail: '수집 실패' };
+  if (hasDescription === null) return { id, status: 'fail', label, detail: '수집 실패' };
   return hasDescription
-    ? { status: 'done', label, detail: '작성됨' }
-    : { status: 'fail', label, detail: '미작성' };
+    ? { id, status: 'done', label, detail: '작성됨' }
+    : { id, status: 'fail', label, detail: '미작성' };
 }
 
 function menuCheck(menuCount: number | null): ChecklistItem {
+  const id = 'menu' as const;
   const label = '메뉴/가격 등록';
   if (menuCount !== null && menuCount > 0) {
-    return { status: 'done', label, detail: `${menuCount}개` };
+    return { id, status: 'done', label, detail: `${menuCount}개` };
   }
-  return { status: 'fail', label, detail: '등록된 메뉴 없음' };
+  return { id, status: 'fail', label, detail: '등록된 메뉴 없음' };
 }
 
 function reservationCheck(hasReservation: boolean | null): ChecklistItem {
+  const id = 'reservation' as const;
   const label = '네이버 예약 연동';
-  if (hasReservation === null) return { status: 'warn', label, detail: '확인 불가' };
+  if (hasReservation === null) return { id, status: 'warn', label, detail: '확인 불가' };
   return hasReservation
-    ? { status: 'done', label, detail: '연동됨' }
-    : { status: 'fail', label, detail: '미연동' };
+    ? { id, status: 'done', label, detail: '연동됨' }
+    : { id, status: 'fail', label, detail: '미연동' };
 }
 
 function visitorReviewCheck(visitorReviewCount: number | null): ChecklistItem {
+  const id = 'visitor_review' as const;
   const label = '방문자(영수증) 리뷰';
-  if (visitorReviewCount === null) return { status: 'fail', label, detail: '수집된 리뷰 없음' };
-  if (visitorReviewCount >= 10) return { status: 'done', label, detail: `${visitorReviewCount}건` };
-  if (visitorReviewCount > 0) return { status: 'warn', label, detail: `${visitorReviewCount}건 · 목표 10건` };
-  return { status: 'fail', label, detail: '리뷰 없음' };
+  if (visitorReviewCount === null) return { id, status: 'fail', label, detail: '수집된 리뷰 없음' };
+  if (visitorReviewCount >= 10) return { id, status: 'done', label, detail: `${visitorReviewCount}건` };
+  if (visitorReviewCount > 0) return { id, status: 'warn', label, detail: `${visitorReviewCount}건 · 목표 10건` };
+  return { id, status: 'fail', label, detail: '리뷰 없음' };
 }
 
 function blogReviewCheck(blogReviewCount: number | null): ChecklistItem {
+  const id = 'blog_review' as const;
   const label = '블로그 리뷰';
   return blogReviewCount !== null && blogReviewCount > 0
-    ? { status: 'done', label, detail: `${blogReviewCount}건` }
-    : { status: 'fail', label, detail: '없음' };
+    ? { id, status: 'done', label, detail: `${blogReviewCount}건` }
+    : { id, status: 'fail', label, detail: '없음' };
 }
 
 function ratingCheck(rating: number | null): ChecklistItem {
+  const id = 'rating' as const;
   const label = '평점 데이터 확인';
   return rating !== null
-    ? { status: 'done', label, detail: `${rating.toFixed(2)}점` }
-    : { status: 'fail', label, detail: '평점 비공개 또는 미수집' };
+    ? { id, status: 'done', label, detail: `${rating.toFixed(2)}점` }
+    : { id, status: 'fail', label, detail: '평점 비공개 또는 미수집' };
 }
 
 // 안 된 것부터 눈에 띄어야 바로 조치할 수 있다 — fail → warn → done 순으로 정렬.

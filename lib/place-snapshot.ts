@@ -15,11 +15,14 @@ export function toSnapshotRow(registrationId: string, info: PlaceBasicInfo) {
     rating: info.rating,
     photo_count: info.photoCount,
     has_reservation: info.hasReservation,
+    has_smart_order: info.hasSmartOrder,
+    coupon_count: info.couponCount,
     keyword_count: info.keywordList?.length ?? null,
     keyword_list: info.keywordList,
     has_description: info.description !== null,
     menu_count: info.menuCount,
-    photo_urls: info.photoUrls,
+    business_photo_urls: info.businessPhotoUrls,
+    review_photo_urls: info.reviewPhotoUrls,
     raw_data: info.raw,
   }
 }

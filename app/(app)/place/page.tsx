@@ -34,11 +34,16 @@ import {
   SkeletonCard,
   RegisterModal,
   RankChart,
-  PhotoGallery,
   CompetitorHoverCard,
+  ThumbRow,
 } from './components';
 
 type ModalRole = 'mine' | 'competitor';
+
+// 키워드 검색 순위는 Vercel 서버 IP가 네이버 캡차에 막혀 안정적으로 못 돌린다
+// (Railway Playwright 크론잡 설계만 있고 미구현) — 신뢰할 수 없는 기능을 보여주는 대신
+// 일단 숨긴다. 코드는 남겨뒀다가 실제 순위 수집 경로가 생기면 이 값만 true 로 바꾼다.
+const SHOW_RANK_MONITORING = false;
 
 export default function PlacePage() {
   const [loading, setLoading] = useState(true);
@@ -142,7 +147,7 @@ export default function PlacePage() {
     const nextCompetitors = Array.isArray(payload.competitors) ? payload.competitors : [];
     setMine(nextMine);
     setCompetitors(nextCompetitors);
-    if (nextMine) await loadKeywordData(nextMine.id);
+    if (SHOW_RANK_MONITORING && nextMine) await loadKeywordData(nextMine.id);
     setLoading(false);
 
     const pending = [nextMine, ...nextCompetitors].filter(
@@ -340,7 +345,7 @@ export default function PlacePage() {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">플레이스 최적화</h1>
           <p className="mt-1 text-sm text-gray-500">
-            내 가게의 네이버 노출 순위를 실시간으로 관리하세요
+            내 가게 정보를 진단하고 경쟁사와 비교하세요
           </p>
         </div>
         <button
@@ -349,7 +354,7 @@ export default function PlacePage() {
           className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#0055aa] disabled:opacity-60"
         >
           <RefreshCw className={`h-4 w-4 ${mineCollecting ? 'animate-spin' : ''}`} />
-          {mineCollecting ? '분석 중...' : updated ? '업데이트 완료' : '순위 업데이트'}
+          {mineCollecting ? '분석 중...' : updated ? '업데이트 완료' : '정보 새로고침'}
         </button>
       </div>
       {mineError && (
@@ -403,90 +408,84 @@ export default function PlacePage() {
         </button>
       </div>
 
-      {mine.latest_snapshot?.photo_urls != null && (
-        <PhotoGallery
-          photoUrls={mine.latest_snapshot.photo_urls}
-          totalCount={mine.latest_snapshot.photo_count}
-        />
-      )}
-
-      {/* 키워드 순위 PANEL */}
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            value={newKeyword}
-            onChange={(event) => {
-              setNewKeyword(event.target.value);
-              setKeywordError(null);
-            }}
-            onKeyDown={(event) => event.key === 'Enter' && addKeyword()}
-            placeholder="모니터링할 키워드 추가 (예: 을지로 쌈밥)"
-            className="min-w-[240px] flex-1 rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:outline-none"
-          />
-          <button
-            onClick={addKeyword}
-            disabled={!newKeyword.trim()}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0055aa] disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4" />
-            키워드 추가
-          </button>
-        </div>
-        {keywordError && <p className="text-sm font-medium text-red-600">{keywordError}</p>}
-
-        {keywordCards.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-gray-400">
-            모니터링할 키워드를 추가하면 순위 추이가 표시됩니다.
+      {SHOW_RANK_MONITORING && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              value={newKeyword}
+              onChange={(event) => {
+                setNewKeyword(event.target.value);
+                setKeywordError(null);
+              }}
+              onKeyDown={(event) => event.key === 'Enter' && addKeyword()}
+              placeholder="모니터링할 키워드 추가 (예: 을지로 쌈밥)"
+              className="min-w-[240px] flex-1 rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:outline-none"
+            />
+            <button
+              onClick={addKeyword}
+              disabled={!newKeyword.trim()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0055aa] disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" />
+              키워드 추가
+            </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {keywordCards.map((card) => {
-              const style = SIGNAL_STYLES[card.signal];
-              return (
-                <div
-                  key={card.id}
-                  className="group relative rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">{card.keyword}</span>
-                    <span
-                      className={`h-4 w-4 rounded-full ${style.dot} ring-4 ${style.ring}`}
-                      aria-label={`신호 ${card.signal}`}
-                    />
-                  </div>
-                  <div className="mt-4 flex items-end gap-2">
-                    <span className="text-[48px] font-bold leading-none text-gray-900">
-                      {card.rank ?? '—'}
-                    </span>
-                    <span className="pb-1 text-lg font-semibold text-gray-400">
-                      {card.rank === null ? '권 밖' : '위'}
-                    </span>
-                    <div className="ml-auto pb-1">
-                      <TrendBadge trend={card.trend} delta={card.delta} />
-                    </div>
-                  </div>
-                  <p className="mt-3 text-xs text-gray-400">
-                    {card.rank === null
-                      ? '순위권 밖 — 노출 개선이 필요해요'
-                      : card.trend === 'up'
-                        ? '지난 수집 대비 순위 상승 중'
-                        : card.trend === 'down'
-                          ? '순위 하락 — 개선이 필요해요'
-                          : '순위 변동 없음'}
-                  </p>
-                  <button
-                    onClick={() => removeKeyword(card.id)}
-                    aria-label="키워드 삭제"
-                    className="absolute right-3 top-3 rounded-md p-1 text-gray-300 opacity-0 transition hover:bg-gray-100 hover:text-gray-500 group-hover:opacity-100"
+          {keywordError && <p className="text-sm font-medium text-red-600">{keywordError}</p>}
+
+          {keywordCards.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-gray-400">
+              모니터링할 키워드를 추가하면 순위 추이가 표시됩니다.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {keywordCards.map((card) => {
+                const style = SIGNAL_STYLES[card.signal];
+                return (
+                  <div
+                    key={card.id}
+                    className="group relative rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-600">{card.keyword}</span>
+                      <span
+                        className={`h-4 w-4 rounded-full ${style.dot} ring-4 ${style.ring}`}
+                        aria-label={`신호 ${card.signal}`}
+                      />
+                    </div>
+                    <div className="mt-4 flex items-end gap-2">
+                      <span className="text-[48px] font-bold leading-none text-gray-900">
+                        {card.rank ?? '—'}
+                      </span>
+                      <span className="pb-1 text-lg font-semibold text-gray-400">
+                        {card.rank === null ? '권 밖' : '위'}
+                      </span>
+                      <div className="ml-auto pb-1">
+                        <TrendBadge trend={card.trend} delta={card.delta} />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-gray-400">
+                      {card.rank === null
+                        ? '순위권 밖 — 노출 개선이 필요해요'
+                        : card.trend === 'up'
+                          ? '지난 수집 대비 순위 상승 중'
+                          : card.trend === 'down'
+                            ? '순위 하락 — 개선이 필요해요'
+                            : '순위 변동 없음'}
+                    </p>
+                    <button
+                      onClick={() => removeKeyword(card.id)}
+                      aria-label="키워드 삭제"
+                      className="absolute right-3 top-3 rounded-md p-1 text-gray-300 opacity-0 transition hover:bg-gray-100 hover:text-gray-500 group-hover:opacity-100"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 2-COLUMN: 개선 진단 + 경쟁자 분석 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -515,13 +514,22 @@ export default function PlacePage() {
                 {checklist.items.map((item) => {
                   const isDone = item.status === 'done';
                   const isWarn = item.status === 'warn';
+                  // "실제로 조회했다"는 걸 증명하는 썸네일 — 사진/리뷰 항목에만, 조회된 게 있을 때만.
+                  // id 로 매칭한다 — label(화면 문구)은 나중에 바뀔 수 있어서 문자열로 매칭하면
+                  // 문구만 바뀌어도 조용히 깨진다.
+                  const thumbUrls =
+                    item.id === 'photo'
+                      ? mine.latest_snapshot?.business_photo_urls
+                      : item.id === 'visitor_review'
+                        ? mine.latest_snapshot?.review_photo_urls
+                        : null;
                   return (
                     <li
-                      key={item.label}
-                      className="flex items-center gap-3 rounded-lg border border-gray-100 px-3 py-2.5"
+                      key={item.id}
+                      className="flex items-start gap-3 rounded-lg border border-gray-100 px-3 py-2.5"
                     >
                       <span
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
                           isDone
                             ? 'bg-emerald-50 text-emerald-600'
                             : isWarn
@@ -546,6 +554,14 @@ export default function PlacePage() {
                           {item.label}
                         </p>
                         <p className="text-xs text-gray-400">{item.detail}</p>
+                        {thumbUrls && thumbUrls.length > 0 && (
+                          <>
+                            <ThumbRow urls={thumbUrls} />
+                            {/* detail("31장" 등)은 전체 수, 썸네일은 초기 로드분 미리보기라 개수가
+                                다르다 — 숫자가 안 맞아 보이는 걸 막기 위한 캡션. */}
+                            <p className="mt-1 text-[10px] text-gray-300">미리보기 {thumbUrls.length}장</p>
+                          </>
+                        )}
                       </div>
                     </li>
                   );
@@ -555,7 +571,7 @@ export default function PlacePage() {
               <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-500">
                 네이버가 순위 알고리즘 가중치를 공식적으로 공개하지 않아, 위 항목은
                 &ldquo;채워졌는지 여부&rdquo;를 진단할 뿐 순위 상승을 보장하지 않습니다.
-                &lsquo;순위 업데이트&rsquo;로 최신 데이터를 다시 수집할 수 있습니다.
+                &lsquo;정보 새로고침&rsquo;으로 최신 데이터를 다시 수집할 수 있습니다.
               </div>
             </>
           ) : mineCollecting ? (
@@ -565,7 +581,7 @@ export default function PlacePage() {
             </div>
           ) : (
             <div className="mt-5 flex flex-1 items-center justify-center rounded-lg border border-dashed border-gray-200 py-10 text-center text-sm text-gray-400">
-              기본정보 수집 대기중입니다. &lsquo;순위 업데이트&rsquo;를 눌러 다시 시도해보세요.
+              기본정보 수집 대기중입니다. &lsquo;정보 새로고침&rsquo;을 눌러 다시 시도해보세요.
             </div>
           )}
         </div>
@@ -724,42 +740,44 @@ export default function PlacePage() {
       </div>
 
       {/* 순위 변동 그래프 */}
-      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">순위 변동 추이</h2>
-            <p className="mt-0.5 text-xs text-gray-400">
-              최근 30일 키워드별 노출 순위 (낮을수록 상위)
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            {chartLines.map((line) => (
-              <div key={line.name} className="flex items-center gap-1.5">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: line.color }}
-                />
-                <span className="text-xs font-medium text-gray-600">{line.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {chartLabels.length === 0 ? (
-          <p className="mt-6 rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-gray-400">
-            순위 수집 이력이 쌓이면 추이 그래프가 표시됩니다.
-          </p>
-        ) : (
-          <>
-            <RankChart labels={chartLabels} lines={chartLines} />
-            <div className="ml-11 mt-2 flex justify-between text-[10px] text-gray-400">
-              {chartLabels.map((label, index) => (
-                <span key={`${label}-${index}`}>{label}</span>
+      {SHOW_RANK_MONITORING && (
+        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">순위 변동 추이</h2>
+              <p className="mt-0.5 text-xs text-gray-400">
+                최근 30일 키워드별 노출 순위 (낮을수록 상위)
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              {chartLines.map((line) => (
+                <div key={line.name} className="flex items-center gap-1.5">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: line.color }}
+                  />
+                  <span className="text-xs font-medium text-gray-600">{line.name}</span>
+                </div>
               ))}
             </div>
-          </>
-        )}
-      </div>
+          </div>
+
+          {chartLabels.length === 0 ? (
+            <p className="mt-6 rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-gray-400">
+              순위 수집 이력이 쌓이면 추이 그래프가 표시됩니다.
+            </p>
+          ) : (
+            <>
+              <RankChart labels={chartLabels} lines={chartLines} />
+              <div className="ml-11 mt-2 flex justify-between text-[10px] text-gray-400">
+                {chartLabels.map((label, index) => (
+                  <span key={`${label}-${index}`}>{label}</span>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {modal}
     </div>
@@ -772,7 +790,7 @@ function EmptyState({ onRegister }: { onRegister: () => void }) {
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">플레이스 최적화</h1>
         <p className="mt-1 text-sm text-gray-500">
-          내 가게의 네이버 노출 순위를 실시간으로 관리하세요
+          내 가게 정보를 진단하고 경쟁사와 비교하세요
         </p>
       </div>
       <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-gray-200 bg-white p-16 text-center shadow-sm">
@@ -780,7 +798,7 @@ function EmptyState({ onRegister }: { onRegister: () => void }) {
         <div>
           <p className="text-base font-semibold text-gray-900">등록된 플레이스가 없습니다</p>
           <p className="mt-1 text-sm text-gray-500">
-            네이버 플레이스 URL을 등록하면 순위·기본정보 추적이 시작됩니다.
+            네이버 플레이스 URL을 등록하면 기본정보 추적과 경쟁사 비교가 시작됩니다.
           </p>
         </div>
         <button

@@ -45,53 +45,27 @@ export function SkeletonCard({ className = '' }: { className?: string }) {
   );
 }
 
-// 플레이스 사진 갤러리 — 가로 스크롤 + 호버 확대로 생동감 있게.
-export function PhotoGallery({
-  photoUrls,
-  totalCount,
-}: {
-  photoUrls: string[];
-  totalCount: number | null;
-}) {
-  if (photoUrls.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-400">
-        등록된 사진이 없습니다.
-      </div>
-    );
-  }
+// 체크리스트 항목 옆에 붙는 작은 썸네일 줄 — "숫자만 말하는 게 아니라 실제로 봤다"는 증거.
+// 독립된 큰 갤러리 섹션은 "등록해놓고 뭘 어쩌라는 거냐"는 피드백으로 없앴다.
+export function ThumbRow({ urls }: { urls: string[] }) {
+  if (urls.length === 0) return null;
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-900">플레이스 사진</h2>
-        {totalCount !== null && totalCount > photoUrls.length && (
-          <span className="text-xs font-medium text-gray-400">
-            전체 {totalCount}장 중 최근 {photoUrls.length}장
-          </span>
-        )}
-      </div>
-      <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
-        {photoUrls.map((url, index) => (
-          <div
-            key={`${url}-${index}`}
-            className="group relative aspect-square w-40 shrink-0 overflow-hidden rounded-xl bg-gray-100 shadow-sm ring-1 ring-black/5"
-          >
-            <img
-              src={url}
-              alt={`가게 사진 ${index + 1}`}
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              onError={(event) => {
-                // 일부 네이버 CDN(블로그 원본 등)은 리퍼러 없이도 403을 낼 수 있다 —
-                // 깨진 이미지 아이콘 대신 타일 자체를 숨긴다.
-                const tile = event.currentTarget.parentElement;
-                if (tile) tile.style.display = 'none';
-              }}
-              className="h-full w-full object-cover transition duration-300 ease-out group-hover:scale-110"
-            />
-          </div>
-        ))}
-      </div>
+    <div className="mt-1.5 flex gap-1">
+      {urls.slice(0, 6).map((url, index) => (
+        <img
+          key={`${url}-${index}`}
+          src={url}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={(event) => {
+            // 일부 네이버 CDN(블로그 원본 등)은 리퍼러 없이도 403을 낼 수 있다 —
+            // 깨진 이미지 아이콘 대신 타일 자체를 숨긴다.
+            event.currentTarget.style.display = 'none';
+          }}
+          className="h-10 w-10 shrink-0 rounded-md object-cover ring-1 ring-black/5"
+        />
+      ))}
     </div>
   );
 }
@@ -167,7 +141,10 @@ export function CompetitorHoverCard({
           <div className="space-y-1.5 border-t border-gray-100 pt-2.5">
             <CompareField label="소개글" mineValue={mines?.has_description} theirValue={theirs.has_description} />
             <CompareField label="예약 연동" mineValue={mines?.has_reservation} theirValue={theirs.has_reservation} />
+            <CompareField label="스마트주문" mineValue={mines?.has_smart_order} theirValue={theirs.has_smart_order} />
             <CompareField label="메뉴 등록" mineValue={mines?.menu_count} theirValue={theirs.menu_count} unit="개" />
+            <CompareField label="블로그 리뷰" mineValue={mines?.blog_review_count} theirValue={theirs.blog_review_count} unit="건" />
+            <CompareField label="쿠폰" mineValue={mines?.coupon_count} theirValue={theirs.coupon_count} unit="개" />
           </div>
         </div>
       ) : (
