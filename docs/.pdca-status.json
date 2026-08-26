@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-08-26T08:06:55.389Z",
+  "lastUpdated": "2026-08-26T09:48:23.455Z",
   "activeFeatures": [
     "puzzle-sajangnim",
     "login",
@@ -61,7 +61,13 @@
     "bankbook",
     "withdrawals",
     "collect",
-    "ohora"
+    "ohora",
+    "members",
+    "cancel",
+    "upload",
+    "my",
+    "survey",
+    "survey-upload"
   ],
   "primaryFeature": "puzzle-sajangnim",
   "features": {
@@ -74,9 +80,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:32:00.677Z",
-        "lastUpdated": "2026-08-26T07:46:50.435Z"
+        "lastUpdated": "2026-08-26T09:45:20.720Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/lib/place-snapshot.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/lib/admin-team-deals.ts"
     },
     "login": {
       "phase": "do",
@@ -178,9 +184,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:42:20.210Z",
-        "lastUpdated": "2026-08-26T05:47:26.310Z"
+        "lastUpdated": "2026-08-26T09:47:14.679Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/team-deals/route.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/team-deals/page.tsx"
     },
     "join": {
       "phase": "do",
@@ -191,7 +197,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:42:26.814Z",
-        "lastUpdated": "2026-08-26T05:46:49.088Z"
+        "lastUpdated": "2026-08-26T08:34:53.145Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/team-deals/[id]/join/route.ts"
     },
@@ -217,7 +223,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:43:57.100Z",
-        "lastUpdated": "2026-06-18T15:29:48.696Z"
+        "lastUpdated": "2026-08-26T09:36:22.250Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/team-buy/page.tsx"
     },
@@ -230,9 +236,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:44:37.187Z",
-        "lastUpdated": "2026-08-26T05:47:50.307Z"
+        "lastUpdated": "2026-08-26T09:47:41.223Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/layout.tsx"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/components/admin/team-deal-types.ts"
     },
     "users": {
       "phase": "do",
@@ -308,9 +314,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:30:44.852Z",
-        "lastUpdated": "2026-08-26T08:06:40.472Z"
+        "lastUpdated": "2026-08-26T09:45:47.529Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/knowledge/[id]/page.tsx"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/team-deals/[id]/route.ts"
     },
     "questions": {
       "phase": "do",
@@ -321,9 +327,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:31:43.557Z",
-        "lastUpdated": "2026-08-26T08:06:49.307Z"
+        "lastUpdated": "2026-08-26T09:44:52.401Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/knowledge/questions/route.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/admin/team-deals/[id]/questions/route.ts"
     },
     "answers": {
       "phase": "do",
@@ -685,9 +691,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-08-25T16:25:33.993Z",
-        "lastUpdated": "2026-08-26T02:16:57.519Z"
+        "lastUpdated": "2026-08-26T09:05:21.899Z"
       },
-      "lastFile": "/private/tmp/claude-502/-Users-hokang2father-puzzle-sajangnim/4a971374-a3ad-4ae9-9bd2-cbe44fe0b7bc/scratchpad/mint-cookies.js"
+      "lastFile": "/private/tmp/claude-502/-Users-hokang2father-puzzle-sajangnim/e1eaa0f6-9856-4e6d-8da0-e6aaf192fc4c/scratchpad/gen_thumbnail.py"
     },
     "cancel-transfer": {
       "phase": "do",
@@ -844,6 +850,84 @@
         "lastUpdated": "2026-08-26T07:42:47.640Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/ohora/page.tsx"
+    },
+    "members": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T08:36:03.637Z",
+        "lastUpdated": "2026-08-26T09:48:23.455Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/team-deals/[id]/members/page.tsx"
+    },
+    "cancel": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T08:36:11.259Z",
+        "lastUpdated": "2026-08-26T08:36:11.259Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/admin/team-deals/[id]/members/[memberId]/cancel/route.ts"
+    },
+    "upload": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T08:36:22.591Z",
+        "lastUpdated": "2026-08-26T09:34:46.349Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/admin/team-deals/upload/route.ts"
+    },
+    "my": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T09:35:03.077Z",
+        "lastUpdated": "2026-08-26T09:35:03.077Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/team-deals/my/route.ts"
+    },
+    "survey": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T09:35:24.601Z",
+        "lastUpdated": "2026-08-26T09:37:25.228Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/team-buy/[id]/survey/page.tsx"
+    },
+    "survey-upload": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T09:35:34.713Z",
+        "lastUpdated": "2026-08-26T09:35:34.713Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/team-deals/survey-upload/route.ts"
     }
   },
   "pipeline": {
@@ -854,7 +938,7 @@
   "session": {
     "startedAt": "2026-06-18T07:25:20.070Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-08-26T08:06:55.389Z"
+    "lastActivity": "2026-08-26T09:48:23.455Z"
   },
   "history": [
     {
@@ -5192,6 +5276,384 @@
     {
       "timestamp": "2026-08-26T08:06:55.389Z",
       "feature": "answers",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:34:21.515Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:34:30.806Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:34:34.334Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:34:38.688Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:34:53.145Z",
+      "feature": "join",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:34:55.279Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:34:56.513Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:35:24.968Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:35:40.041Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:35:52.628Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:36:03.637Z",
+      "feature": "members",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:36:11.259Z",
+      "feature": "cancel",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:36:22.591Z",
+      "feature": "upload",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:38:13.729Z",
+      "feature": "team-buy",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:38:26.819Z",
+      "feature": "team-buy",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:39:18.789Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:41:21.366Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:41:59.384Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:42:22.227Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:42:54.854Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:04:41.739Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:05:21.899Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:29:16.512Z",
+      "feature": "members",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:29:28.544Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:30:29.598Z",
+      "feature": "members",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:30:35.949Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:30:40.190Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:30:42.306Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:30:45.125Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:31:27.959Z",
+      "feature": "questions",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:31:40.142Z",
+      "feature": "members",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:32:04.804Z",
+      "feature": "members",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:32:11.733Z",
+      "feature": "members",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:32:20.301Z",
+      "feature": "questions",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:34:38.712Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:34:46.349Z",
+      "feature": "upload",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:35:03.077Z",
+      "feature": "my",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:35:24.601Z",
+      "feature": "survey",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:35:34.713Z",
+      "feature": "survey-upload",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:36:22.250Z",
+      "feature": "team-buy",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:37:25.228Z",
+      "feature": "survey",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:44:38.749Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:44:52.401Z",
+      "feature": "questions",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:44:57.335Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:45:09.966Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:45:20.720Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:45:24.879Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:45:40.318Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:45:47.529Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:45:52.829Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:45:57.343Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:46:23.628Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:46:33.431Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:46:35.873Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:46:44.181Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:46:54.640Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:47:04.513Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:47:12.495Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:47:14.679Z",
+      "feature": "team-deals",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:47:41.223Z",
+      "feature": "admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:47:53.032Z",
+      "feature": "members",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:48:16.099Z",
+      "feature": "members",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T09:48:23.455Z",
+      "feature": "members",
       "phase": "do",
       "action": "updated"
     }
