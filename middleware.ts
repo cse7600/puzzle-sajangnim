@@ -15,14 +15,14 @@ import {
 const PROTECTED_PAGES = [
   '/dashboard', '/ai-blog', '/place', '/experience', '/team-buy', '/rewards',
   '/knowledge', '/referral', '/earnings', '/community', '/hub', '/settings',
-  '/onboarding', '/admin',
+  '/my-link', '/onboarding', '/admin',
 ]
 
 const PROTECTED_API_PREFIXES = [
   '/api/receipts', '/api/business-verification', '/api/team-deals', '/api/earnings',
   '/api/ad-accounts', '/api/paybacks', '/api/referral', '/api/knowledge', '/api/points',
   '/api/place', '/api/community', '/api/users', '/api/settlement-config', '/api/admin',
-  '/api/withdrawals',
+  '/api/withdrawals', '/api/link-page', '/api/experience',
 ]
 
 function matchesPrefix(pathname: string, prefixes: string[]): boolean {

@@ -8,13 +8,14 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard': '대시보드',
   '/ai-blog': 'AI 블로그',
   '/place': '플레이스 최적화',
-  '/experience': '미니 체험단',
+  '/experience': '한끼 체험단',
   '/team-buy': '팀 구매',
   '/rewards': '리워드',
   '/knowledge': '오호라!',
   '/referral': '추천인',
   '/earnings': '수익·정산',
   '/hub': '연동 허브',
+  '/my-link': '나만의 링크',
   '/settings': '개인 설정',
 };
 

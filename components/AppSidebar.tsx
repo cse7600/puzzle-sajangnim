@@ -20,9 +20,9 @@ const NAV_SECTIONS: NavSection[] = [
     label: '마케팅 도구',
     items: [
       { icon: '📊', label: '대시보드', href: '/dashboard' },
-      { icon: '✍️', label: 'AI 블로그', href: '/ai-blog' },
       { icon: '📍', label: '플레이스 최적화', href: '/place' },
-      { icon: '👥', label: '미니 체험단', href: '/experience' },
+      { icon: '🔗', label: '나만의 링크', href: '/my-link' },
+      { icon: '👥', label: '한끼 체험단', href: '/experience' },
     ],
   },
   {
