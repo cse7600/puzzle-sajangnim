@@ -188,6 +188,48 @@ export interface Database {
           }
         ]
       }
+      gov_support_listings: {
+        Row: {
+          pblanc_id: string
+          title: string
+          url: string | null
+          jrsdinsttnm: string | null
+          trgetnm: string | null
+          reqst_end_de: string | null
+          is_marketing: boolean
+          region_sido: string | null
+          is_puzzle_transactable: boolean
+          puzzle_note: string | null
+          summary: string | null
+        }
+        Insert: {
+          pblanc_id: string
+          title: string
+          url?: string | null
+          jrsdinsttnm?: string | null
+          trgetnm?: string | null
+          reqst_end_de?: string | null
+          is_marketing?: boolean
+          region_sido?: string | null
+          is_puzzle_transactable?: boolean
+          puzzle_note?: string | null
+          summary?: string | null
+        }
+        Update: {
+          pblanc_id?: string
+          title?: string
+          url?: string | null
+          jrsdinsttnm?: string | null
+          trgetnm?: string | null
+          reqst_end_de?: string | null
+          is_marketing?: boolean
+          region_sido?: string | null
+          is_puzzle_transactable?: boolean
+          puzzle_note?: string | null
+          summary?: string | null
+        }
+        Relationships: []
+      }
       paybacks: {
         Row: {
           id: string
