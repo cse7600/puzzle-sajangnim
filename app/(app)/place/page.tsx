@@ -10,14 +10,15 @@ import {
   Check,
   AlertTriangle,
   X,
-  ChevronRight,
   Star,
   Image as ImageIcon,
   MessageSquare,
   Plus,
+  Trash2,
 } from 'lucide-react';
 import type {
   PlaceRegistration,
+  PlaceRegistrationsResponse,
   KeywordWithRank,
   RankingTrendResponse,
   RegisterResponse,
@@ -25,6 +26,7 @@ import type {
   ChartLine,
 } from './types';
 import { toKeywordCards, toChartLabels, toChartLines } from './lib';
+import { buildChecklist } from './checklist';
 import {
   SIGNAL_STYLES,
   TrendBadge,
@@ -33,50 +35,20 @@ import {
   RankChart,
 } from './components';
 
-interface ChecklistItem {
-  status: 'done' | 'warn' | 'fail';
-  label: string;
-  detail?: string;
-  action?: string;
-}
-
-interface Competitor {
-  rank: number;
-  name: string;
-  reviews: number;
-  photos: number;
-  rating: number;
-  isMine?: boolean;
-}
-
-// 후속 페이즈: 진단 로직 별도 — 현재 목업
-const CHECKLIST: ChecklistItem[] = [
-  { status: 'done', label: '사진 20장 이상 등록', detail: '완료' },
-  { status: 'done', label: '영업시간 최신화', detail: '완료' },
-  { status: 'warn', label: '리뷰 응답률 64%', detail: '목표 80%', action: '바로가기' },
-  { status: 'fail', label: '메뉴 가격 미업데이트', detail: '6개월 경과', action: '수정하기' },
-  { status: 'fail', label: '예약 기능 미사용', action: '설정하기' },
-];
-
-// 후속 페이즈: 경쟁자 데이터 모델 별도 — 현재 목업
-const COMPETITORS: Competitor[] = [
-  { rank: 1, name: '을지면옥 본점', reviews: 4820, photos: 312, rating: 4.6 },
-  { rank: 2, name: '충무로 한정식', reviews: 2104, photos: 198, rating: 4.5 },
-  { rank: 3, name: '을지로 쌈밥 철수네', reviews: 1342, photos: 156, rating: 4.7, isMine: true },
-  { rank: 4, name: '광장시장 보쌈집', reviews: 1188, photos: 142, rating: 4.3 },
-  { rank: 5, name: '명동 손칼국수', reviews: 967, photos: 88, rating: 4.4 },
-];
+type ModalRole = 'mine' | 'competitor';
 
 export default function PlacePage() {
   const [loading, setLoading] = useState(true);
-  const [registration, setRegistration] = useState<PlaceRegistration | null>(null);
+  const [mine, setMine] = useState<PlaceRegistration | null>(null);
+  const [competitors, setCompetitors] = useState<PlaceRegistration[]>([]);
   const [keywordCards, setKeywordCards] = useState<KeywordCard[]>([]);
   const [chartLabels, setChartLabels] = useState<string[]>([]);
   const [chartLines, setChartLines] = useState<ChartLine[]>([]);
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [updated, setUpdated] = useState(false);
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
+
+  const [modalRole, setModalRole] = useState<ModalRole | null>(null);
   const [registerUrl, setRegisterUrl] = useState('');
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [registerNotice, setRegisterNotice] = useState<string | null>(null);
@@ -103,14 +75,16 @@ export default function PlacePage() {
     setChartLines(toChartLines(series));
   }, []);
 
-  // 등록 플레이스 목록 → 첫 항목을 활성 registration 으로. 이후 키워드 데이터 로드.
+  // 내 가게 + 경쟁자 목록을 불러온다. 내 가게가 있으면 키워드 데이터까지 로드.
   const loadRegistrations = useCallback(async () => {
     setLoading(true);
     const res = await fetch('/api/place/register').catch(() => null);
-    const registrations: PlaceRegistration[] = res ? await res.json() : [];
-    const active = Array.isArray(registrations) ? registrations[0] ?? null : null;
-    setRegistration(active);
-    if (active) await loadKeywordData(active.id);
+    const payload: PlaceRegistrationsResponse = res
+      ? await res.json()
+      : { mine: null, competitors: [] };
+    setMine(payload.mine ?? null);
+    setCompetitors(Array.isArray(payload.competitors) ? payload.competitors : []);
+    if (payload.mine) await loadKeywordData(payload.mine.id);
     setLoading(false);
   }, [loadKeywordData]);
 
@@ -118,8 +92,15 @@ export default function PlacePage() {
     loadRegistrations();
   }, [loadRegistrations]);
 
+  function openRegisterModal(role: ModalRole) {
+    setModalRole(role);
+    setRegisterUrl(role === 'mine' && mine ? mine.place_url : '');
+    setRegisterError(null);
+    setRegisterNotice(null);
+  }
+
   async function submitRegister() {
-    if (!registerUrl.trim()) {
+    if (!modalRole || !registerUrl.trim()) {
       setRegisterError('플레이스 URL을 입력해주세요.');
       return;
     }
@@ -129,7 +110,7 @@ export default function PlacePage() {
     const res = await fetch('/api/place/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ place_url: registerUrl.trim() }),
+      body: JSON.stringify({ place_url: registerUrl.trim(), role: modalRole }),
     }).catch(() => null);
     setRegisterSubmitting(false);
 
@@ -146,12 +127,19 @@ export default function PlacePage() {
       setRegisterNotice('기본정보 수집 대기중입니다. 등록은 완료되었습니다.');
     }
     setRegisterUrl('');
-    setShowRegisterModal(false);
+    setModalRole(null);
     loadRegistrations();
   }
 
+  async function removeCompetitor(registrationId: string) {
+    const res = await fetch(`/api/place/register?registration_id=${registrationId}`, {
+      method: 'DELETE',
+    }).catch(() => null);
+    if (res?.ok) loadRegistrations();
+  }
+
   async function addKeyword() {
-    if (!registration || !newKeyword.trim()) {
+    if (!mine || !newKeyword.trim()) {
       setKeywordError('키워드를 입력해주세요.');
       return;
     }
@@ -159,7 +147,7 @@ export default function PlacePage() {
     const res = await fetch('/api/place/keywords', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ registration_id: registration.id, keyword: newKeyword.trim() }),
+      body: JSON.stringify({ registration_id: mine.id, keyword: newKeyword.trim() }),
     }).catch(() => null);
 
     if (!res) {
@@ -176,27 +164,27 @@ export default function PlacePage() {
       return;
     }
     setNewKeyword('');
-    loadKeywordData(registration.id);
+    loadKeywordData(mine.id);
   }
 
   async function removeKeyword(keywordId: string) {
-    if (!registration) return;
+    if (!mine) return;
     const res = await fetch(`/api/place/keywords?id=${keywordId}`, {
       method: 'DELETE',
     }).catch(() => null);
-    if (res?.ok) loadKeywordData(registration.id);
+    if (res?.ok) loadKeywordData(mine.id);
     else setKeywordError('키워드 삭제에 실패했습니다.');
   }
 
   // 등록된 placeId 로 register 재호출(upsert) → 순위·기본정보 재수집.
   async function handleRefresh() {
-    if (isUpdating || !registration) return;
+    if (isUpdating || !mine) return;
     setIsUpdating(true);
     setUpdated(false);
     const res = await fetch('/api/place/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ place_url: registration.place_url }),
+      body: JSON.stringify({ place_url: mine.place_url, role: 'mine' }),
     }).catch(() => null);
     setIsUpdating(false);
     if (res?.ok) {
@@ -206,26 +194,48 @@ export default function PlacePage() {
     }
   }
 
+  const modal = modalRole && (
+    <RegisterModal
+      url={registerUrl}
+      setUrl={setRegisterUrl}
+      error={registerError}
+      notice={registerNotice}
+      submitting={registerSubmitting}
+      onClose={() => setModalRole(null)}
+      onSubmit={submitRegister}
+      title={modalRole === 'mine' ? '네이버 플레이스 등록' : '경쟁 가게 등록'}
+      description={
+        modalRole === 'mine'
+          ? '내 가게의 네이버 플레이스 URL을 붙여넣어 주세요. 순위·기본정보를 다시 수집합니다.'
+          : '비교하고 싶은 경쟁 가게의 네이버 플레이스 URL을 붙여넣어 주세요.'
+      }
+    />
+  );
+
   if (loading) return <PlaceSkeleton />;
 
-  if (!registration) {
+  if (!mine) {
     return (
       <>
-        <EmptyState onRegister={() => setShowRegisterModal(true)} />
-        {showRegisterModal && (
-          <RegisterModal
-            url={registerUrl}
-            setUrl={setRegisterUrl}
-            error={registerError}
-            notice={registerNotice}
-            submitting={registerSubmitting}
-            onClose={() => setShowRegisterModal(false)}
-            onSubmit={submitRegister}
-          />
-        )}
+        <EmptyState onRegister={() => openRegisterModal('mine')} />
+        {modal}
       </>
     );
   }
+
+  const checklist = mine.latest_snapshot ? buildChecklist(mine.latest_snapshot) : null;
+
+  const compareRows = [mine, ...competitors].sort(
+    (a, b) =>
+      (b.latest_snapshot?.visitor_review_count ?? -1) -
+      (a.latest_snapshot?.visitor_review_count ?? -1)
+  );
+  const maxReviews = Math.max(0, ...compareRows.map((row) => row.latest_snapshot?.visitor_review_count ?? 0));
+  const maxPhotos = Math.max(0, ...compareRows.map((row) => row.latest_snapshot?.photo_count ?? 0));
+  const myReviews = mine.latest_snapshot?.visitor_review_count ?? 0;
+  const myPhotos = mine.latest_snapshot?.photo_count ?? 0;
+  const reviewGap = maxReviews - myReviews;
+  const photoGap = maxPhotos - myPhotos;
 
   return (
     <div className="mx-auto max-w-[1280px] space-y-6">
@@ -250,21 +260,21 @@ export default function PlacePage() {
       <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2">
           <Store className="h-4 w-4 text-gray-400" />
-          <span className="text-base font-bold text-gray-900">{registration.name}</span>
+          <span className="text-base font-bold text-gray-900">{mine.name}</span>
         </div>
-        {registration.address && (
+        {mine.address && (
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <MapPin className="h-4 w-4 text-gray-400" />
-            {registration.address}
+            {mine.address}
           </div>
         )}
-        {registration.category && (
+        {mine.category && (
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Tag className="h-4 w-4 text-gray-400" />
-            {registration.category}
+            {mine.category}
           </div>
         )}
-        {registration.latest_snapshot ? (
+        {mine.latest_snapshot ? (
           <div className="flex items-center gap-2 text-sm font-medium text-emerald-600">
             <CheckCircle2 className="h-4 w-4" />
             네이버 연동 완료
@@ -276,12 +286,7 @@ export default function PlacePage() {
           </div>
         )}
         <button
-          onClick={() => {
-            setRegisterUrl(registration.place_url);
-            setRegisterError(null);
-            setRegisterNotice(null);
-            setShowRegisterModal(true);
-          }}
+          onClick={() => openRegisterModal('mine')}
           className="ml-auto text-sm font-medium text-[#0066cc] hover:underline"
         >
           가게 정보 수정
@@ -368,157 +373,196 @@ export default function PlacePage() {
 
       {/* 2-COLUMN: 개선 진단 + 경쟁자 분석 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* 후속 페이즈: 진단 로직 별도 — 현재 목업 */}
+        {/* 개선 진단 체크리스트 — 실 수집 데이터 기반 */}
         <div className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-gray-900">개선 진단 체크리스트</h2>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-[#0066cc]">62</span>
-              <span className="text-sm font-medium text-gray-400">/100</span>
-            </div>
+            {checklist && (
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold text-[#0066cc]">{checklist.score}</span>
+                <span className="text-sm font-medium text-gray-400">/100</span>
+              </div>
+            )}
           </div>
 
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-            <div className="h-full rounded-full bg-[#0066cc]" style={{ width: '62%' }} />
-          </div>
+          {checklist ? (
+            <>
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="h-full rounded-full bg-[#0066cc]"
+                  style={{ width: `${checklist.score}%` }}
+                />
+              </div>
 
-          <ul className="mt-5 flex-1 space-y-2.5">
-            {CHECKLIST.map((checkItem, index) => {
-              const isDone = checkItem.status === 'done';
-              const isWarn = checkItem.status === 'warn';
-              return (
-                <li
-                  key={index}
-                  className="flex items-center gap-3 rounded-lg border border-gray-100 px-3 py-2.5"
-                >
-                  <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-                      isDone
-                        ? 'bg-emerald-50 text-emerald-600'
-                        : isWarn
-                          ? 'bg-amber-50 text-amber-500'
-                          : 'bg-red-50 text-red-500'
-                    }`}
-                  >
-                    {isDone ? (
-                      <Check className="h-3.5 w-3.5" />
-                    ) : isWarn ? (
-                      <AlertTriangle className="h-3.5 w-3.5" />
-                    ) : (
-                      <X className="h-3.5 w-3.5" />
-                    )}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`truncate text-sm font-medium ${
-                        isDone ? 'text-gray-500' : 'text-gray-900'
-                      }`}
+              <ul className="mt-5 flex-1 space-y-2.5">
+                {checklist.items.map((item) => {
+                  const isDone = item.status === 'done';
+                  const isWarn = item.status === 'warn';
+                  return (
+                    <li
+                      key={item.label}
+                      className="flex items-center gap-3 rounded-lg border border-gray-100 px-3 py-2.5"
                     >
-                      {checkItem.label}
-                    </p>
-                    {checkItem.detail && (
-                      <p className="text-xs text-gray-400">{checkItem.detail}</p>
-                    )}
-                  </div>
-                  {checkItem.action && (
-                    <button className="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-[#0066cc] hover:underline">
-                      {checkItem.action}
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-
-          <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-700">
-            플레이스 모니터링은 1일 1회 자동 수집됩니다. 순위·리뷰 수·별점 변화를 매일 추적해 드립니다.
-          </div>
-        </div>
-
-        {/* 후속 페이즈: 경쟁자 데이터 모델 별도 — 현재 목업 */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-gray-900">내 가게 vs 경쟁자</h2>
-            <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-[#0066cc]">
-              &lsquo;을지로 쌈밥&rsquo; 기준
-            </span>
-          </div>
-
-          <div className="mt-4 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-400">
-                  <th className="pb-2 pl-3 font-medium">순위</th>
-                  <th className="pb-2 font-medium">가게명</th>
-                  <th className="pb-2 text-right font-medium">리뷰수</th>
-                  <th className="pb-2 text-right font-medium">사진</th>
-                  <th className="pb-2 pr-1 text-right font-medium">평점</th>
-                </tr>
-              </thead>
-              <tbody>
-                {COMPETITORS.map((competitor) => (
-                  <tr
-                    key={competitor.rank}
-                    className={`border-b border-gray-50 last:border-0 ${
-                      competitor.isMine ? 'bg-blue-50/50' : ''
-                    }`}
-                  >
-                    <td
-                      className={`py-3 pl-3 ${
-                        competitor.isMine
-                          ? 'border-l-2 border-[#0066cc]'
-                          : 'border-l-2 border-transparent'
-                      }`}
-                    >
-                      <span className="font-semibold text-gray-700">{competitor.rank}</span>
-                    </td>
-                    <td className="py-3 pr-2">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`truncate ${
-                            competitor.isMine
-                              ? 'font-bold text-[#0066cc]'
-                              : 'font-medium text-gray-800'
+                      <span
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                          isDone
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : isWarn
+                              ? 'bg-amber-50 text-amber-500'
+                              : 'bg-red-50 text-red-500'
+                        }`}
+                      >
+                        {isDone ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : isWarn ? (
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                        ) : (
+                          <X className="h-3.5 w-3.5" />
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`truncate text-sm font-medium ${
+                            isDone ? 'text-gray-500' : 'text-gray-900'
                           }`}
                         >
-                          {competitor.name}
-                        </span>
-                        {competitor.isMine && (
-                          <span className="shrink-0 rounded bg-[#0066cc] px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                            내 가게
-                          </span>
-                        )}
+                          {item.label}
+                        </p>
+                        <p className="text-xs text-gray-400">{item.detail}</p>
                       </div>
-                    </td>
-                    <td className="py-3 text-right tabular-nums text-gray-600">
-                      {competitor.reviews.toLocaleString()}
-                    </td>
-                    <td className="py-3 text-right tabular-nums text-gray-600">
-                      {competitor.photos}
-                    </td>
-                    <td className="py-3 pr-1 text-right">
-                      <span className="inline-flex items-center gap-0.5 font-medium tabular-nums text-gray-800">
-                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                        {competitor.rating}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-500">
+                네이버가 순위 알고리즘 가중치를 공식적으로 공개하지 않아, 위 항목은
+                &ldquo;채워졌는지 여부&rdquo;를 진단할 뿐 순위 상승을 보장하지 않습니다.
+                &lsquo;순위 업데이트&rsquo;로 최신 데이터를 다시 수집할 수 있습니다.
+              </div>
+            </>
+          ) : (
+            <div className="mt-5 flex flex-1 items-center justify-center rounded-lg border border-dashed border-gray-200 py-10 text-center text-sm text-gray-400">
+              기본정보 수집 대기중입니다. &lsquo;순위 업데이트&rsquo;를 눌러 다시 시도해보세요.
+            </div>
+          )}
+        </div>
+
+        {/* 내 가게 vs 경쟁자 — 실제 등록된 경쟁자만 표시 */}
+        <div className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-900">내 가게 vs 경쟁자</h2>
+            <button
+              onClick={() => openRegisterModal('competitor')}
+              className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-[#0066cc] hover:bg-blue-100"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              경쟁자 추가
+            </button>
           </div>
 
-          <div className="mt-4 flex items-center gap-4 rounded-lg bg-gray-50 px-4 py-3 text-xs text-gray-500">
-            <span className="inline-flex items-center gap-1">
-              <MessageSquare className="h-3.5 w-3.5 text-gray-400" />
-              리뷰수 1위와 격차 <b className="text-gray-700">-3,478</b>
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <ImageIcon className="h-3.5 w-3.5 text-gray-400" />
-              사진 보강 추천 <b className="text-gray-700">+44장</b>
-            </span>
-          </div>
+          {competitors.length === 0 ? (
+            <div className="mt-4 flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-200 py-10 text-center">
+              <p className="text-sm text-gray-500">등록된 경쟁 가게가 없습니다</p>
+              <p className="text-xs text-gray-400">경쟁 가게를 등록하면 리뷰수·사진·평점을 비교합니다</p>
+            </div>
+          ) : (
+            <>
+              <p className="mt-1 text-xs text-gray-400">리뷰수 기준 정렬</p>
+              <div className="mt-3 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-400">
+                      <th className="pb-2 pl-3 font-medium">#</th>
+                      <th className="pb-2 font-medium">가게명</th>
+                      <th className="pb-2 text-right font-medium">리뷰수</th>
+                      <th className="pb-2 text-right font-medium">사진</th>
+                      <th className="pb-2 pr-1 text-right font-medium">평점</th>
+                      <th className="pb-2 pl-2 font-medium" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {compareRows.map((row, index) => {
+                      const isMine = row.id === mine.id;
+                      const snapshot = row.latest_snapshot;
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`border-b border-gray-50 last:border-0 ${
+                            isMine ? 'bg-blue-50/50' : ''
+                          }`}
+                        >
+                          <td
+                            className={`py-3 pl-3 ${
+                              isMine ? 'border-l-2 border-[#0066cc]' : 'border-l-2 border-transparent'
+                            }`}
+                          >
+                            <span className="font-semibold text-gray-700">{index + 1}</span>
+                          </td>
+                          <td className="py-3 pr-2">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`truncate ${
+                                  isMine ? 'font-bold text-[#0066cc]' : 'font-medium text-gray-800'
+                                }`}
+                              >
+                                {row.name}
+                              </span>
+                              {isMine && (
+                                <span className="shrink-0 rounded bg-[#0066cc] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                  내 가게
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 text-right tabular-nums text-gray-600">
+                            {snapshot?.visitor_review_count?.toLocaleString() ?? '—'}
+                          </td>
+                          <td className="py-3 text-right tabular-nums text-gray-600">
+                            {snapshot?.photo_count ?? '—'}
+                          </td>
+                          <td className="py-3 pr-1 text-right">
+                            {snapshot?.rating !== null && snapshot?.rating !== undefined ? (
+                              <span className="inline-flex items-center gap-0.5 font-medium tabular-nums text-gray-800">
+                                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                {snapshot.rating.toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 pl-2 text-right">
+                            {!isMine && (
+                              <button
+                                onClick={() => removeCompetitor(row.id)}
+                                aria-label="경쟁자 삭제"
+                                className="rounded-md p-1 text-gray-300 hover:bg-gray-100 hover:text-red-500"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-4 rounded-lg bg-gray-50 px-4 py-3 text-xs text-gray-500">
+                <span className="inline-flex items-center gap-1">
+                  <MessageSquare className="h-3.5 w-3.5 text-gray-400" />
+                  리뷰수 1위와 격차{' '}
+                  <b className="text-gray-700">{reviewGap > 0 ? `-${reviewGap.toLocaleString()}` : '1위'}</b>
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <ImageIcon className="h-3.5 w-3.5 text-gray-400" />
+                  사진 격차{' '}
+                  <b className="text-gray-700">{photoGap > 0 ? `+${photoGap}장` : '1위'}</b>
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -559,6 +603,8 @@ export default function PlacePage() {
           </>
         )}
       </div>
+
+      {modal}
     </div>
   );
 }

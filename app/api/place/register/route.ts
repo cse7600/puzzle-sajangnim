@@ -40,18 +40,32 @@ function toSnapshotRow(registrationId: string, info: PlaceBasicInfo) {
     blog_review_count: info.blogReviewCount,
     rating: info.rating,
     photo_count: info.photoCount,
+    has_reservation: info.hasReservation,
+    keyword_count: info.keywordList?.length ?? null,
+    has_description: info.description !== null,
+    menu_count: info.menuCount,
     raw_data: info.raw,
   }
+}
+
+const VALID_ROLES = new Set(['mine', 'competitor'])
+
+// postgres unique_violation. 'mine' 은 유저당 1개로 부분 유니크 인덱스가 걸려있다
+// (migrations/013) — onConflict 대상(user_id,naver_place_id)과 다른 제약이라 upsert가
+// 못 잡고 insert 에러로 올라온다.
+function isUniqueViolation(error: unknown): boolean {
+  return Boolean(error && typeof error === 'object' && (error as { code?: string }).code === '23505')
 }
 
 export async function POST(req: Request) {
   const sessionUser = await getSessionUser()
   if (!sessionUser) return unauthorizedResponse()
 
-  const { place_url } = await req.json()
+  const { place_url, role: rawRole } = await req.json()
   if (!place_url || !place_url.trim()) {
     return NextResponse.json({ error: '플레이스 URL을 입력해주세요.' }, { status: 400 })
   }
+  const role = VALID_ROLES.has(rawRole) ? rawRole : 'mine'
 
   let placeId: string
   try {
@@ -82,6 +96,7 @@ export async function POST(req: Request) {
         name: placeInfo?.name ?? `플레이스 ${placeId}`,
         address: placeInfo?.address ?? null,
         category: placeInfo?.category ?? null,
+        role,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id,naver_place_id' }
@@ -90,6 +105,12 @@ export async function POST(req: Request) {
     .single()
 
   if (regError || !registration) {
+    if (isUniqueViolation(regError)) {
+      return NextResponse.json(
+        { error: '이미 등록된 내 가게가 있습니다. 새 가게로 바꾸려면 기존 등록을 먼저 삭제해주세요.' },
+        { status: 409 }
+      )
+    }
     return NextResponse.json(
       { error: '플레이스 등록 중 오류가 발생했습니다.' },
       { status: 500 }
@@ -132,9 +153,10 @@ export async function GET() {
     .order('created_at', { ascending: false })
 
   if (error || !registrations) {
-    return NextResponse.json([], {
-      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
-    })
+    return NextResponse.json(
+      { mine: null, competitors: [] },
+      { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+    )
   }
 
   const withSnapshots = await Promise.all(
@@ -149,7 +171,38 @@ export async function GET() {
     })
   )
 
-  return NextResponse.json(withSnapshots, {
-    headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
-  })
+  const mine = withSnapshots.find((registration) => registration.role === 'mine') ?? null
+  const competitors = withSnapshots.filter((registration) => registration.role === 'competitor')
+
+  return NextResponse.json(
+    { mine, competitors },
+    { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+  )
+}
+
+export async function DELETE(req: Request) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return unauthorizedResponse()
+
+  const registrationId = new URL(req.url).searchParams.get('registration_id')
+  if (!registrationId) {
+    return NextResponse.json({ error: 'registration_id가 필요합니다.' }, { status: 400 })
+  }
+
+  const { data: deleted, error } = await db
+    .from('puzl_place_registrations')
+    .delete()
+    .eq('id', registrationId)
+    .eq('user_id', sessionUser.id)
+    .select('id')
+    .maybeSingle()
+
+  if (error) {
+    return NextResponse.json({ error: '삭제 중 오류가 발생했습니다.' }, { status: 500 })
+  }
+  if (!deleted) {
+    return NextResponse.json({ error: '등록된 플레이스를 찾을 수 없습니다.' }, { status: 404 })
+  }
+
+  return NextResponse.json({ ok: true })
 }

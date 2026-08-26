@@ -45,7 +45,7 @@ export function SkeletonCard({ className = '' }: { className?: string }) {
   );
 }
 
-// 네이버 플레이스 URL 등록 모달
+// 네이버 플레이스 URL 등록 모달 (내 가게 / 경쟁자 공용 — title/description 으로 구분)
 export function RegisterModal(props: {
   url: string;
   setUrl: (value: string) => void;
@@ -54,8 +54,20 @@ export function RegisterModal(props: {
   submitting: boolean;
   onClose: () => void;
   onSubmit: () => void;
+  title?: string;
+  description?: string;
 }) {
-  const { url, setUrl, error, notice, submitting, onClose, onSubmit } = props;
+  const {
+    url,
+    setUrl,
+    error,
+    notice,
+    submitting,
+    onClose,
+    onSubmit,
+    title = '네이버 플레이스 등록',
+    description = '내 가게의 네이버 플레이스 URL을 붙여넣어 주세요. 순위·기본정보를 매일 추적합니다.',
+  } = props;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -66,15 +78,13 @@ export function RegisterModal(props: {
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-gray-100 p-5">
-          <h2 className="text-lg font-semibold text-gray-900">네이버 플레이스 등록</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
           <button onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100">
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="space-y-3 p-5">
-          <p className="text-sm text-gray-500">
-            내 가게의 네이버 플레이스 URL을 붙여넣어 주세요. 순위·기본정보를 매일 추적합니다.
-          </p>
+          <p className="text-sm text-gray-500">{description}</p>
           <input
             value={url}
             onChange={(event) => setUrl(event.target.value)}

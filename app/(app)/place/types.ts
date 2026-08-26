@@ -12,8 +12,14 @@ export interface PlaceSnapshot {
   blog_review_count: number | null;
   rating: number | null;
   photo_count: number | null;
+  has_reservation: boolean | null; // null = 판별 불가
+  keyword_count: number | null; // null = 못 읽음, 0 = 진짜 미설정
+  has_description: boolean | null;
+  menu_count: number | null;
   created_at: string;
 }
+
+export type PlaceRole = 'mine' | 'competitor';
 
 export interface PlaceRegistration {
   id: string;
@@ -23,10 +29,16 @@ export interface PlaceRegistration {
   name: string;
   address: string | null;
   category: string | null;
+  role: PlaceRole;
   is_active: boolean;
   created_at: string;
   updated_at: string;
   latest_snapshot: PlaceSnapshot | null;
+}
+
+export interface PlaceRegistrationsResponse {
+  mine: PlaceRegistration | null;
+  competitors: PlaceRegistration[];
 }
 
 export interface RegisterResponse {
