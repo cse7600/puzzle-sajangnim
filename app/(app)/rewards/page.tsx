@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { Sparkles, FileImage, AlertCircle } from 'lucide-react'
 
 interface Receipt {
@@ -155,6 +156,13 @@ export default function RewardsPage() {
             <p className="text-[18px] font-semibold">50~500P</p>
           </div>
         </div>
+        <Link
+          href="/earnings?tab=confirmed"
+          className="mt-4 flex items-center justify-between rounded-[11px] bg-white/10 px-3.5 py-2.5 text-[12px] text-white/90 transition-colors hover:bg-white/15"
+        >
+          <span>전체 적립 내역은 수익·정산에서 확인하세요</span>
+          <span className="font-medium">보러가기 →</span>
+        </Link>
       </div>
 
       {/* 영수증 업로드 섹션 */}

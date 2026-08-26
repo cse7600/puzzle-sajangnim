@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Platform, PLATFORM_INFO, ConnectionStatus } from '@/lib/hub'
+import Link from 'next/link'
+import { Platform, PLATFORM_INFO, ConnectionStatus, PaybackStatus } from '@/lib/hub'
 import AccountStatusBadges from '@/components/hub/AccountStatusBadges'
 import TransferGuide from '@/components/hub/TransferGuide'
-import SettlementTable, { PaybackLineItem } from '@/components/hub/SettlementTable'
 import NaverCredentialsModal from '@/components/hub/NaverCredentialsModal'
 
 interface AdAccount {
@@ -18,11 +18,17 @@ interface AdAccount {
   cost_verification_status: 'not_configured' | 'configured' | 'verified' | 'failed'
 }
 
-type Tab = 'accounts' | 'statements' | 'guide'
+// 정산 상세(월별 그룹/출금 신청)는 /earnings로 통합됐다 — 여기선 요약 카드/배너용 최소 필드만 필요.
+interface PaybackSummaryItem {
+  status: PaybackStatus
+  amount: number
+}
+
+type Tab = 'accounts' | 'guide'
 
 export default function HubPage() {
   const [accounts, setAccounts] = useState<AdAccount[]>([])
-  const [paybacks, setPaybacks] = useState<PaybackLineItem[]>([])
+  const [paybacks, setPaybacks] = useState<PaybackSummaryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -52,7 +58,7 @@ export default function HubPage() {
   useEffect(loadData, [])
 
   const totalPayback = paybacks
-    .filter(p => p.status !== 'paid')
+    .filter(p => p.status !== 'paid' && p.status !== 'converted_to_points')
     .reduce((sum, p) => sum + p.amount, 0)
   const confirmedPayback = paybacks.filter(p => p.status === 'confirmed').reduce((sum, p) => sum + p.amount, 0)
 
@@ -141,7 +147,6 @@ export default function HubPage() {
         <div className="flex border-b border-[#e0e0e0]">
           {([
             ['accounts', '광고계정 관리'],
-            ['statements', '정산 내역'],
             ['guide', '이관 가이드'],
           ] as [Tab, string][]).map(([key, label]) => (
             <button
@@ -157,6 +162,18 @@ export default function HubPage() {
         <div className="p-6">
           {tab === 'accounts' && (
             <>
+              <Link
+                href="/earnings?tab=confirmed"
+                className="mb-5 flex items-center justify-between gap-3 rounded-[11px] border border-[#0066cc]/20 bg-[#f0f7ff] px-4 py-3 text-[13px] transition-colors hover:bg-[#e5f1ff]"
+              >
+                <span className="text-[#1d1d1f]">
+                  {confirmedPayback > 0
+                    ? <>출금 신청 가능한 정산 <strong className="text-[#0066cc]">{confirmedPayback.toLocaleString()}P</strong> 있어요</>
+                    : '정산 내역과 출금 신청은 수익·정산 탭에서 관리해요'}
+                </span>
+                <span className="whitespace-nowrap font-medium text-[#0066cc]">수익·정산에서 관리하기 →</span>
+              </Link>
+
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h3 className="text-[16px] font-semibold text-[#1d1d1f]">광고계정 등록</h3>
@@ -271,14 +288,6 @@ export default function HubPage() {
                   })}
                 </div>
               )}
-            </>
-          )}
-
-          {tab === 'statements' && (
-            <>
-              <h3 className="text-[16px] font-semibold text-[#1d1d1f] mb-1">정산 내역</h3>
-              <p className="text-[13px] text-[#6e6e73] mb-5">퍼즐코퍼레이션이 발행하는 월별 정산내역서예요. PDF로도 받아보실 수 있어요.</p>
-              <SettlementTable paybacks={paybacks} onWithdrawalRequested={loadData} />
             </>
           )}
 

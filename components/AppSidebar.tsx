@@ -13,6 +13,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: '핵심',
     items: [
       { icon: '🔗', label: '연동 허브', href: '/hub' },
+      { icon: '💰', label: '수익·정산', href: '/earnings' },
     ],
   },
   {
@@ -32,7 +33,6 @@ const NAV_SECTIONS: NavSection[] = [
       { icon: '🧾', label: '영수증 환급', href: '/rewards' },
       { icon: '💡', label: '지식 거래소', href: '/knowledge' },
       { icon: '🤝', label: '추천인', href: '/referral' },
-      { icon: '💰', label: '수익 현황', href: '/earnings' },
     ],
   },
   {

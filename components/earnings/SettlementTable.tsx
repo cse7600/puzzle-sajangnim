@@ -206,12 +206,14 @@ function MonthTable({
   error,
   onDownload,
   onWithdrawalRequested,
+  showPdfDownload,
 }: {
   group: MonthGroup
   downloading: boolean
   error: string | null
   onDownload: () => void
   onWithdrawalRequested: () => void
+  showPdfDownload: boolean
 }) {
   const headerLabel = PAYBACK_USER_STATUS_LABEL[group.status]
 
@@ -227,13 +229,15 @@ function MonthTable({
             {headerLabel}
           </span>
           <p className="text-[16px] font-semibold text-[#0066cc]">+{group.totalAmount.toLocaleString()}P</p>
-          <button
-            onClick={onDownload}
-            disabled={downloading}
-            className="rounded-[9999px] border border-[#e0e0e0] px-3.5 py-1.5 text-[12px] font-medium text-[#1d1d1f] hover:bg-white disabled:opacity-50 transition-colors"
-          >
-            {downloading ? 'PDF 생성 중...' : 'PDF 다운로드'}
-          </button>
+          {showPdfDownload && (
+            <button
+              onClick={onDownload}
+              disabled={downloading}
+              className="rounded-[9999px] border border-[#e0e0e0] px-3.5 py-1.5 text-[12px] font-medium text-[#1d1d1f] hover:bg-white disabled:opacity-50 transition-colors"
+            >
+              {downloading ? 'PDF 생성 중...' : 'PDF 다운로드'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -274,9 +278,11 @@ function MonthTable({
 export default function SettlementTable({
   paybacks,
   onWithdrawalRequested,
+  showPdfDownload = true,
 }: {
   paybacks: PaybackLineItem[]
   onWithdrawalRequested?: () => void
+  showPdfDownload?: boolean
 }) {
   const groups = useMemo(() => groupByPeriod(paybacks), [paybacks])
   const periodOptions = useMemo(() => groups.map(g => g.period), [groups])
@@ -333,6 +339,7 @@ export default function SettlementTable({
               error={downloadError?.period === group.period ? downloadError.message : null}
               onDownload={() => handleDownload(group.period)}
               onWithdrawalRequested={() => onWithdrawalRequested?.()}
+              showPdfDownload={showPdfDownload}
             />
           ))}
         </div>

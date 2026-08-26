@@ -13,7 +13,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/rewards': '리워드',
   '/knowledge': '지식 거래소',
   '/referral': '추천인',
-  '/earnings': '수익 현황',
+  '/earnings': '수익·정산',
   '/community': '사장님 모임',
   '/hub': '연동 허브',
   '/settings': '개인 설정',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   Share2,
   Copy,
@@ -399,6 +400,14 @@ export default function ReferralPage() {
             내 포인트 잔액에 자동으로 합산돼요.
           </p>
         </div>
+
+        <Link
+          href="/earnings?tab=confirmed"
+          className="mt-3 flex items-center justify-between rounded-lg border border-gray-100 px-4 py-2.5 text-xs text-gray-500 transition-colors hover:bg-gray-50"
+        >
+          <span>전체 적립 내역은 수익·정산에서 확인하세요</span>
+          <span className="font-medium text-[#0066cc]">보러가기 →</span>
+        </Link>
       </div>
     </div>
   );
