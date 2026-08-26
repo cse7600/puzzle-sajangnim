@@ -12,6 +12,7 @@ import type { AdAccount, BusinessVerification } from '@/types/database'
 
 interface VerificationDetail extends BusinessVerification {
   certificate_url: string | null
+  bankbook_copy_url: string | null
 }
 
 interface PaybackSummary {
@@ -35,12 +36,18 @@ interface BusinessInfoFormValues {
   tax_invoice_email: string
   business_address: string
   naver_place_url: string
+  bank_name: string
+  account_number: string
+  account_holder: string
 }
 
 interface BusinessInfoResponse {
   tax_invoice_email: string | null
   business_address: string | null
   naver_place_url: string | null
+  bank_name: string | null
+  account_number: string | null
+  account_holder: string | null
 }
 
 const CONNECTION_LABEL_FALLBACK: Record<string, string> = {
@@ -73,6 +80,9 @@ function toBusinessInfoFormValues(verification: VerificationDetail): BusinessInf
     tax_invoice_email: verification.tax_invoice_email ?? '',
     business_address: verification.business_address ?? '',
     naver_place_url: verification.naver_place_url ?? '',
+    bank_name: verification.bank_name ?? '',
+    account_number: verification.account_number ?? '',
+    account_holder: verification.account_holder ?? '',
   }
 }
 
@@ -151,6 +161,18 @@ function VerificationInfo({ verification }: { verification: VerificationDetail }
           사업자 등록증 보기
         </a>
       )}
+      {verification.bankbook_copy_url && (
+        <div>
+          <a
+            href={verification.bankbook_copy_url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block text-[#0066cc] underline"
+          >
+            통장사본 보기
+          </a>
+        </div>
+      )}
       {verification.status === 'rejected' && (
         <div className="text-red-600">반려 사유: {verification.reviewer_note ?? '(없음)'}</div>
       )}
@@ -185,6 +207,18 @@ function BusinessInfoReadonly({ verification }: { verification: VerificationDeta
             '미입력'
           )}
         </dd>
+      </div>
+      <div>
+        <dt className="text-muted-light mb-0.5">정산 계좌</dt>
+        <dd className="text-ink">
+          {verification.bank_name || verification.account_number
+            ? `${verification.bank_name ?? ''} ${verification.account_number ?? ''}`.trim()
+            : '미입력'}
+        </dd>
+      </div>
+      <div>
+        <dt className="text-muted-light mb-0.5">예금주</dt>
+        <dd className="text-ink">{verification.account_holder ?? '미입력'}</dd>
       </div>
     </dl>
   )
@@ -229,6 +263,34 @@ function BusinessInfoForm({
         value={fields.naver_place_url}
         onChange={e => onChange({ ...fields, naver_place_url: e.target.value })}
         placeholder="https://naver.me/... 또는 https://m.place.naver.com/..."
+        disabled={saving}
+        className="w-full rounded-md border border-hairline px-3 py-2 text-[13px] outline-none focus:border-primary"
+      />
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={fields.bank_name}
+          onChange={e => onChange({ ...fields, bank_name: e.target.value })}
+          placeholder="은행명 (예: 국민은행)"
+          maxLength={30}
+          disabled={saving}
+          className="w-1/2 rounded-md border border-hairline px-3 py-2 text-[13px] outline-none focus:border-primary"
+        />
+        <input
+          type="text"
+          value={fields.account_number}
+          onChange={e => onChange({ ...fields, account_number: e.target.value })}
+          placeholder="계좌번호"
+          disabled={saving}
+          className="w-1/2 rounded-md border border-hairline px-3 py-2 text-[13px] outline-none focus:border-primary"
+        />
+      </div>
+      <input
+        type="text"
+        value={fields.account_holder}
+        onChange={e => onChange({ ...fields, account_holder: e.target.value })}
+        placeholder="예금주"
+        maxLength={50}
         disabled={saving}
         className="w-full rounded-md border border-hairline px-3 py-2 text-[13px] outline-none focus:border-primary"
       />

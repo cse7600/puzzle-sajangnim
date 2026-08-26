@@ -13,6 +13,10 @@ type VerificationResponse = {
   tax_invoice_email?: string | null
   business_address?: string | null
   naver_place_url?: string | null
+  bank_name?: string | null
+  account_number?: string | null
+  account_holder?: string | null
+  bankbook_copy_url?: string | null
 }
 
 function SettingsSkeleton() {
@@ -206,13 +210,14 @@ function VerificationCardBody({ verification, onSubmitted }: { verification: Ver
   return <BusinessVerificationForm onSubmitted={onSubmitted} submitLabel="사업자 정보 등록하기" />
 }
 
-type BusinessInfoField = 'tax_invoice_email' | 'business_address' | 'naver_place_url'
+type BusinessInfoField = 'tax_invoice_email' | 'business_address' | 'naver_place_url' | 'account_number'
 
 // 서버는 단일 error 메시지만 돌려주므로, 문구를 보고 어느 필드 문제인지 추정해 그 아래에 붙인다.
 // 매칭되지 않으면(예: 404/500) 폼 상단 배너로 표시한다.
 function classifyPatchError(message: string): BusinessInfoField | 'general' {
   if (message.includes('이메일')) return 'tax_invoice_email'
   if (message.includes('네이버 플레이스')) return 'naver_place_url'
+  if (message.includes('계좌번호')) return 'account_number'
   return 'general'
 }
 
@@ -220,6 +225,9 @@ async function patchBusinessInfo(body: {
   tax_invoice_email: string
   business_address: string
   naver_place_url: string
+  bank_name: string
+  account_number: string
+  account_holder: string
 }): Promise<{ error?: string; field?: BusinessInfoField | 'general' }> {
   const res = await fetch('/api/business-verification', {
     method: 'PATCH',
@@ -236,6 +244,9 @@ function BusinessInfoSection({ verification }: { verification: VerificationRespo
   const [email, setEmail] = useState(verification.tax_invoice_email ?? '')
   const [address, setAddress] = useState(verification.business_address ?? '')
   const [naverUrl, setNaverUrl] = useState(verification.naver_place_url ?? '')
+  const [bankName, setBankName] = useState(verification.bank_name ?? '')
+  const [accountNumber, setAccountNumber] = useState(verification.account_number ?? '')
+  const [accountHolder, setAccountHolder] = useState(verification.account_holder ?? '')
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<number | null>(null)
   const [fieldError, setFieldError] = useState<Partial<Record<BusinessInfoField, string>>>({})
@@ -252,6 +263,9 @@ function BusinessInfoSection({ verification }: { verification: VerificationRespo
         tax_invoice_email: email.trim(),
         business_address: address.trim(),
         naver_place_url: naverUrl.trim(),
+        bank_name: bankName.trim(),
+        account_number: accountNumber.trim(),
+        account_holder: accountHolder.trim(),
       })
       if (result.error) {
         if (result.field && result.field !== 'general') {
@@ -322,6 +336,37 @@ function BusinessInfoSection({ verification }: { verification: VerificationRespo
           )}
         </div>
 
+        <div>
+          <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">정산 계좌</label>
+          <p className="text-[12px] text-[#6e6e73] mb-2">페이백 정산금을 입금받을 계좌예요. 은행/계좌번호/예금주를 정확히 입력해주세요.</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="은행명 (예: 국민은행)"
+              value={bankName}
+              onChange={e => setBankName(e.target.value)}
+              className="w-1/2 rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+            />
+            <input
+              type="text"
+              placeholder="계좌번호"
+              value={accountNumber}
+              onChange={e => setAccountNumber(e.target.value)}
+              className="w-1/2 rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+            />
+          </div>
+          {fieldError.account_number && (
+            <p className="mt-1.5 text-[12px] text-red-600">{fieldError.account_number}</p>
+          )}
+          <input
+            type="text"
+            placeholder="예금주"
+            value={accountHolder}
+            onChange={e => setAccountHolder(e.target.value)}
+            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors mt-2"
+          />
+        </div>
+
         <div className="flex items-center gap-3">
           <button
             type="submit"
@@ -333,6 +378,57 @@ function BusinessInfoSection({ verification }: { verification: VerificationRespo
           {savedAt && <span className="text-[12px] text-green-600">저장됐어요</span>}
         </div>
       </form>
+
+      <BankbookUpload initialUrl={verification.bankbook_copy_url ?? null} />
+    </div>
+  )
+}
+
+function BankbookUpload({ initialUrl }: { initialUrl: string | null }) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialUrl)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [fileName, setFileName] = useState('')
+
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const picked = event.target.files?.[0]
+    if (!picked) return
+    setFileName(picked.name)
+    setError(null)
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('bankbook_copy', picked)
+      const res = await fetch('/api/business-verification/bankbook', { method: 'POST', body: fd })
+      const body = await res.json()
+      if (!res.ok) {
+        setError(body.error ?? '통장사본 업로드에 실패했습니다')
+        return
+      }
+      setPreviewUrl(body.bankbook_copy_url ?? null)
+    } catch {
+      setError('네트워크 오류로 통장사본을 업로드하지 못했습니다')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="mt-5 pt-5 border-t border-[#e0e0e0]">
+      <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">통장사본</label>
+      <p className="text-[12px] text-[#6e6e73] mb-2">정산 계좌 확인용 통장사본(또는 계좌 캡처) 사진을 올려주세요.</p>
+      <div className="flex items-center gap-3">
+        {previewUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage 서명 URL 미리보기
+          <img src={previewUrl} alt="통장사본 미리보기" className="h-16 w-16 rounded-[9px] object-cover border border-[#e0e0e0]" />
+        )}
+        <label className="inline-block cursor-pointer rounded-[9999px] border border-[#e0e0e0] px-4 py-2 text-[13px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition-colors">
+          {uploading ? '업로드 중...' : previewUrl ? '사진 다시 올리기' : '사진 선택'}
+          <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={handleFileChange} />
+        </label>
+        {fileName && !error && <span className="text-[12px] text-[#6e6e73] truncate max-w-[140px]">{fileName}</span>}
+      </div>
+      {error && <p className="mt-1.5 text-[12px] text-red-600">{error}</p>}
     </div>
   )
 }

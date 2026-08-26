@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-08-26T04:57:10.785Z",
+  "lastUpdated": "2026-08-26T05:08:06.539Z",
   "activeFeatures": [
     "puzzle-sajangnim",
     "login",
@@ -57,7 +57,8 @@
     "callback",
     "me",
     "qa-mode",
-    "monthly-spend"
+    "monthly-spend",
+    "bankbook"
   ],
   "primaryFeature": "puzzle-sajangnim",
   "features": {
@@ -70,9 +71,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:32:00.677Z",
-        "lastUpdated": "2026-08-26T04:27:03.901Z"
+        "lastUpdated": "2026-08-26T05:05:43.875Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/lib/hub-server.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/lib/business-info.ts"
     },
     "login": {
       "phase": "do",
@@ -304,9 +305,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:30:44.852Z",
-        "lastUpdated": "2026-08-26T04:55:31.168Z"
+        "lastUpdated": "2026-08-26T05:07:15.393Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/receipts/[id]/route.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/users/[id]/page.tsx"
     },
     "questions": {
       "phase": "do",
@@ -343,7 +344,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:32:14.723Z",
-        "lastUpdated": "2026-08-26T02:11:07.411Z"
+        "lastUpdated": "2026-08-26T05:08:06.539Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/settings/page.tsx"
     },
@@ -707,7 +708,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-08-25T16:34:03.733Z",
-        "lastUpdated": "2026-08-26T01:53:14.522Z"
+        "lastUpdated": "2026-08-26T05:06:35.874Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/business-verification/route.ts"
     },
@@ -788,6 +789,19 @@
         "lastUpdated": "2026-08-26T04:52:18.734Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/ad-accounts/[id]/monthly-spend/route.ts"
+    },
+    "bankbook": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T05:06:05.209Z",
+        "lastUpdated": "2026-08-26T05:06:05.209Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/business-verification/bankbook/route.ts"
     }
   },
   "pipeline": {
@@ -798,7 +812,7 @@
   "session": {
     "startedAt": "2026-06-18T07:25:20.070Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-08-26T04:57:10.785Z"
+    "lastActivity": "2026-08-26T05:08:06.539Z"
   },
   "history": [
     {
@@ -3822,6 +3836,114 @@
     {
       "timestamp": "2026-08-26T04:57:10.785Z",
       "feature": "receipts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:05:24.222Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:05:33.675Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:05:43.875Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:06:05.209Z",
+      "feature": "bankbook",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:06:11.950Z",
+      "feature": "business-verification",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:06:17.564Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:06:26.282Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:06:35.874Z",
+      "feature": "business-verification",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:06:39.815Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:06:43.927Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:06:56.169Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:07:01.038Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:07:08.155Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:07:15.393Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:07:26.123Z",
+      "feature": "settings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:07:33.751Z",
+      "feature": "settings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:07:48.958Z",
+      "feature": "settings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T05:08:06.539Z",
+      "feature": "settings",
       "phase": "do",
       "action": "updated"
     }

@@ -28,7 +28,14 @@ async function loadLatestVerification(userId: string) {
       .createSignedUrl(data.certificate_path, 600)
     certificateUrl = signed?.signedUrl ?? null
   }
-  return { ...data, certificate_url: certificateUrl }
+  let bankbookCopyUrl: string | null = null
+  if (data.bankbook_copy_path) {
+    const { data: signed } = await supabaseAdmin.storage
+      .from('bank-accounts')
+      .createSignedUrl(data.bankbook_copy_path, 600)
+    bankbookCopyUrl = signed?.signedUrl ?? null
+  }
+  return { ...data, certificate_url: certificateUrl, bankbook_copy_url: bankbookCopyUrl }
 }
 
 // 5단계 status(draft/review_1/review_2/confirmed/paid) 전부를 버킷팅한다.
@@ -157,7 +164,7 @@ async function handleBusinessInfoPatch(userId: string, body: BusinessInfoPatchBo
     .from('business_verifications')
     .update(update)
     .eq('id', latest.id)
-    .select('tax_invoice_email, business_address, naver_place_url')
+    .select('tax_invoice_email, business_address, naver_place_url, bank_name, account_number, account_holder')
     .single()
 
   if (error || !data) {

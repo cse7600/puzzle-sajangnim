@@ -147,6 +147,14 @@ export async function GET() {
     return NextResponse.json({ status: 'not_submitted' })
   }
 
+  let bankbookCopyUrl: string | null = null
+  if (data.bankbook_copy_path) {
+    const { data: signed } = await supabaseAdmin.storage
+      .from('bank-accounts')
+      .createSignedUrl(data.bankbook_copy_path, 600)
+    bankbookCopyUrl = signed?.signedUrl ?? null
+  }
+
   return NextResponse.json({
     status: data.status,
     business_number: data.business_number,
@@ -156,6 +164,10 @@ export async function GET() {
     tax_invoice_email: data.tax_invoice_email,
     business_address: data.business_address,
     naver_place_url: data.naver_place_url,
+    bank_name: data.bank_name,
+    account_number: data.account_number,
+    account_holder: data.account_holder,
+    bankbook_copy_url: bankbookCopyUrl,
   })
 }
 
@@ -200,7 +212,7 @@ export async function PATCH(req: NextRequest) {
     .from('business_verifications')
     .update(update)
     .eq('id', latest.id)
-    .select('tax_invoice_email, business_address, naver_place_url')
+    .select('tax_invoice_email, business_address, naver_place_url, bank_name, account_number, account_holder')
     .single()
 
   if (error || !data) {

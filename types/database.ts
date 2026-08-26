@@ -123,6 +123,10 @@ export interface Database {
           tax_invoice_email: string | null
           business_address: string | null
           naver_place_url: string | null
+          bank_name: string | null
+          account_number: string | null
+          account_holder: string | null
+          bankbook_copy_path: string | null
         }
         Insert: {
           user_id: string
@@ -135,6 +139,10 @@ export interface Database {
           tax_invoice_email?: string | null
           business_address?: string | null
           naver_place_url?: string | null
+          bank_name?: string | null
+          account_number?: string | null
+          account_holder?: string | null
+          bankbook_copy_path?: string | null
         }
         Update: {
           user_id?: string
@@ -147,6 +155,10 @@ export interface Database {
           tax_invoice_email?: string | null
           business_address?: string | null
           naver_place_url?: string | null
+          bank_name?: string | null
+          account_number?: string | null
+          account_holder?: string | null
+          bankbook_copy_path?: string | null
         }
         Relationships: [
           {
