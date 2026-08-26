@@ -1419,17 +1419,19 @@ function HandleModal({ current, onClose, onSaved }: { current: string | null; on
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const valid = /^[a-zA-Z0-9._]{3,30}$/.test(value)
+  const hasInvalidChar = value.length > 0 && /[^a-zA-Z0-9._]/.test(value)
 
   const save = async () => {
-    if (!valid) { setError('영문/숫자/./_ 조합 3~30자로 입력해주세요.'); return }
+    const cleaned = value.replace(/[^a-zA-Z0-9._]/g, '')
+    if (!/^[a-zA-Z0-9._]{3,30}$/.test(cleaned)) { setError('영문/숫자/./_ 조합 3~30자로 입력해주세요.'); return }
     setSaving(true); setError(null)
     try {
       const res = await fetch('/api/link-page', {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ link_handle: value.toLowerCase() }),
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ link_handle: cleaned.toLowerCase() }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) { setError((json as { error?: string }).error || '이미 사용 중이거나 사용할 수 없는 주소예요.'); return }
-      onSaved(value.toLowerCase())
+      onSaved(cleaned.toLowerCase())
     } catch { setError('저장에 실패했어요.') } finally { setSaving(false) }
   }
 
@@ -1438,8 +1440,11 @@ function HandleModal({ current, onClose, onSaved }: { current: string | null; on
       <label style={modalLabel}>링크 주소 (핸들)</label>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ fontSize: 13, color: T.muted, whiteSpace: 'nowrap' }}>/l/</span>
-        <input value={value} onChange={e => setValue(e.target.value.replace(/[^a-zA-Z0-9._]/g, ''))} placeholder="myhandle" maxLength={30} style={modalInput} autoFocus />
+        <input value={value} onChange={e => setValue(e.target.value)} placeholder="myhandle" maxLength={30} style={modalInput} autoFocus />
       </div>
+      {hasInvalidChar && (
+        <p style={{ fontSize: 12, color: T.amber, marginTop: 6 }}>영문 소문자·숫자·.·_ 만 사용할 수 있어요. 키보드가 한글 입력 상태는 아닌지 확인해주세요 (한/영 키).</p>
+      )}
       {current && (
         <div style={{ display: 'flex', gap: 8, padding: '11px 13px', borderRadius: 9, background: T.amberSoft, marginTop: 14 }}>
           <AlertTriangle size={16} color={T.amber} style={{ flexShrink: 0, marginTop: 1 }} />
