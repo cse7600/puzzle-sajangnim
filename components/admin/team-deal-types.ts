@@ -124,13 +124,13 @@ export const QUESTION_TYPE_LABEL: Record<SurveyQuestionType, string> = {
 export const SURVEY_STATUS_LABEL: Record<SurveyStatus, string> = {
   none: '문항 없음',
   pending: '미작성',
-  partial: '작성중',
+  partial: '부분작성',
   done: '작성완료',
 }
 
 export const SURVEY_STATUS_STYLE: Record<SurveyStatus, string> = {
   none: 'bg-[#f5f5f7] text-[#6e6e73]',
-  pending: 'bg-amber-50 text-amber-700',
-  partial: 'bg-blue-50 text-blue-700',
+  pending: 'bg-red-50 text-red-600',
+  partial: 'bg-amber-50 text-amber-700',
   done: 'bg-green-50 text-green-700',
 }
