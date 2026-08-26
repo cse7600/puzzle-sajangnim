@@ -143,3 +143,42 @@ value 트림 후 비어있지 않음, member.status = joined.
 5. `docs`: VERIFICATION_team_buy_survey.md — gap-detector 검증 (Match Rate ≥ 90%)
 
 배포(push/vercel) 없음 — 로컬 커밋까지만.
+
+---
+
+# 부록 (2026-08-26 추가 요구): 딜 오픈 전제조건 + 제출 현황 가시화
+
+## 불변식
+**설문 문항(요청서)이 0개인 딜은 고객에게 노출(active)될 수 없다.**
+개별 참여자의 답변 제출 여부와는 무관 — 참여/결제는 기존대로 즉시 원자 처리.
+
+## 설계 결정
+1. **`draft` 상태 도입** (migration 020, 실 DB CHECK에 draft 없음 실측 후 완화형 스왑).
+   문항 없이 저장하는 초안 흐름을 막지 않기 위함.
+2. **문항 편집을 딜 생성/편집 흐름(TeamDealFormModal)에 인라인 통합.**
+   - `POST /api/admin/team-deals`: body에 `questions: [{ position, question_type, label, required }]` 허용.
+     딜 insert 후 문항 insert. **status = 문항 ≥ 1개면 'active', 0개면 'draft'**(자동 판정,
+     응답에 status 포함 — UI가 "문항이 없어 비공개 대기로 저장됨" 안내).
+   - `PATCH /api/admin/team-deals/[id]` (edit): body에 `questions` 있으면 세트 저장(PUT 로직과 동일).
+     저장 후 재판정: draft + 문항 ≥ 1 → active 자동 전환. active + 문항 0개로 만들려는 요청 → 400
+     ("모집중인 딜의 요청서 문항을 전부 삭제할 수 없습니다" 류).
+   - `PUT /api/admin/team-deals/[id]/questions`(기존): 같은 불변식 — active 딜에 빈 세트 → 400.
+     draft 딜에 문항 추가 시 active 자동 전환은 하지 않음(전환은 딜 편집 저장 경로로 일원화).
+   - `GET .../questions` 핸들러 추가 — 모달이 편집 시 기존 문항 로드.
+3. **사용자 노출 차단**: 사용자 목록은 이미 `status='active'` 필터. 상세 GET도 draft면 404.
+4. **어드민 UI**:
+   - TeamDealFormModal에 "요청서 문항" 섹션(추가/라벨/타입/필수/순서/삭제) 인라인.
+     저장 시 questions를 POST/PATCH body에 포함. 문항 0개로 저장 시 draft 저장됨을 사전 안내.
+   - 어드민 목록: status 'draft' 라벨 "비공개(문항 필요)" 계열 배지 추가.
+   - 신청자 관리 페이지: 문항 편집 섹션 제거 → 읽기 전용 문항 요약 + "문항 수정은 딜 편집에서" 안내.
+5. **제출 현황 가시화(신청자 관리 페이지)**: 신청자 테이블 행에 제출 배지
+   (작성완료 green / 부분작성 M·N amber / 미작성 red 계열 / 문항없음 무배지) +
+   "N문항 중 M답변" 카운트를 목록에서 바로 표시. 행 펼침에 답변 상세(기존 구현 유지 —
+   텍스트 그대로/링크 클릭 가능/이미지 미리보기).
+6. **처리 상태(미확인/확인함) 토글은 이번 범위에서 제외** — 선택 사항이며 가시성 핵심에 집중.
+
+## 추가 커밋
+6. `feat`: migration 020 + PLAN 부록 — PO 직접
+7. `feat`: 딜 오픈 게이트(서버) + 폼 모달 문항 통합 + draft 상태 UI
+8. `feat`: 신청자 관리 제출 현황 배지 + 문항 편집 섹션 정리
+9. `docs`: VERIFICATION 부록 갱신
