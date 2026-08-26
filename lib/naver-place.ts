@@ -25,7 +25,8 @@ export interface PlaceBasicInfo {
   blogReviewCount: number | null;
   rating: number | null;
   photoCount: number | null;
-  keywordList: string[] | null; // 정보 탭 대표 키워드. [] = 미설정 확인됨, null = 못 읽음
+  keywordList: string[] | null; // 정보 탭 대표 키워드(DOM 실렌더 기준). []=미설정 확인, null=못 읽음
+  photoUrls: string[]; // 미리보기 사진 URL(최대 10장 안팎). 전체 장수는 photoCount 참고
   description: string | null; // 소개글 (placeDetail.description)
   hasReservation: boolean | null; // 네이버 예약 연동 여부. null = naverBooking 노드 자체를 못 찾음(판별 불가)
   hasSmartOrder: boolean | null; // 스마트주문 연동 여부. null = 판별 불가
@@ -235,20 +236,8 @@ function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value : null;
 }
 
-/**
- * unknown 값을 string[] 로(배열이면). 배열 자체가 없으면(필드 부재/파싱 실패) null,
- * 배열은 있는데 비어있으면(진짜로 키워드 미설정) 빈 배열을 그대로 반환한다 —
- * "설정 안 함"과 "못 읽음"을 구분해야 체크리스트 진단이 정확하다.
- */
-function asStringArray(value: unknown): string[] | null {
-  if (!Array.isArray(value)) return null;
-  return value.filter(
-    (entry): entry is string => typeof entry === 'string' && entry.trim() !== '',
-  );
-}
-
 // 네이버 GraphQL 엔드포인트는 스키마 변경으로 동작 불가
-// ("Cannot query field 'place' on type 'Query'"). 대신 플레이스 home 페이지
+// ("Cannot query field 'place' on type 'Query'"). 대신 플레이스 information 페이지
 // HTML 의 window.__APOLLO_STATE__ 를 파싱한다(실테스트 검증).
 
 // [\s\S] 는 dotAll(s 플래그) 대용 — tsconfig target ES2017 에서 s 플래그 미지원.
@@ -256,6 +245,51 @@ const APOLLO_STATE_PATTERN =
   /window\.__APOLLO_STATE__\s*=\s*(\{[\s\S]+?\});\s*<\/script>/;
 const APOLLO_STATE_FALLBACK = /window\.__APOLLO_STATE__\s*=\s*([\s\S]+?);\s*\n/;
 const PHOTO_ITEM_PREFIX = 'PlaceDetailTopPhotoItem:';
+
+// Apollo State 의 placeDetail.informationTab.keywordList 는 실제 "대표 키워드"와 다를 수
+// 있다 — 메뉴명 기반 자동 제안값으로 보이는 값이 대표 키워드를 설정 안 한 가게에도 채워져
+// 있는 걸 실측으로 확인했다(2026-08-26, 남양주대하구이 덕소점: Apollo 값은
+// ['새우소금구이','대하구이',...]인데 실제 정보 탭엔 "대표 키워드" 섹션 자체가 없음).
+// 반대로 실제로 대표 키워드를 설정한 가게(펫포레스트, place 689184344)는 정보 탭에
+// "대표 키워드" 섹션이 렌더되고 그 값이 Apollo 값과 일치했다 — 즉 신뢰할 수 있는 건
+// "화면에 실제로 렌더된 DOM"뿐이다. 그래서 Apollo JSON이 아니라 HTML 텍스트를 직접
+// 파싱한다. 이 섹션은 /information 경로에서만 SSR 렌더되고 /home 에는 없다(실측 확인)
+// — fetchPlaceInfo 가 /information 을 fetch 하는 이유.
+const KEYWORD_SECTION_PATTERN =
+  /대표 키워드<\/div><\/h2><div class="place_section_content"><div class="[^"]*">([\s\S]*?)<\/div><\/div><\/div>/;
+const SPAN_TEXT_PATTERN = /<span[^>]*>([^<]+)<\/span>/g;
+
+// &amp; 는 반드시 마지막에 치환한다 — 먼저 치환하면 "&amp;lt;"(escape된 "&lt;" 텍스트)가
+// "&lt;" 로 바뀐 뒤 다음 줄에서 "<" 로 한 번 더 풀려버리는 이중 디코딩이 생긴다.
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
+// "대표 키워드" 섹션을 감싸는 place_section_content 래퍼가 정보 탭 페이지엔 통상 여러 개
+// 있다(편의시설, 주차 등). 이 문자열 자체가 하나도 없다면 대표 키워드 섹션이 없는 게 아니라
+// information 페이지 구조 자체가 바뀐 것으로 보고 null(못 읽음)을 반환한다.
+const SECTION_WRAPPER_SENTINEL = 'place_section_content';
+
+/**
+ * "대표 키워드" 섹션의 실제 렌더 DOM에서 키워드 목록을 뽑는다.
+ * - 페이지 구조 자체가 예상과 다르면(SECTION_WRAPPER_SENTINEL 부재) null = 못 읽음
+ * - 구조는 정상인데 "대표 키워드" 섹션만 없으면 [] = 진짜 미설정
+ * DOM 텍스트 매칭이라 네이버가 "대표 키워드" 문구 자체나 인접 구조를 바꾸면(클래스명 변경과
+ * 달리) 조용히 깨질 수 있다 — 정기적으로 키워드가 있는 걸 아는 가게로 재확인 권장.
+ */
+function extractKeywordListFromDom(html: string): string[] | null {
+  if (!html.includes(SECTION_WRAPPER_SENTINEL)) return null;
+  const sectionMatch = html.match(KEYWORD_SECTION_PATTERN);
+  if (!sectionMatch) return [];
+  return Array.from(sectionMatch[1].matchAll(SPAN_TEXT_PATTERN))
+    .map(([, text]) => decodeHtmlEntities(text).trim())
+    .filter((text) => text !== '');
+}
 
 /**
  * 타임아웃 + 1회 재시도가 붙은 HTML(text) fetch.
@@ -281,7 +315,7 @@ async function fetchHtmlWithRetry(
 }
 
 /**
- * home HTML 에서 window.__APOLLO_STATE__ 객체를 추출해 파싱한다.
+ * 플레이스 페이지 HTML 에서 window.__APOLLO_STATE__ 객체를 추출해 파싱한다.
  * 기본 정규식 실패 시 폴백 정규식으로 한 번 더 시도한다.
  * @throws 두 정규식 모두 매칭 실패 시 Error
  */
@@ -305,6 +339,19 @@ function countPhotoItems(apolloState: Record<string, unknown>): number | null {
     key.startsWith(PHOTO_ITEM_PREFIX),
   ).length;
   return count > 0 ? count : null;
+}
+
+/**
+ * 초기 상태에 박제된 미리보기 사진들의 실제 이미지 URL 목록(보통 10장 안팎 — 전체 사진 수는
+ * photoCount 를 봐야 한다). 동영상 항목(video 필드 있음)은 originalUrl 이 이미지가 아닐 수
+ * 있어 제외한다.
+ */
+function extractPhotoUrls(apolloState: Record<string, unknown>): string[] {
+  return Object.keys(apolloState)
+    .filter((key) => key.startsWith(PHOTO_ITEM_PREFIX))
+    .filter((key) => readPath(apolloState[key], 'video') == null)
+    .map((key) => asString(readPath(apolloState[key], 'originalUrl')))
+    .filter((url): url is string => url !== null);
 }
 
 const PLACE_DETAIL_QUERY_PREFIX = 'placeDetail(';
@@ -354,6 +401,7 @@ function normalizeRating(score: unknown): number | null {
 function mapPlaceBasicInfo(
   apolloState: Record<string, unknown>,
   placeId: string,
+  html: string,
 ): PlaceBasicInfo {
   const base = apolloState[`PlaceDetailBase:${placeId}`];
   const placeDetail = findPlaceDetailRoot(apolloState, placeId);
@@ -381,7 +429,8 @@ function mapPlaceBasicInfo(
     blogReviewCount: asNumber(readPath(base, 'cafeBlogReviewsTotal')),
     rating: normalizeRating(readPath(base, 'visitorReviewsScore')),
     photoCount: topPhotosTotal ?? countPhotoItems(apolloState),
-    keywordList: asStringArray(readPath(placeDetail, 'informationTab.keywordList', apolloState)),
+    keywordList: extractKeywordListFromDom(html),
+    photoUrls: extractPhotoUrls(apolloState),
     description: asString(readPath(placeDetail, 'description', apolloState)),
     hasReservation: hasNaverBookingNode ? hasBookingUrl || hasBookingBusinessId : null,
     hasSmartOrder: hasNaverBookingNode
@@ -394,12 +443,14 @@ function mapPlaceBasicInfo(
 }
 
 /**
- * placeId 로 기본정보 조회. home 페이지 HTML 의 window.__APOLLO_STATE__ 파싱.
+ * placeId 로 기본정보 조회. information 페이지 HTML 의 window.__APOLLO_STATE__ 파싱 +
+ * 대표 키워드 DOM 파싱. home 이 아니라 information 을 fetch하는 이유는
+ * extractKeywordListFromDom 주석 참고 — Apollo State 내용 자체는 두 경로가 동일하다(실측 확인).
  * @throws 네트워크/파싱 실패 시 Error — 호출부에서 catch
  */
 export async function fetchPlaceInfo(placeId: string): Promise<PlaceBasicInfo> {
   const html = await fetchHtmlWithRetry(
-    `https://pcmap.place.naver.com/place/${placeId}/home`,
+    `https://pcmap.place.naver.com/place/${placeId}/information`,
     {
       method: 'GET',
       headers: {
@@ -411,7 +462,7 @@ export async function fetchPlaceInfo(placeId: string): Promise<PlaceBasicInfo> {
     },
   );
   const apolloState = extractApolloState(html);
-  return mapPlaceBasicInfo(apolloState, placeId);
+  return mapPlaceBasicInfo(apolloState, placeId, html);
 }
 
 /**

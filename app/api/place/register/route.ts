@@ -1,4 +1,8 @@
 export const dynamic = 'force-dynamic'
+// naver.me 리다이렉트(최대 8s) + information 페이지 fetch(재시도 포함 최대 16s)가
+// 직렬로 걸릴 수 있어(최악 24s) Vercel 기본 서버리스 타임아웃을 넘을 수 있다.
+// 여유를 두고 늘려서 504로 죽는 대신 정상적으로 fetch_failed 폴백을 타게 한다.
+export const maxDuration = 30
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin, supabaseAdminCached } from '@/lib/supabase-admin'
@@ -44,6 +48,7 @@ function toSnapshotRow(registrationId: string, info: PlaceBasicInfo) {
     keyword_count: info.keywordList?.length ?? null,
     has_description: info.description !== null,
     menu_count: info.menuCount,
+    photo_urls: info.photoUrls,
     raw_data: info.raw,
   }
 }

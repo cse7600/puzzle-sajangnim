@@ -16,6 +16,7 @@ export interface PlaceSnapshot {
   keyword_count: number | null; // null = 못 읽음, 0 = 진짜 미설정
   has_description: boolean | null;
   menu_count: number | null;
+  photo_urls: string[] | null;
   created_at: string;
 }
 

@@ -45,6 +45,57 @@ export function SkeletonCard({ className = '' }: { className?: string }) {
   );
 }
 
+// 플레이스 사진 갤러리 — 가로 스크롤 + 호버 확대로 생동감 있게.
+export function PhotoGallery({
+  photoUrls,
+  totalCount,
+}: {
+  photoUrls: string[];
+  totalCount: number | null;
+}) {
+  if (photoUrls.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-400">
+        등록된 사진이 없습니다.
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold text-gray-900">플레이스 사진</h2>
+        {totalCount !== null && totalCount > photoUrls.length && (
+          <span className="text-xs font-medium text-gray-400">
+            전체 {totalCount}장 중 최근 {photoUrls.length}장
+          </span>
+        )}
+      </div>
+      <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+        {photoUrls.map((url, index) => (
+          <div
+            key={`${url}-${index}`}
+            className="group relative aspect-square w-40 shrink-0 overflow-hidden rounded-xl bg-gray-100 shadow-sm ring-1 ring-black/5"
+          >
+            <img
+              src={url}
+              alt={`가게 사진 ${index + 1}`}
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={(event) => {
+                // 일부 네이버 CDN(블로그 원본 등)은 리퍼러 없이도 403을 낼 수 있다 —
+                // 깨진 이미지 아이콘 대신 타일 자체를 숨긴다.
+                const tile = event.currentTarget.parentElement;
+                if (tile) tile.style.display = 'none';
+              }}
+              className="h-full w-full object-cover transition duration-300 ease-out group-hover:scale-110"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // 네이버 플레이스 URL 등록 모달 (내 가게 / 경쟁자 공용 — title/description 으로 구분)
 export function RegisterModal(props: {
   url: string;

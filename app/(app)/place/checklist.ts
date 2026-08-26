@@ -79,6 +79,9 @@ function ratingCheck(rating: number | null): ChecklistItem {
     : { status: 'fail', label, detail: '평점 비공개 또는 미수집' };
 }
 
+// 안 된 것부터 눈에 띄어야 바로 조치할 수 있다 — fail → warn → done 순으로 정렬.
+const STATUS_ORDER: Record<ChecklistStatus, number> = { fail: 0, warn: 1, done: 2 };
+
 export function buildChecklist(snapshot: PlaceSnapshot): ChecklistResult {
   const items: ChecklistItem[] = [
     photoCheck(snapshot.photo_count),
@@ -92,5 +95,6 @@ export function buildChecklist(snapshot: PlaceSnapshot): ChecklistResult {
   ];
   const doneCount = items.filter((item) => item.status === 'done').length;
   const score = Math.round((doneCount / items.length) * 100);
-  return { items, score };
+  const sorted = [...items].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
+  return { items: sorted, score };
 }

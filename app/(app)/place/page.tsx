@@ -33,6 +33,7 @@ import {
   SkeletonCard,
   RegisterModal,
   RankChart,
+  PhotoGallery,
 } from './components';
 
 type ModalRole = 'mine' | 'competitor';
@@ -47,6 +48,7 @@ export default function PlacePage() {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [updated, setUpdated] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   const [modalRole, setModalRole] = useState<ModalRole | null>(null);
   const [registerUrl, setRegisterUrl] = useState('');
@@ -118,7 +120,13 @@ export default function PlacePage() {
       setRegisterError('네트워크 오류로 등록에 실패했습니다.');
       return;
     }
-    const payload: RegisterResponse & { error?: string } = await res.json();
+    const payload: (RegisterResponse & { error?: string }) | null = await res
+      .json()
+      .catch(() => null);
+    if (!payload) {
+      setRegisterError('서버 응답을 처리하지 못했습니다. 네이버 정보 수집이 지연되고 있을 수 있어요 — 잠시 후 다시 시도해주세요.');
+      return;
+    }
     if (!res.ok) {
       setRegisterError(payload.error ?? '등록에 실패했습니다.');
       return;
@@ -181,6 +189,7 @@ export default function PlacePage() {
     if (isUpdating || !mine) return;
     setIsUpdating(true);
     setUpdated(false);
+    setRefreshError(null);
     const res = await fetch('/api/place/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -191,7 +200,9 @@ export default function PlacePage() {
       setUpdated(true);
       setTimeout(() => setUpdated(false), 3000);
       loadRegistrations();
+      return;
     }
+    setRefreshError('업데이트에 실패했습니다. 네이버 응답이 지연되고 있을 수 있어요 — 잠시 후 다시 시도해주세요.');
   }
 
   const modal = modalRole && (
@@ -255,6 +266,7 @@ export default function PlacePage() {
           {isUpdating ? '업데이트 중...' : updated ? '업데이트 완료' : '순위 업데이트'}
         </button>
       </div>
+      {refreshError && <p className="text-sm font-medium text-red-600">{refreshError}</p>}
 
       {/* 가게 정보 BAR */}
       <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -292,6 +304,13 @@ export default function PlacePage() {
           가게 정보 수정
         </button>
       </div>
+
+      {mine.latest_snapshot?.photo_urls != null && (
+        <PhotoGallery
+          photoUrls={mine.latest_snapshot.photo_urls}
+          totalCount={mine.latest_snapshot.photo_count}
+        />
+      )}
 
       {/* 키워드 순위 PANEL */}
       <div className="space-y-4">
@@ -464,7 +483,7 @@ export default function PlacePage() {
           {competitors.length === 0 ? (
             <div className="mt-4 flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-200 py-10 text-center">
               <p className="text-sm text-gray-500">등록된 경쟁 가게가 없습니다</p>
-              <p className="text-xs text-gray-400">경쟁 가게를 등록하면 리뷰수·사진·평점을 비교합니다</p>
+              <p className="text-xs text-gray-400">경쟁 가게를 등록하면 리뷰수·사진·키워드·평점을 비교합니다</p>
             </div>
           ) : (
             <>
@@ -477,6 +496,7 @@ export default function PlacePage() {
                       <th className="pb-2 font-medium">가게명</th>
                       <th className="pb-2 text-right font-medium">리뷰수</th>
                       <th className="pb-2 text-right font-medium">사진</th>
+                      <th className="pb-2 text-right font-medium">키워드</th>
                       <th className="pb-2 pr-1 text-right font-medium">평점</th>
                       <th className="pb-2 pl-2 font-medium" />
                     </tr>
@@ -520,6 +540,9 @@ export default function PlacePage() {
                           </td>
                           <td className="py-3 text-right tabular-nums text-gray-600">
                             {snapshot?.photo_count ?? '—'}
+                          </td>
+                          <td className="py-3 text-right tabular-nums text-gray-600">
+                            {snapshot?.keyword_count ?? '—'}
                           </td>
                           <td className="py-3 pr-1 text-right">
                             {snapshot?.rating !== null && snapshot?.rating !== undefined ? (
