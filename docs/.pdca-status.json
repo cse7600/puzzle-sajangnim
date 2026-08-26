@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-08-26T06:06:53.032Z",
+  "lastUpdated": "2026-08-26T08:06:55.389Z",
   "activeFeatures": [
     "puzzle-sajangnim",
     "login",
@@ -59,7 +59,9 @@
     "qa-mode",
     "monthly-spend",
     "bankbook",
-    "withdrawals"
+    "withdrawals",
+    "collect",
+    "ohora"
   ],
   "primaryFeature": "puzzle-sajangnim",
   "features": {
@@ -72,9 +74,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:32:00.677Z",
-        "lastUpdated": "2026-08-26T06:05:31.410Z"
+        "lastUpdated": "2026-08-26T07:46:50.435Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/lib/points.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/lib/place-snapshot.ts"
     },
     "login": {
       "phase": "do",
@@ -137,7 +139,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:40:02.570Z",
-        "lastUpdated": "2026-08-26T05:41:55.291Z"
+        "lastUpdated": "2026-08-26T06:21:37.023Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/paybacks/route.ts"
     },
@@ -150,7 +152,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:41:03.269Z",
-        "lastUpdated": "2026-08-26T05:49:56.213Z"
+        "lastUpdated": "2026-08-26T06:24:35.359Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/hub/page.tsx"
     },
@@ -202,7 +204,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:43:11.356Z",
-        "lastUpdated": "2026-08-26T04:56:15.210Z"
+        "lastUpdated": "2026-08-26T06:25:12.253Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/rewards/page.tsx"
     },
@@ -267,7 +269,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:46:07.448Z",
-        "lastUpdated": "2026-06-19T15:08:21.406Z"
+        "lastUpdated": "2026-08-26T07:56:41.684Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/place/page.tsx"
     },
@@ -306,9 +308,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:30:44.852Z",
-        "lastUpdated": "2026-08-26T06:05:44.614Z"
+        "lastUpdated": "2026-08-26T08:06:40.472Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/paybacks/[id]/route.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/knowledge/[id]/page.tsx"
     },
     "questions": {
       "phase": "do",
@@ -319,7 +321,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:31:43.557Z",
-        "lastUpdated": "2026-08-25T17:58:46.498Z"
+        "lastUpdated": "2026-08-26T08:06:49.307Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/knowledge/questions/route.ts"
     },
@@ -332,7 +334,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:31:53.419Z",
-        "lastUpdated": "2026-08-25T17:59:00.225Z"
+        "lastUpdated": "2026-08-26T08:06:55.389Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/knowledge/questions/[id]/answers/route.ts"
     },
@@ -371,7 +373,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:33:33.034Z",
-        "lastUpdated": "2026-06-18T16:50:57.792Z"
+        "lastUpdated": "2026-08-26T07:39:37.815Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/knowledge/page.tsx"
     },
@@ -384,7 +386,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:50:38.819Z",
-        "lastUpdated": "2026-08-25T17:59:20.592Z"
+        "lastUpdated": "2026-08-26T07:40:32.891Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/earnings/route.ts"
     },
@@ -449,7 +451,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:52:24.056Z",
-        "lastUpdated": "2026-08-26T06:06:53.032Z"
+        "lastUpdated": "2026-08-26T06:25:46.081Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/referral/page.tsx"
     },
@@ -462,7 +464,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:52:28.479Z",
-        "lastUpdated": "2026-08-26T05:42:09.824Z"
+        "lastUpdated": "2026-08-26T07:40:30.652Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/points/summary/route.ts"
     },
@@ -475,7 +477,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:52:39.818Z",
-        "lastUpdated": "2026-06-18T15:52:39.818Z"
+        "lastUpdated": "2026-08-26T07:39:43.446Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/community/page.tsx"
     },
@@ -501,7 +503,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T16:33:37.980Z",
-        "lastUpdated": "2026-06-18T16:33:37.980Z"
+        "lastUpdated": "2026-08-26T08:06:09.469Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/knowledge/ask/page.tsx"
     },
@@ -527,7 +529,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-19T15:03:37.929Z",
-        "lastUpdated": "2026-08-25T18:00:17.459Z"
+        "lastUpdated": "2026-08-26T07:31:07.313Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/place/register/route.ts"
     },
@@ -816,6 +818,32 @@
         "lastUpdated": "2026-08-26T05:48:38.807Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/withdrawals/page.tsx"
+    },
+    "collect": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T07:20:26.467Z",
+        "lastUpdated": "2026-08-26T07:20:26.467Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/place/collect/route.ts"
+    },
+    "ohora": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-26T07:41:30.479Z",
+        "lastUpdated": "2026-08-26T07:42:47.640Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/ohora/page.tsx"
     }
   },
   "pipeline": {
@@ -826,7 +854,7 @@
   "session": {
     "startedAt": "2026-06-18T07:25:20.070Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-08-26T06:06:53.032Z"
+    "lastActivity": "2026-08-26T08:06:55.389Z"
   },
   "history": [
     {
@@ -4276,6 +4304,894 @@
     {
       "timestamp": "2026-08-26T06:06:53.032Z",
       "feature": "referral",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:11:22.062Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:11:28.812Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:11:31.960Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:11:37.325Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:11:47.423Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:11:59.206Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:16:40.297Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:16:46.134Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:16:57.034Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:17:03.384Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:17:21.487Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:17:29.798Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:20:53.510Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:20:59.317Z",
+      "feature": "paybacks",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:21:08.692Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:21:12.562Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:21:37.023Z",
+      "feature": "paybacks",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:22:39.143Z",
+      "feature": "earnings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:22:43.069Z",
+      "feature": "earnings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:22:46.530Z",
+      "feature": "earnings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:23:11.904Z",
+      "feature": "earnings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:23:48.788Z",
+      "feature": "earnings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:24:07.464Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:24:11.256Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:24:19.291Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:24:24.262Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:24:30.266Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:24:35.359Z",
+      "feature": "hub",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:24:48.548Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:24:54.957Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:25:06.837Z",
+      "feature": "rewards",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:25:12.253Z",
+      "feature": "rewards",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:25:17.943Z",
+      "feature": "referral",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:25:30.463Z",
+      "feature": "referral",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:25:46.081Z",
+      "feature": "referral",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:26:05.971Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:26:20.655Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:26:28.854Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:26:40.545Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:26:51.054Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:27:02.344Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:28:57.008Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:54:57.955Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:55:05.451Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:55:13.321Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:55:16.456Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:55:24.325Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:57:27.367Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:57:33.583Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:57:45.440Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:57:57.996Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:58:02.982Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:58:05.912Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:58:38.840Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:58:42.340Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:59:01.072Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:59:16.223Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:59:22.880Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:59:26.623Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:59:36.882Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:59:40.784Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T06:59:44.912Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:06:11.180Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:06:15.201Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:06:18.501Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:06:24.402Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:06:41.697Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:06:45.450Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:06:54.310Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:07:01.167Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:07:15.106Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:20:11.046Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:20:26.467Z",
+      "feature": "collect",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:20:40.941Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:20:53.542Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:21:10.164Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:22:38.367Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:22:43.032Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:22:49.598Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:23:03.449Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:24:30.483Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:30:37.945Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:30:47.348Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:30:56.979Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:31:07.313Z",
+      "feature": "register",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:31:32.525Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:31:43.828Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:31:53.522Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:32:05.893Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:32:09.382Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:32:33.157Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:32:40.488Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:38:44.951Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:38:49.760Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:38:50.574Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:39:37.815Z",
+      "feature": "knowledge",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:39:43.446Z",
+      "feature": "community",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:16.679Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:22.780Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:24.343Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:25.611Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:26.447Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:27.736Z",
+      "feature": "questions",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:28.547Z",
+      "feature": "answers",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:30.652Z",
+      "feature": "summary",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:31.260Z",
+      "feature": "earnings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:32.891Z",
+      "feature": "earnings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:41.660Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:40:56.623Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:41:30.479Z",
+      "feature": "ohora",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:41:54.580Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:42:01.361Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:42:24.239Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:42:29.759Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:42:47.640Z",
+      "feature": "ohora",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:46:29.822Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:46:35.292Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:46:42.769Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:46:50.435Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:47:25.943Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:48:12.556Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:48:16.506Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:48:25.090Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:48:46.589Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:49:04.978Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:49:15.904Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:49:22.474Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:49:45.926Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:49:55.584Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:55:41.313Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:56:04.092Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:56:32.204Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T07:56:41.684Z",
+      "feature": "place",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:05:40.237Z",
+      "feature": "ask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:05:44.288Z",
+      "feature": "ask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:05:49.527Z",
+      "feature": "ask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:05:55.645Z",
+      "feature": "ask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:05:59.808Z",
+      "feature": "ask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:06:03.351Z",
+      "feature": "ask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:06:09.469Z",
+      "feature": "ask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:06:12.300Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:06:24.672Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:06:32.519Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:06:40.472Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:06:44.802Z",
+      "feature": "questions",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:06:49.307Z",
+      "feature": "questions",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:06:51.920Z",
+      "feature": "answers",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-26T08:06:55.389Z",
+      "feature": "answers",
       "phase": "do",
       "action": "updated"
     }
