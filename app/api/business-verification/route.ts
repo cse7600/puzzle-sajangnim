@@ -168,6 +168,12 @@ export async function GET() {
     account_number: data.account_number,
     account_holder: data.account_holder,
     bankbook_copy_url: bankbookCopyUrl,
+    industry_category: data.industry_category,
+    founded_date: data.founded_date,
+    annual_revenue_krw: data.annual_revenue_krw,
+    employee_count: data.employee_count,
+    region_sido: data.region_sido,
+    region_sigungu: data.region_sigungu,
   })
 }
 
@@ -212,7 +218,10 @@ export async function PATCH(req: NextRequest) {
     .from('business_verifications')
     .update(update)
     .eq('id', latest.id)
-    .select('tax_invoice_email, business_address, naver_place_url, bank_name, account_number, account_holder')
+    .select(
+      'tax_invoice_email, business_address, naver_place_url, bank_name, account_number, account_holder, ' +
+      'industry_category, founded_date, annual_revenue_krw, employee_count, region_sido, region_sigungu'
+    )
     .single()
 
   if (error || !data) {

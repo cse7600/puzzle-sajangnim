@@ -127,6 +127,12 @@ export interface Database {
           account_number: string | null
           account_holder: string | null
           bankbook_copy_path: string | null
+          industry_category: string | null
+          founded_date: string | null
+          annual_revenue_krw: number | null
+          employee_count: number | null
+          region_sido: string | null
+          region_sigungu: string | null
         }
         Insert: {
           user_id: string
@@ -143,6 +149,12 @@ export interface Database {
           account_number?: string | null
           account_holder?: string | null
           bankbook_copy_path?: string | null
+          industry_category?: string | null
+          founded_date?: string | null
+          annual_revenue_krw?: number | null
+          employee_count?: number | null
+          region_sido?: string | null
+          region_sigungu?: string | null
         }
         Update: {
           user_id?: string
@@ -159,6 +171,12 @@ export interface Database {
           account_number?: string | null
           account_holder?: string | null
           bankbook_copy_path?: string | null
+          industry_category?: string | null
+          founded_date?: string | null
+          annual_revenue_krw?: number | null
+          employee_count?: number | null
+          region_sido?: string | null
+          region_sigungu?: string | null
         }
         Relationships: [
           {
