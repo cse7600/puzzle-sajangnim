@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Coins,
   Banknote,
+  UtensilsCrossed,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
@@ -23,6 +24,7 @@ const NAV = [
   { label: '출금 관리', href: '/admin/withdrawals', icon: Banknote },
   { label: '영수증 검토', href: '/admin/receipts', icon: Receipt },
   { label: '팀 구매', href: '/admin/team-deals', icon: ShoppingBag },
+  { label: '한끼 체험단', href: '/admin/experience-campaigns', icon: UtensilsCrossed },
   { label: '포인트', href: '/admin/points', icon: Coins },
 ]
 

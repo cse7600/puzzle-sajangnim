@@ -1,137 +1,133 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import Link from 'next/link';
+import { Plus, Users, Wallet, ClipboardList, X } from 'lucide-react';
 import {
-  Plus,
-  Users,
-  Calendar,
-  ClipboardList,
-  Pencil,
-  UserPlus,
-  ArrowLeftRight,
-  Instagram,
-  FileText,
-} from 'lucide-react';
-import {
-  NewCampaignModal,
-  ApplicantsDrawer,
-  RecruitModal,
-  ExchangeProposalModal,
-} from '@/components/modals/ExperienceModals';
+  MISSION_TYPE_LABEL,
+  CREATOR_TYPE_LABEL,
+  CAMPAIGN_STATUS_LABEL,
+  DEFAULT_FEE_RATE,
+  type MissionType,
+  type CreatorType,
+  type CampaignStatus,
+} from '@/lib/experience-campaigns';
 
-type TabKey = 'active' | 'completed' | 'exchange' | 'pool';
+const PRIMARY = '#0066cc';
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'active', label: '진행 중' },
-  { key: 'completed', label: '완료' },
-  { key: 'exchange', label: '품앗이' },
-  { key: 'pool', label: '크리에이터 풀' },
-];
+interface ParticipantStats {
+  applied: number;
+  approved: number;
+  paid: number;
+}
 
-interface Campaign {
+interface CampaignListItem {
   id: string;
+  store_name: string;
   title: string;
-  status: 'recruiting' | 'waiting';
-  recruited: number;
+  mission_type: MissionType;
+  creator_types: CreatorType[];
+  payback_amount: number;
   capacity: number;
-  experienceDate: string;
-  conditions: string[];
+  budget_total: number;
+  fee_rate: number;
+  fee_amount: number;
+  budget_available: number;
+  budget_reserved: number;
+  setup_mode: 'self' | 'requested';
+  status: CampaignStatus;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string;
+  participant_stats: ParticipantStats;
 }
 
-const CAMPAIGNS: Campaign[] = [
-  {
-    id: 'c1',
-    title: '을지로 쌈밥 런치 체험',
-    status: 'recruiting',
-    recruited: 3,
-    capacity: 5,
-    experienceDate: '2026.06.25',
-    conditions: ['블로그 1건', '인스타 1건'],
-  },
-  {
-    id: 'c2',
-    title: '주말 저녁 코스 메뉴 체험',
-    status: 'waiting',
-    recruited: 1,
-    capacity: 3,
-    experienceDate: '2026.07.05',
-    conditions: ['인스타 1건'],
-  },
-];
+const STATUS_BADGE: Record<CampaignStatus, string> = {
+  draft: 'bg-gray-100 text-gray-600',
+  pending_setup: 'bg-purple-50 text-purple-700',
+  pending_approval: 'bg-amber-50 text-amber-700',
+  change_requested: 'bg-orange-50 text-orange-700',
+  active: 'bg-green-50 text-green-700',
+  paused: 'bg-yellow-50 text-yellow-700',
+  closed: 'bg-gray-100 text-gray-600',
+  settled: 'bg-blue-50 text-blue-700',
+  rejected: 'bg-red-50 text-red-700',
+};
 
-interface Creator {
-  id: string;
-  nickname: string;
-  followers: number;
-  category: string;
-  matchScore: number;
-  color: string;
+function formatWon(n: number): string {
+  return n.toLocaleString('ko-KR') + '원';
 }
 
-const CREATORS: Creator[] = [
-  { id: 'k1', nickname: '이한별', followers: 12400, category: '맛집탐방', matchScore: 94, color: '#0066cc' },
-  { id: 'k2', nickname: '서울맛집탐험가', followers: 8230, category: '한식', matchScore: 91, color: '#16a34a' },
-  { id: 'k3', nickname: '홍대미식가', followers: 15100, category: '카페/맛집', matchScore: 88, color: '#9333ea' },
-  { id: 'k4', nickname: '먹스타그램', followers: 6800, category: '외식업', matchScore: 85, color: '#ea580c' },
-  { id: 'k5', nickname: '음식사진작가김', followers: 22000, category: '푸드포토', matchScore: 82, color: '#dc2626' },
-  { id: 'k6', nickname: '동네맛집지도', followers: 4500, category: '로컬맛집', matchScore: 79, color: '#0891b2' },
-];
+const MISSION_TYPES: MissionType[] = ['visit', 'press', 'provided', 'receipt_review'];
+const CREATOR_TYPES: CreatorType[] = ['blog', 'instagram', 'youtube', 'tiktok'];
+const MIN_CONDITIONS_LENGTH = 10;
+const REQUESTED_SETUP_PLACEHOLDER = '세팅 요청 - 지급 조건은 관리자가 상담 후 채워드립니다';
 
-interface ExchangeRow {
-  id: string;
-  partner: string;
-  type: string;
-  status: '진행 중' | '예정' | '검토 중';
-  scheduledDate: string;
+interface CampaignFormState {
+  store_name: string;
+  title: string;
+  description: string;
+  mission_type: MissionType;
+  creator_types: CreatorType[];
+  mission_conditions: string;
+  payback_amount: string;
+  capacity: string;
+  budget_total: string;
+  start_date: string;
+  end_date: string;
 }
 
-const EXCHANGES: ExchangeRow[] = [
-  { id: 'e1', partner: '연남동 베이글베이커리', type: '인스타 상호 노출', status: '진행 중', scheduledDate: '2026.06.21' },
-  { id: 'e2', partner: '망원 수제버거하우스', type: '블로그 교차 리뷰', status: '예정', scheduledDate: '2026.06.28' },
-  { id: 'e3', partner: '합정 디저트카페 모모', type: '스토리 공유', status: '검토 중', scheduledDate: '2026.07.02' },
-];
-
-function formatFollowers(n: number): string {
-  return n.toLocaleString('ko-KR') + '명';
-}
+const EMPTY_FORM: CampaignFormState = {
+  store_name: '',
+  title: '',
+  description: '',
+  mission_type: 'visit',
+  creator_types: [],
+  mission_conditions: '',
+  payback_amount: '',
+  capacity: '',
+  budget_total: '',
+  start_date: '',
+  end_date: '',
+};
 
 export default function ExperiencePage() {
-  const [activeTab, setActiveTab] = useState<TabKey>('active');
-  const [showNewCampaign, setShowNewCampaign] = useState<boolean>(false);
-  const [showApplicants, setShowApplicants] = useState<{
-    open: boolean;
-    campaign: Campaign | null;
-  }>({ open: false, campaign: null });
-  const [showRecruit, setShowRecruit] = useState<{
-    open: boolean;
-    creator: Creator | null;
-  }>({ open: false, creator: null });
-  const [showExchange, setShowExchange] = useState<boolean>(false);
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [selectedItem, setSelectedItem] = useState<Creator | null>(null);
-  const [applied, setApplied] = useState<Set<string>>(new Set());
+  const [campaigns, setCampaigns] = useState<CampaignListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [showNewCampaign, setShowNewCampaign] = useState(false);
 
-  function openApplyModal(creator: Creator) {
-    setSelectedItem(creator);
-    setModalOpen(true);
+  useEffect(() => {
+    loadCampaigns();
+  }, []);
+
+  async function loadCampaigns() {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetch('/api/experience/campaigns');
+      if (!res.ok) throw new Error('failed');
+      const data = (await res.json()) as CampaignListItem[];
+      setCampaigns(data);
+    } catch {
+      setLoadError('한끼 체험단 목록을 불러오지 못했습니다');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function confirmApply() {
-    if (selectedItem) {
-      setApplied(prev => new Set(prev).add(selectedItem.id));
-    }
-    setModalOpen(false);
-    setSelectedItem(null);
+  function handleCreated(campaign: CampaignListItem) {
+    setCampaigns((prev) => [campaign, ...prev]);
+    setShowNewCampaign(false);
   }
 
   return (
     <div className="mx-auto max-w-7xl">
-      {/* PAGE HEADER */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">미니 체험단</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">한끼 체험단</h1>
           <p className="mt-1 text-sm text-gray-500">
-            크리에이터를 매칭하고 품앗이로 무료 홍보를
+            크리에이터가 방문해서 식사하고 후기 남기면, 검증 후 자동으로 페이백
           </p>
         </div>
         <button
@@ -140,210 +136,114 @@ export default function ExperiencePage() {
           className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0058b0]"
         >
           <Plus className="h-4 w-4" />
-          새 체험단 만들기
+          새 캠페인 만들기
         </button>
       </div>
 
-      {/* TABS */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex gap-6">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
-                activeTab === tab.key
-                  ? 'border-[#0066cc] text-[#0066cc]'
-                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+      {loading && <LoadingSkeleton />}
 
-      {activeTab === 'active' && (
-        <div className="space-y-8">
-          {/* 진행 중인 캠페인 */}
-          <section>
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-              {CAMPAIGNS.map((c) => (
-                <CampaignCard
-                  key={c.id}
-                  campaign={c}
-                  onViewApplicants={() =>
-                    setShowApplicants({ open: true, campaign: c })
-                  }
-                  onEdit={() => alert('수정 기능 준비 중')}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* 크리에이터 추천 */}
-          <section>
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                내 가게와 맞는 크리에이터
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                업종과 지역 데이터를 기반으로 매칭 점수가 높은 순으로 추천합니다
-              </p>
-            </div>
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {CREATORS.map((creator) => (
-                <CreatorCard
-                  key={creator.id}
-                  creator={creator}
-                  onRecruit={() => setShowRecruit({ open: true, creator })}
-                  isApplied={applied.has(creator.id)}
-                  onApply={() => openApplyModal(creator)}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* 품앗이 현황 */}
-          <section>
-            <ExchangePanel onPropose={() => setShowExchange(true)} />
-          </section>
+      {!loading && loadError && (
+        <div className="rounded-xl border border-red-100 bg-red-50 p-6 text-sm text-red-700">
+          {loadError}
         </div>
       )}
 
-      {activeTab === 'completed' && (
-        <EmptyState
-          icon={<ClipboardList className="h-6 w-6 text-gray-400" />}
-          title="완료된 체험단이 없습니다"
-          description="진행 중인 캠페인이 마무리되면 이곳에서 결과 리포트를 확인할 수 있습니다."
-        />
+      {!loading && !loadError && campaigns.length === 0 && (
+        <EmptyState onCreate={() => setShowNewCampaign(true)} />
       )}
 
-      {activeTab === 'exchange' && (
-        <div className="space-y-6">
-          <ExchangePanel onPropose={() => setShowExchange(true)} />
-        </div>
-      )}
-
-      {activeTab === 'pool' && (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {CREATORS.map((creator) => (
-            <CreatorCard
-              key={creator.id}
-              creator={creator}
-              onRecruit={() => setShowRecruit({ open: true, creator })}
-              isApplied={applied.has(creator.id)}
-              onApply={() => openApplyModal(creator)}
-            />
+      {!loading && !loadError && campaigns.length > 0 && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {campaigns.map((c) => (
+            <CampaignCard key={c.id} campaign={c} />
           ))}
         </div>
       )}
 
-      {/* MODALS */}
-      <NewCampaignModal
-        isOpen={showNewCampaign}
-        onClose={() => setShowNewCampaign(false)}
-      />
-      <ApplicantsDrawer
-        isOpen={showApplicants.open}
-        onClose={() => setShowApplicants({ open: false, campaign: null })}
-        campaign={showApplicants.campaign}
-      />
-      <RecruitModal
-        isOpen={showRecruit.open}
-        onClose={() => setShowRecruit({ open: false, creator: null })}
-        creator={showRecruit.creator}
-      />
-      <ExchangeProposalModal
-        isOpen={showExchange}
-        onClose={() => setShowExchange(false)}
-      />
-
-      {/* 신청하기 모달 */}
-      {modalOpen && selectedItem && (
-        <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-          onClick={() => setModalOpen(false)}
-        >
-          <div
-            className="bg-white rounded-[18px] p-6 w-[380px] max-w-[90vw]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-[16px] font-semibold text-[#1d1d1f] mb-1">체험단 신청</h3>
-            <p className="text-[13px] text-[#6e6e73] mb-5">
-              <span className="font-medium text-[#1d1d1f]">{selectedItem.nickname}</span> 크리에이터에게 체험단을 신청합니다.
-            </p>
-            <div className="rounded-[11px] bg-[#f5f5f7] p-4 mb-5 text-[13px] text-[#1d1d1f]">
-              <div className="flex justify-between mb-1.5">
-                <span className="text-[#6e6e73]">팔로워</span>
-                <span className="font-medium">{selectedItem.followers.toLocaleString()}명</span>
-              </div>
-              <div className="flex justify-between mb-1.5">
-                <span className="text-[#6e6e73]">카테고리</span>
-                <span className="font-medium">{selectedItem.category}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#6e6e73]">매칭 점수</span>
-                <span className="font-medium text-[#0066cc]">{selectedItem.matchScore}%</span>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="flex-1 rounded-[9999px] border border-[#e0e0e0] py-2.5 text-[13px] font-medium text-[#6e6e73] hover:bg-[#f5f5f7] transition-colors"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={confirmApply}
-                className="flex-1 rounded-[9999px] bg-[#0066cc] py-2.5 text-[13px] font-medium text-white hover:bg-[#0055aa] transition-colors"
-              >
-                신청 완료
-              </button>
-            </div>
-          </div>
-        </div>
+      {showNewCampaign && (
+        <NewCampaignModal onClose={() => setShowNewCampaign(false)} onCreated={handleCreated} />
       )}
     </div>
   );
 }
 
-function CampaignCard({
-  campaign,
-  onViewApplicants,
-  onEdit,
-}: {
-  campaign: Campaign;
-  onViewApplicants: () => void;
-  onEdit: () => void;
-}) {
-  const pct = Math.round((campaign.recruited / campaign.capacity) * 100);
-  const isRecruiting = campaign.status === 'recruiting';
+function LoadingSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      {[0, 1].map((i) => (
+        <div key={i} className="animate-pulse rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="h-4 w-2/3 rounded bg-gray-100" />
+          <div className="mt-4 h-2 w-full rounded bg-gray-100" />
+          <div className="mt-6 h-2 w-full rounded bg-gray-100" />
+          <div className="mt-2 h-2 w-3/4 rounded bg-gray-100" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-white p-12 text-center shadow-sm">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-50">
+        <ClipboardList className="h-6 w-6 text-gray-400" />
+      </div>
+      <h3 className="mt-4 text-base font-semibold text-gray-900">진행 중인 한끼 체험단이 없습니다</h3>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
+        새 캠페인을 만들면 관리자 승인 후 크리에이터 신청을 받을 수 있습니다.
+      </p>
+      <button
+        type="button"
+        onClick={onCreate}
+        className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0058b0]"
+      >
+        <Plus className="h-4 w-4" />첫 캠페인 만들기
+      </button>
+    </div>
+  );
+}
+
+function CampaignCard({ campaign }: { campaign: CampaignListItem }) {
+  const recruitPct = Math.min(
+    100,
+    Math.round((campaign.participant_stats.approved / campaign.capacity) * 100)
+  );
+  const budgetPct =
+    campaign.budget_total > 0
+      ? Math.min(100, Math.round((campaign.budget_available / campaign.budget_total) * 100))
+      : 0;
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+    <Link
+      href={`/experience/${campaign.id}`}
+      className="block rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+    >
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-semibold text-gray-900">
-          {campaign.title}
-        </h3>
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium text-gray-500">{campaign.store_name}</p>
+          <h3 className="mt-0.5 truncate text-base font-semibold text-gray-900">{campaign.title}</h3>
+        </div>
         <span
-          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-            isRecruiting
-              ? 'bg-amber-50 text-amber-700'
-              : 'bg-blue-50 text-blue-700'
-          }`}
+          className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_BADGE[campaign.status]}`}
         >
-          <span className={isRecruiting ? 'text-amber-500' : 'text-blue-500'}>
-            ●
-          </span>
-          {isRecruiting ? '모집 중' : '대기 중'}
+          {CAMPAIGN_STATUS_LABEL[campaign.status]}
         </span>
       </div>
 
-      {/* 모집 현황 */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600">
+          {MISSION_TYPE_LABEL[campaign.mission_type]}
+        </span>
+        {campaign.creator_types.map((t) => (
+          <span
+            key={t}
+            className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-[#0066cc]"
+          >
+            {CREATOR_TYPE_LABEL[t]}
+          </span>
+        ))}
+      </div>
+
       <div className="mt-5">
         <div className="flex items-center justify-between text-sm">
           <span className="flex items-center gap-1.5 text-gray-500">
@@ -351,234 +251,343 @@ function CampaignCard({
             모집 현황
           </span>
           <span className="font-semibold text-gray-900">
-            {campaign.recruited}/{campaign.capacity}명
+            {campaign.participant_stats.approved}/{campaign.capacity}명
           </span>
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-          <div
-            className="h-full rounded-full bg-[#0066cc] transition-all"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-
-      {/* 메타 정보 */}
-      <dl className="mt-5 space-y-3 border-t border-gray-100 pt-5 text-sm">
-        <div className="flex items-center justify-between">
-          <dt className="flex items-center gap-1.5 text-gray-500">
-            <Calendar className="h-4 w-4" />
-            체험일
-          </dt>
-          <dd className="font-medium text-gray-900">
-            {campaign.experienceDate}
-          </dd>
-        </div>
-        <div className="flex items-start justify-between gap-3">
-          <dt className="flex items-center gap-1.5 text-gray-500">
-            <ClipboardList className="h-4 w-4" />
-            조건
-          </dt>
-          <dd className="flex flex-wrap justify-end gap-1.5">
-            {campaign.conditions.map((cond) => (
-              <span
-                key={cond}
-                className="inline-flex items-center gap-1 rounded-md bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600"
-              >
-                {cond.startsWith('블로그') ? (
-                  <FileText className="h-3 w-3" />
-                ) : (
-                  <Instagram className="h-3 w-3" />
-                )}
-                {cond}
-              </span>
-            ))}
-          </dd>
-        </div>
-      </dl>
-
-      {/* 액션 */}
-      <div className="mt-5 flex gap-2">
-        <button
-          type="button"
-          onClick={onViewApplicants}
-          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#0066cc] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0058b0]"
-        >
-          <Users className="h-4 w-4" />
-          지원자 보기
-        </button>
-        {isRecruiting && (
-          <button
-            type="button"
-            onClick={onEdit}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-          >
-            <Pencil className="h-4 w-4" />
-            캠페인 수정
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CreatorCard({
-  creator,
-  onRecruit,
-  isApplied,
-  onApply,
-}: {
-  creator: Creator;
-  onRecruit: () => void;
-  isApplied?: boolean;
-  onApply?: () => void;
-}) {
-  const initial = creator.nickname.charAt(0);
-
-  return (
-    <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-semibold text-white"
-          style={{ backgroundColor: creator.color }}
-        >
-          {initial}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-gray-900">
-            {creator.nickname}
-          </p>
-          <p className="text-xs text-gray-500">
-            팔로워 {formatFollowers(creator.followers)}
-          </p>
+          <div className="h-full rounded-full bg-[#0066cc] transition-all" style={{ width: `${recruitPct}%` }} />
         </div>
       </div>
 
       <div className="mt-4">
-        <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600">
-          {creator.category}
-        </span>
-      </div>
-
-      <div className="mt-4">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-gray-500">매칭 점수</span>
-          <span className="font-semibold text-[#0066cc]">
-            {creator.matchScore}%
+        <div className="flex items-center justify-between text-sm">
+          <span className="flex items-center gap-1.5 text-gray-500">
+            <Wallet className="h-4 w-4" />
+            예산 현황
+          </span>
+          <span className="font-semibold text-gray-900">
+            {formatWon(campaign.budget_available)} / {formatWon(campaign.budget_total)}
           </span>
         </div>
-        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-          <div
-            className="h-full rounded-full bg-[#0066cc]"
-            style={{ width: `${creator.matchScore}%` }}
-          />
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+          <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${budgetPct}%` }} />
         </div>
       </div>
 
-      {isApplied ? (
-        <button
-          type="button"
-          disabled
-          className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed"
-        >
-          신청 완료
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={onApply ?? onRecruit}
-          className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#0066cc] bg-white px-3 py-2 text-sm font-medium text-[#0066cc] transition-colors hover:bg-blue-50"
-        >
-          <UserPlus className="h-4 w-4" />
-          신청하기
-        </button>
-      )}
-    </div>
+      <dl className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4 text-sm">
+        <dt className="text-gray-500">페이백 단가</dt>
+        <dd className="font-semibold text-gray-900">{formatWon(campaign.payback_amount)}</dd>
+      </dl>
+    </Link>
   );
 }
 
-function ExchangePanel({ onPropose }: { onPropose: () => void }) {
-  const statusStyle: Record<ExchangeRow['status'], string> = {
-    '진행 중': 'bg-green-50 text-green-700',
-    예정: 'bg-blue-50 text-blue-700',
-    '검토 중': 'bg-amber-50 text-amber-700',
-  };
-
-  return (
-    <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-6">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50">
-            <ArrowLeftRight className="h-4.5 w-4.5 text-[#0066cc]" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">품앗이 현황</h2>
-            <p className="text-sm text-gray-500">현재 3건 교환 진행 중</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onPropose}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-        >
-          <Plus className="h-4 w-4" />
-          교환 제안
-        </button>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
-              <th className="px-6 py-3">상대 가게</th>
-              <th className="px-6 py-3">교환 유형</th>
-              <th className="px-6 py-3">상태</th>
-              <th className="px-6 py-3 text-right">예정일</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {EXCHANGES.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  {row.partner}
-                </td>
-                <td className="px-6 py-4 text-gray-600">{row.type}</td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusStyle[row.status]}`}
-                  >
-                    {row.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right text-gray-600">
-                  {row.scheduledDate}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({
-  icon,
-  title,
-  description,
+function NewCampaignModal({
+  onClose,
+  onCreated,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
+  onClose: () => void;
+  onCreated: (campaign: CampaignListItem) => void;
 }) {
+  const [form, setForm] = useState<CampaignFormState>(EMPTY_FORM);
+  const [submitting, setSubmitting] = useState<'self' | 'requested' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const budgetTotalNumber = Number(form.budget_total) || 0;
+  const feePreview = Math.round((budgetTotalNumber * DEFAULT_FEE_RATE) / 100);
+  const availablePreview = budgetTotalNumber - feePreview;
+
+  function toggleCreatorType(type: CreatorType) {
+    setForm((prev) => ({
+      ...prev,
+      creator_types: prev.creator_types.includes(type)
+        ? prev.creator_types.filter((t) => t !== type)
+        : [...prev.creator_types, type],
+    }));
+  }
+
+  function buildRequestPayload(setupMode: 'self' | 'requested') {
+    if (setupMode === 'self') {
+      return {
+        store_name: form.store_name,
+        title: form.title,
+        description: form.description || undefined,
+        mission_type: form.mission_type,
+        creator_types: form.creator_types,
+        mission_conditions: form.mission_conditions,
+        payback_amount: Number(form.payback_amount),
+        capacity: Number(form.capacity),
+        budget_total: Number(form.budget_total),
+        setup_mode: 'self',
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
+      };
+    }
+
+    // 세팅 요청 — 최소 유효값만 채워 validateCampaignCreateInput을 통과시키고
+    // 나머지 세부 항목은 관리자가 상담 후 채운다.
+    const budgetTotal = Number(form.budget_total) || 0;
+    const capacity = Number(form.capacity) || 1;
+    const payback =
+      Number(form.payback_amount) || Math.max(1, Math.floor(budgetTotal / capacity));
+
+    return {
+      store_name: form.store_name,
+      title: form.title,
+      description: form.description || undefined,
+      mission_type: form.mission_type || 'visit',
+      creator_types: form.creator_types.length > 0 ? form.creator_types : ['blog'],
+      mission_conditions:
+        form.mission_conditions.trim().length >= MIN_CONDITIONS_LENGTH
+          ? form.mission_conditions
+          : REQUESTED_SETUP_PLACEHOLDER,
+      payback_amount: payback,
+      capacity,
+      budget_total: budgetTotal,
+      setup_mode: 'requested',
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
+    };
+  }
+
+  async function submit(setupMode: 'self' | 'requested', e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!form.store_name.trim()) return setError('가게 이름을 입력해주세요');
+    if (!form.title.trim()) return setError('캠페인 제목을 입력해주세요');
+    if (!form.budget_total || Number(form.budget_total) <= 0) {
+      return setError('예산을 올바르게 입력해주세요');
+    }
+    if (setupMode === 'self') {
+      if (form.creator_types.length === 0) return setError('참여 크리에이터 유형을 하나 이상 선택해주세요');
+      if (form.mission_conditions.trim().length < MIN_CONDITIONS_LENGTH) {
+        return setError('지급 조건은 10자 이상 작성해주세요');
+      }
+      if (!form.payback_amount || Number(form.payback_amount) <= 0) {
+        return setError('페이백 금액을 올바르게 입력해주세요');
+      }
+      if (!form.capacity || Number(form.capacity) <= 0) {
+        return setError('모집 인원을 올바르게 입력해주세요');
+      }
+      if (Number(form.budget_total) < Number(form.payback_amount) * Number(form.capacity)) {
+        return setError('예산은 최소 (페이백 금액 × 모집 인원) 이상이어야 합니다');
+      }
+    }
+
+    setSubmitting(setupMode);
+    try {
+      const res = await fetch('/api/experience/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildRequestPayload(setupMode)),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? '캠페인 등록에 실패했습니다');
+      onCreated(data as CampaignListItem);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '캠페인 등록에 실패했습니다');
+    } finally {
+      setSubmitting(null);
+    }
+  }
+
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-12 text-center shadow-sm">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-50">
-        {icon}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white shadow-xl"
+      >
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+          <h2 className="text-base font-semibold text-gray-900">새 캠페인 만들기</h2>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-5 px-6 py-5">
+          {error && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+          )}
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">가게 이름</label>
+            <input
+              type="text"
+              value={form.store_name}
+              onChange={(e) => setForm((p) => ({ ...p, store_name: e.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              placeholder="예) 을지로 쌈밥집"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">캠페인 제목</label>
+            <input
+              type="text"
+              value={form.title}
+              onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              placeholder="예) 을지로 쌈밥 런치 체험단 모집"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">설명 (선택)</label>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              rows={2}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">미션 유형</label>
+            <div className="grid grid-cols-2 gap-2">
+              {MISSION_TYPES.map((type) => (
+                <label
+                  key={type}
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer ${
+                    form.mission_type === type
+                      ? 'border-[#0066cc] bg-blue-50 text-[#0066cc]'
+                      : 'border-gray-200 text-gray-600'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="mission_type"
+                    className="accent-[#0066cc]"
+                    checked={form.mission_type === type}
+                    onChange={() => setForm((p) => ({ ...p, mission_type: type }))}
+                  />
+                  {MISSION_TYPE_LABEL[type]}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">참여 크리에이터 유형</label>
+            <div className="grid grid-cols-2 gap-2">
+              {CREATOR_TYPES.map((type) => (
+                <label
+                  key={type}
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer ${
+                    form.creator_types.includes(type)
+                      ? 'border-[#0066cc] bg-blue-50 text-[#0066cc]'
+                      : 'border-gray-200 text-gray-600'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-[#0066cc]"
+                    checked={form.creator_types.includes(type)}
+                    onChange={() => toggleCreatorType(type)}
+                  />
+                  {CREATOR_TYPE_LABEL[type]}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">지급 조건</label>
+            <textarea
+              value={form.mission_conditions}
+              onChange={(e) => setForm((p) => ({ ...p, mission_conditions: e.target.value }))}
+              rows={3}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              placeholder="지급 조건을 명확히 안내하세요 (예: 방문 후 7일 이내 블로그 게시, 사진 5장 이상 포함)"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">페이백 금액</label>
+              <input
+                type="number"
+                min={0}
+                value={form.payback_amount}
+                onChange={(e) => setForm((p) => ({ ...p, payback_amount: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+                placeholder="원"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">모집 인원</label>
+              <input
+                type="number"
+                min={0}
+                value={form.capacity}
+                onChange={(e) => setForm((p) => ({ ...p, capacity: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+                placeholder="명"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">총 예산</label>
+            <input
+              type="number"
+              min={0}
+              value={form.budget_total}
+              onChange={(e) => setForm((p) => ({ ...p, budget_total: e.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              placeholder="원"
+            />
+            {budgetTotalNumber > 0 && (
+              <p className="mt-1.5 text-xs text-gray-500">
+                수수료 {DEFAULT_FEE_RATE}% ({formatWon(feePreview)}) 제외 후 실제 운영 예산{' '}
+                <span className="font-medium text-gray-700">{formatWon(availablePreview)}</span>
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">시작일 (선택)</label>
+              <input
+                type="date"
+                value={form.start_date}
+                onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">종료일 (선택)</label>
+              <input
+                type="date"
+                value={form.end_date}
+                onChange={(e) => setForm((p) => ({ ...p, end_date: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 border-t border-gray-100 px-6 py-4">
+          <button
+            type="button"
+            disabled={submitting !== null}
+            onClick={(e) => submit('self', e)}
+            className="w-full rounded-lg bg-[#0066cc] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0058b0] disabled:opacity-60"
+          >
+            {submitting === 'self' ? '등록 중...' : '직접 등록 완료'}
+          </button>
+          <button
+            type="button"
+            disabled={submitting !== null}
+            onClick={(e) => submit('requested', e)}
+            className="w-full rounded-lg border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+          >
+            {submitting === 'requested' ? '요청 중...' : '세팅 요청하기 — 관리자가 대신 채워드려요'}
+          </button>
+        </div>
       </div>
-      <h3 className="mt-4 text-base font-semibold text-gray-900">{title}</h3>
-      <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
-        {description}
-      </p>
     </div>
   );
 }
