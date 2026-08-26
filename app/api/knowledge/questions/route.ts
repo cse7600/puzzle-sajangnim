@@ -6,6 +6,8 @@ import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 import { awardPoints } from '@/lib/points'
 
 const QUESTION_DAILY_LIMIT = 1000
+const TITLE_MIN = 16
+const BODY_MIN = 55
 const db = supabaseAdmin as any
 const dbRead = supabaseAdminCached as any
 
@@ -42,6 +44,12 @@ export async function POST(req: Request) {
 
   if (!category || !title || !questionBody) {
     return NextResponse.json({ error: '필수 항목을 입력해주세요' }, { status: 400 })
+  }
+  if (String(title).trim().length < TITLE_MIN) {
+    return NextResponse.json({ error: `제목은 최소 ${TITLE_MIN}자 이상 입력해주세요` }, { status: 400 })
+  }
+  if (String(questionBody).trim().length < BODY_MIN) {
+    return NextResponse.json({ error: `내용은 최소 ${BODY_MIN}자 이상 입력해주세요` }, { status: 400 })
   }
 
   const { data: question, error } = await db

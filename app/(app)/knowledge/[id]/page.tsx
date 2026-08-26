@@ -5,6 +5,8 @@ import { ThumbsUp, MessageCircle, Share2, ChevronLeft, CheckCircle2, Check } fro
 import AppTopBar from '@/components/AppTopBar'
 import { relativeTime } from '@/lib/relative-time'
 
+const ANSWER_MIN = 55
+
 const CATEGORY_STYLE: Record<string, string> = {
   네이버SEO: 'bg-green-50 text-green-700',
   광고: 'bg-orange-50 text-orange-700',
@@ -44,6 +46,9 @@ export default function KnowledgeDetailPage() {
   const [toast, setToast] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
+  const answerLength = answerBody.trim().length
+  const answerShortage = Math.max(0, ANSWER_MIN - answerLength)
+
   useEffect(() => {
     Promise.all([
       fetch(`/api/knowledge/questions/${id}`).then(r => r.ok ? r.json() : null),
@@ -67,7 +72,7 @@ export default function KnowledgeDetailPage() {
   }
 
   async function submitAnswer() {
-    if (!answerBody.trim()) return
+    if (answerShortage > 0) return
     setSubmitting(true)
     try {
       const res = await fetch(`/api/knowledge/questions/${id}/answers`, {
@@ -75,11 +80,16 @@ export default function KnowledgeDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ body: answerBody }),
       })
-      const answerData = await res.json()
-      setAnswers(prev => [...prev, answerData])
+      const created = await res.json()
+      if (!res.ok) {
+        setToast(created.error ?? '답변을 등록하지 못했습니다. 잠시 후 다시 시도해주세요')
+        setTimeout(() => setToast(null), 3000)
+        return
+      }
+      setAnswers(prev => [...prev, created])
       setAnswerBody('')
-      if (answerData.points_earned) {
-        setToast(`+${answerData.points_earned.toLocaleString()}P 적립!`)
+      if (created.points_earned) {
+        setToast(`+${created.points_earned.toLocaleString()}P 적립!`)
         setTimeout(() => setToast(null), 3000)
       }
     } finally {
@@ -223,11 +233,22 @@ export default function KnowledgeDetailPage() {
               placeholder="사업 노하우를 공유해보세요. 구체적인 경험일수록 더 많은 도움이 됩니다."
               className="w-full resize-none rounded-lg border border-gray-200 px-4 py-3 text-[14px] leading-relaxed text-gray-900 outline-none focus:border-[#0066cc] transition-colors"
             />
-            <div className="mt-3 flex justify-end">
+            <div className="mt-3 flex items-center justify-between gap-3">
+              {answerShortage > 0 ? (
+                <p className="inline-flex rounded-md bg-[#0066cc]/10 px-2.5 py-1 text-[12px] font-medium text-[#0066cc]">
+                  {answerShortage}글자 더 채워주세요.
+                </p>
+              ) : (
+                <p className="text-[12px] text-gray-400">{answerLength}자 (최소 {ANSWER_MIN}자)</p>
+              )}
               <button
                 onClick={submitAnswer}
-                disabled={submitting || !answerBody.trim()}
-                className="rounded-lg bg-[#0066cc] px-6 py-2.5 text-[14px] font-medium text-white hover:bg-[#0058b0] disabled:opacity-40 transition-colors"
+                disabled={submitting || answerShortage > 0}
+                className={`shrink-0 rounded-lg px-6 py-2.5 text-[14px] font-medium transition-colors ${
+                  answerShortage === 0 && !submitting
+                    ? 'bg-[#0066cc] text-white hover:bg-[#0058b0]'
+                    : 'cursor-not-allowed bg-gray-200 text-gray-400'
+                }`}
               >
                 {submitting ? '등록 중...' : '답변 등록'}
               </button>

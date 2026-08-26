@@ -19,10 +19,16 @@ export default function KnowledgeAskPage() {
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<{ title?: string; body?: string; category?: string }>({})
 
+  const titleLength = title.trim().length
+  const bodyLength = body.trim().length
+  const titleShortage = Math.max(0, TITLE_MIN - titleLength)
+  const bodyShortage = Math.max(0, BODY_MIN - bodyLength)
+  const canSubmit = titleShortage === 0 && bodyShortage === 0 && category !== ''
+
   function validate() {
     const e: typeof errors = {}
-    if (title.length < TITLE_MIN) e.title = `제목은 최소 ${TITLE_MIN}자 이상 입력해주세요`
-    if (body.length < BODY_MIN) e.body = `내용은 최소 ${BODY_MIN}자 이상 입력해주세요`
+    if (titleShortage > 0) e.title = `제목은 최소 ${TITLE_MIN}자 이상 입력해주세요`
+    if (bodyShortage > 0) e.body = `내용은 최소 ${BODY_MIN}자 이상 입력해주세요`
     if (!category) e.category = '카테고리를 선택해주세요'
     return e
   }
@@ -37,9 +43,12 @@ export default function KnowledgeAskPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, title, body }),
       })
-      const data = await res.json()
-      if (data.id) router.push(`/knowledge/${data.id}`)
-      else router.push('/knowledge')
+      const created = await res.json()
+      if (!res.ok) {
+        setErrors({ body: created.error ?? '질문을 등록하지 못했습니다. 잠시 후 다시 시도해주세요' })
+        return
+      }
+      router.push(created.id ? `/knowledge/${created.id}` : '/knowledge')
     } finally {
       setSubmitting(false)
     }
@@ -62,8 +71,8 @@ export default function KnowledgeAskPage() {
               <div className="rounded-xl border border-gray-200 bg-white p-5">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-[14px] font-semibold text-gray-900">제목</label>
-                  <span className={`text-[12px] ${title.length < TITLE_MIN ? 'text-gray-400' : 'text-[#0066cc]'}`}>
-                    {title.length} / {TITLE_MAX}자 (최소 {TITLE_MIN}자)
+                  <span className={`text-[12px] ${titleShortage > 0 ? 'text-gray-400' : 'text-[#0066cc]'}`}>
+                    {titleLength} / {TITLE_MAX}자 (최소 {TITLE_MIN}자)
                   </span>
                 </div>
                 <input
@@ -74,6 +83,11 @@ export default function KnowledgeAskPage() {
                   onChange={e => { setTitle(e.target.value); setErrors(v => ({ ...v, title: undefined })) }}
                   className={`w-full rounded-lg border px-4 py-3 text-[15px] outline-none transition-colors ${errors.title ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-[#0066cc]'}`}
                 />
+                {titleShortage > 0 && (
+                  <p className="mt-2 inline-flex rounded-md bg-[#0066cc]/10 px-2.5 py-1 text-[12px] font-medium text-[#0066cc]">
+                    {titleShortage}글자 더 채워주세요.
+                  </p>
+                )}
                 {errors.title && (
                   <p className="mt-1.5 flex items-center gap-1 text-[12px] text-red-500">
                     <AlertCircle className="h-3.5 w-3.5" />{errors.title}
@@ -85,8 +99,8 @@ export default function KnowledgeAskPage() {
               <div className="rounded-xl border border-gray-200 bg-white p-5">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-[14px] font-semibold text-gray-900">내용</label>
-                  <span className={`text-[12px] ${body.length < BODY_MIN ? 'text-gray-400' : 'text-[#0066cc]'}`}>
-                    {body.length} / {BODY_MAX.toLocaleString()}자 (최소 {BODY_MIN}자)
+                  <span className={`text-[12px] ${bodyShortage > 0 ? 'text-gray-400' : 'text-[#0066cc]'}`}>
+                    {bodyLength} / {BODY_MAX.toLocaleString()}자 (최소 {BODY_MIN}자)
                   </span>
                 </div>
                 {/* 툴바 */}
@@ -111,6 +125,11 @@ export default function KnowledgeAskPage() {
                   onChange={e => { setBody(e.target.value); setErrors(v => ({ ...v, body: undefined })) }}
                   className={`w-full resize-none rounded-lg border px-4 py-3 text-[15px] leading-relaxed outline-none transition-colors ${errors.body ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-[#0066cc]'}`}
                 />
+                {bodyShortage > 0 && (
+                  <p className="mt-2 inline-flex rounded-md bg-[#0066cc]/10 px-2.5 py-1 text-[12px] font-medium text-[#0066cc]">
+                    {bodyShortage}글자 더 채워주세요.
+                  </p>
+                )}
                 {errors.body && (
                   <p className="mt-1.5 flex items-center gap-1 text-[12px] text-red-500">
                     <AlertCircle className="h-3.5 w-3.5" />{errors.body}
@@ -150,11 +169,20 @@ export default function KnowledgeAskPage() {
             <div className="w-[240px] shrink-0 space-y-4 sticky top-6">
               <button
                 onClick={handleSubmit}
-                disabled={submitting}
-                className="w-full rounded-xl bg-[#0066cc] py-4 text-[15px] font-semibold text-white hover:bg-[#0058b0] disabled:opacity-50 transition-colors"
+                disabled={submitting || !canSubmit}
+                className={`w-full rounded-xl py-4 text-[15px] font-semibold transition-colors ${
+                  canSubmit && !submitting
+                    ? 'bg-[#0066cc] text-white hover:bg-[#0058b0]'
+                    : 'cursor-not-allowed bg-gray-200 text-gray-400'
+                }`}
               >
                 {submitting ? '등록 중...' : '질문하기'}
               </button>
+              {!canSubmit && (
+                <p className="-mt-2 text-center text-[12px] text-gray-400">
+                  제목 {TITLE_MIN}자, 내용 {BODY_MIN}자 이상 작성하고 카테고리를 선택해주세요.
+                </p>
+              )}
 
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-center gap-2 mb-3">

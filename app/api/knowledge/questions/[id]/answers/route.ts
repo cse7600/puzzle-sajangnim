@@ -6,6 +6,7 @@ import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 import { awardPoints } from '@/lib/points'
 
 const ANSWER_DAILY_LIMIT = 1000
+const ANSWER_MIN = 55
 const db = supabaseAdmin as any
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
@@ -28,6 +29,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const { body } = await req.json()
   if (!body) return NextResponse.json({ error: '답변 내용을 입력해주세요' }, { status: 400 })
+  if (String(body).trim().length < ANSWER_MIN) {
+    return NextResponse.json({ error: `답변은 최소 ${ANSWER_MIN}자 이상 입력해주세요` }, { status: 400 })
+  }
 
   const { data: answer, error } = await db
     .from('knowledge_answers')
