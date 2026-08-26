@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import OhoraPreviewSection from '@/components/OhoraPreviewSection';
 import {
   Sparkles,
   Check,
@@ -522,6 +523,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ===================== 9.5. OHORA Q&A (white) ======================== */}
+      <OhoraPreviewSection />
 
       {/* ====================== 10. FOOTER CTA (dark) ======================= */}
       <section className="bg-dark-tile text-white">

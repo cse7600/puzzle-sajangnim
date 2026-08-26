@@ -10,7 +10,7 @@ const NAV_LINKS = [
   { label: '체험단', href: '/creators' },
   { label: '팀구매', href: '/team-purchase' },
   { label: '리워드', href: '/rewards' },
-  { label: '지식거래소', href: '/knowledge' },
+  { label: '오호라!', href: '/ohora' },
 ];
 
 export default function Navigation() {

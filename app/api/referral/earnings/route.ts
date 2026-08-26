@@ -9,7 +9,7 @@ const db = supabaseAdmin as any
 const SOURCE_LABELS: Record<string, string> = {
   receipt: '영수증',
   payback: '광고 페이백',
-  knowledge: '지식 거래소',
+  knowledge: '오호라',
 }
 
 type EarningRow = {

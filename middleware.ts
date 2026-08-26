@@ -114,7 +114,9 @@ async function handleVerificationGate(
     pathname === '/settings' ||
     pathname.startsWith('/settings/') ||
     pathname === '/onboarding' ||
-    pathname.startsWith('/auth/')
+    pathname.startsWith('/auth/') ||
+    pathname === '/knowledge' ||
+    pathname.startsWith('/knowledge/')
   if (exempt) return null
 
   const approved = await fetchBusinessApproved(userId)

@@ -23,7 +23,6 @@ const NAV_SECTIONS: NavSection[] = [
       { icon: '✍️', label: 'AI 블로그', href: '/ai-blog' },
       { icon: '📍', label: '플레이스 최적화', href: '/place' },
       { icon: '👥', label: '미니 체험단', href: '/experience' },
-      { icon: '💬', label: '사장님 모임', href: '/community' },
     ],
   },
   {
@@ -31,7 +30,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { icon: '🛒', label: '팀 구매', href: '/team-buy' },
       { icon: '🧾', label: '영수증 환급', href: '/rewards' },
-      { icon: '💡', label: '지식 거래소', href: '/knowledge' },
+      { icon: '💡', label: '오호라!', href: '/knowledge' },
       { icon: '🤝', label: '추천인', href: '/referral' },
     ],
   },

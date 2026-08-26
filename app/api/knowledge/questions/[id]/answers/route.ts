@@ -61,7 +61,7 @@ async function grantAnswerPoints(userId: string, answerId: string): Promise<numb
     userId,
     requestedAmount: ANSWER_DAILY_LIMIT,
     type: 'knowledge_answer',
-    description: '지식 거래소 답변 작성 포인트',
+    description: '오호라 답변 작성 포인트',
     referenceId: answerId,
   })
   return awarded

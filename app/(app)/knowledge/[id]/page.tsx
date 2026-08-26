@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ThumbsUp, MessageCircle, Share2, ChevronLeft, CheckCircle2, Coins, Check } from 'lucide-react'
+import { ThumbsUp, MessageCircle, Share2, ChevronLeft, CheckCircle2, Check } from 'lucide-react'
 import AppTopBar from '@/components/AppTopBar'
+import { relativeTime } from '@/lib/relative-time'
 
 const CATEGORY_STYLE: Record<string, string> = {
   네이버SEO: 'bg-green-50 text-green-700',
@@ -32,15 +33,6 @@ interface Answer {
   points_earned?: number
 }
 
-function relativeTime(iso: string) {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
-  if (diff < 1) return '방금 전'
-  if (diff < 60) return `${diff}분 전`
-  const h = Math.floor(diff / 60)
-  if (h < 24) return `${h}시간 전`
-  return `${Math.floor(h / 24)}일 전`
-}
-
 export default function KnowledgeDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -66,7 +58,7 @@ export default function KnowledgeDetailPage() {
   function handleShare() {
     const url = window.location.href
     if (navigator.share) {
-      navigator.share({ title: question?.title ?? '지식 거래소', url })
+      navigator.share({ title: question?.title ?? '오호라!', url })
     } else {
       navigator.clipboard?.writeText(url)
       setCopied(true)
@@ -83,11 +75,11 @@ export default function KnowledgeDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ body: answerBody }),
       })
-      const data = await res.json()
-      setAnswers(prev => [...prev, data])
+      const answerData = await res.json()
+      setAnswers(prev => [...prev, answerData])
       setAnswerBody('')
-      if (data.points_earned) {
-        setToast(`+${data.points_earned.toLocaleString()}P 적립!`)
+      if (answerData.points_earned) {
+        setToast(`+${answerData.points_earned.toLocaleString()}P 적립!`)
         setTimeout(() => setToast(null), 3000)
       }
     } finally {
@@ -97,7 +89,7 @@ export default function KnowledgeDetailPage() {
 
   if (loading) return (
     <>
-      <AppTopBar title="지식 거래소" />
+      <AppTopBar title="오호라!" />
       <div className="mx-auto max-w-3xl px-6 py-10 space-y-4">
         {[180, 120, 100].map(h => (
           <div key={h} className="rounded-xl bg-gray-100 animate-pulse" style={{ height: h }} />
@@ -108,7 +100,7 @@ export default function KnowledgeDetailPage() {
 
   if (!question) return (
     <>
-      <AppTopBar title="지식 거래소" />
+      <AppTopBar title="오호라!" />
       <div className="mx-auto max-w-3xl px-6 py-20 text-center text-gray-500">질문을 찾을 수 없습니다.</div>
     </>
   )
@@ -122,7 +114,7 @@ export default function KnowledgeDetailPage() {
           {toast}
         </div>
       )}
-      <AppTopBar title="지식 거래소" />
+      <AppTopBar title="오호라!" />
       <div className="min-h-screen bg-gray-50">
         <div className="mx-auto max-w-3xl px-6 py-8">
           {/* 뒤로가기 */}
@@ -143,11 +135,6 @@ export default function KnowledgeDetailPage() {
               {question.is_adopted && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-[#0066cc]">
                   <CheckCircle2 className="h-3.5 w-3.5" />채택 완료
-                </span>
-              )}
-              {question.reward_points > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2.5 py-1 text-[12px] font-semibold text-amber-700">
-                  <Coins className="h-3.5 w-3.5" />{question.reward_points.toLocaleString()}P 리워드
                 </span>
               )}
             </div>
@@ -233,7 +220,7 @@ export default function KnowledgeDetailPage() {
               rows={5}
               value={answerBody}
               onChange={e => setAnswerBody(e.target.value)}
-              placeholder="마케팅 노하우를 공유해보세요. 구체적인 경험일수록 더 많은 도움이 됩니다."
+              placeholder="사업 노하우를 공유해보세요. 구체적인 경험일수록 더 많은 도움이 됩니다."
               className="w-full resize-none rounded-lg border border-gray-200 px-4 py-3 text-[14px] leading-relaxed text-gray-900 outline-none focus:border-[#0066cc] transition-colors"
             />
             <div className="mt-3 flex justify-end">

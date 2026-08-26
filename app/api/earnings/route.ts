@@ -122,7 +122,7 @@ async function buildConfirmed(userId: string): Promise<ConfirmedResponse> {
     getUserPaybacks(userId, ['paid', 'converted_to_points']),
     fetchApprovedReceipts(userId),
     fetchReferralEarnings(userId),
-    fetchPointsByType(userId, ['knowledge_question', 'knowledge_answer'], 'knowledge', '지식 거래소 포인트', '포인트 지급'),
+    fetchPointsByType(userId, ['knowledge_question', 'knowledge_answer'], 'knowledge', '오호라 포인트', '포인트 지급'),
   ])
 
   const cashTotal = realizedPaybacks.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0)

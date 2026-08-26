@@ -76,7 +76,7 @@ async function grantQuestionPoints(userId: string, questionId: string): Promise<
     userId,
     requestedAmount: QUESTION_DAILY_LIMIT,
     type: 'knowledge_question',
-    description: '지식 거래소 질문 작성 포인트',
+    description: '오호라 질문 작성 포인트',
     referenceId: questionId,
   })
   return awarded

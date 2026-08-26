@@ -26,7 +26,7 @@ interface BreakdownGroup {
 
 const GROUPS: BreakdownGroup[] = [
   { key: 'receipt', label: '영수증 적립', types: ['receipt'] },
-  { key: 'knowledge', label: '지식 거래소', types: ['knowledge_question', 'knowledge_answer'] },
+  { key: 'knowledge', label: '오호라', types: ['knowledge_question', 'knowledge_answer'] },
   { key: 'referral', label: '추천인 수익', types: ['referral'] },
   { key: 'reward', label: '이벤트 리워드', types: ['reward'] },
   { key: 'community', label: '커뮤니티', types: ['community'] },

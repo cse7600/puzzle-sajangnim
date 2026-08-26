@@ -11,10 +11,9 @@ const PAGE_TITLES: Record<string, string> = {
   '/experience': '미니 체험단',
   '/team-buy': '팀 구매',
   '/rewards': '리워드',
-  '/knowledge': '지식 거래소',
+  '/knowledge': '오호라!',
   '/referral': '추천인',
   '/earnings': '수익·정산',
-  '/community': '사장님 모임',
   '/hub': '연동 허브',
   '/settings': '개인 설정',
 };

@@ -9,7 +9,7 @@ const FOOTER_COLUMNS: { header: string; links: string[] }[] = [
       '앱테크 리워드',
       '팀 구매',
       '추천인 시스템',
-      '마케팅 지식 거래소',
+      '오호라! 사업 Q&A',
     ],
   },
   {
