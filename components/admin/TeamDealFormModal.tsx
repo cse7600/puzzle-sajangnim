@@ -153,15 +153,15 @@ export function TeamDealFormModal({
         <div className="px-6 py-5 flex flex-col gap-4">
           <div>
             <label className="block text-[12px] font-medium text-[#6e6e73] mb-1.5">썸네일 이미지</label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-start gap-3">
               {form.thumbnail_url ? (
                 <img
                   src={form.thumbnail_url}
                   alt="딜 썸네일 미리보기"
-                  className="h-20 w-32 rounded-lg object-cover border border-[#e0e0e0]"
+                  className="aspect-[2.5/1] w-[240px] rounded-lg object-cover border border-[#e0e0e0]"
                 />
               ) : (
-                <div className="h-20 w-32 rounded-lg border border-dashed border-[#e0e0e0] flex items-center justify-center text-[#a1a1a6]">
+                <div className="aspect-[2.5/1] w-[240px] rounded-lg border border-dashed border-[#e0e0e0] flex items-center justify-center text-[#a1a1a6]">
                   <ImagePlus className="h-5 w-5" />
                 </div>
               )}
@@ -170,11 +170,15 @@ export function TeamDealFormModal({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="rounded-[9999px] border border-[#e0e0e0] px-3.5 py-1.5 text-[12px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] disabled:opacity-40 transition-colors"
+                  className="rounded-[9999px] border border-[#e0e0e0] px-3.5 py-1.5 text-[12px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] disabled:opacity-40 transition-colors self-start"
                 >
                   {uploading ? '업로드 중...' : form.thumbnail_url ? '이미지 교체' : '이미지 선택'}
                 </button>
-                <p className="text-[11px] text-[#a1a1a6]">JPG/PNG/WEBP · 최대 5MB</p>
+                <div className="rounded-[8px] bg-[#f5f5f7] px-3 py-2 text-[11px] leading-relaxed text-[#6e6e73]">
+                  <p className="font-medium text-[#1d1d1f]">권장 규격: 1200 × 480px (2.5:1)</p>
+                  <p>최소 800 × 320px · JPG/PNG/WEBP · 최대 5MB</p>
+                  <p className="mt-1">목록 카드·상세 페이지에 이 비율로 자동 크롭되어 노출되니 핵심 요소(제목·인물)는 가운데에 배치하세요.</p>
+                </div>
               </div>
               <input
                 ref={fileInputRef}
