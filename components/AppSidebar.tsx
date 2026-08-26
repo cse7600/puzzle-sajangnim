@@ -14,6 +14,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { icon: '🔗', label: '연동 허브', href: '/hub' },
       { icon: '💰', label: '수익·정산', href: '/earnings' },
+      { icon: '🏛️', label: '정부지원사업 매칭', href: '/gov-support' },
     ],
   },
   {
