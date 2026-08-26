@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { TeamDealFormModal } from '@/components/admin/TeamDealFormModal'
-import { TeamDealMembersModal } from '@/components/admin/TeamDealMembersModal'
 import {
   AdminTeamDeal,
   DEAL_CATEGORY_EMOJI,
@@ -54,12 +54,12 @@ function RecruitProgress({ deal }: { deal: AdminTeamDeal }) {
 }
 
 export default function AdminTeamDealsPage() {
+  const router = useRouter()
   const [deals, setDeals] = useState<AdminTeamDeal[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [formTarget, setFormTarget] = useState<AdminTeamDeal | null | 'create'>(null)
-  const [membersTarget, setMembersTarget] = useState<AdminTeamDeal | null>(null)
   const [cancellingDealId, setCancellingDealId] = useState<string | null>(null)
 
   function load() {
@@ -187,7 +187,10 @@ export default function AdminTeamDealsPage() {
                         <button onClick={() => setFormTarget(deal)} className="text-[12px] text-[#0066cc] hover:underline">
                           편집
                         </button>
-                        <button onClick={() => setMembersTarget(deal)} className="text-[12px] text-[#0066cc] hover:underline">
+                        <button
+                          onClick={() => router.push(`/admin/team-deals/${deal.id}/members`)}
+                          className="text-[12px] text-[#0066cc] hover:underline"
+                        >
                           신청자
                         </button>
                         {(deal.status === 'active' || deal.status === 'completed') && (
@@ -214,14 +217,6 @@ export default function AdminTeamDealsPage() {
           deal={formTarget === 'create' ? null : formTarget}
           onClose={() => setFormTarget(null)}
           onSaved={handleSaved}
-        />
-      )}
-
-      {membersTarget && (
-        <TeamDealMembersModal
-          deal={membersTarget}
-          onClose={() => setMembersTarget(null)}
-          onChanged={load}
         />
       )}
     </div>
