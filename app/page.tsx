@@ -416,7 +416,7 @@ export default function LandingPage() {
                 </div>
 
                 <a
-                  href="/team-purchase"
+                  href="/team-buy"
                   className="btn-pill btn-primary mt-6 w-full"
                 >
                   {g.target - g.joined === 0
