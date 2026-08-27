@@ -14,6 +14,7 @@ const config: Config = {
         ink: '#0e0f0c',
         parchment: '#e8ebe6',
         'canvas-white': '#ffffff',
+        'canvas-subtle': '#f5f5f7',
         'dark-tile': '#0e0f0c',
         muted: '#454745',
         'muted-light': '#868685',
