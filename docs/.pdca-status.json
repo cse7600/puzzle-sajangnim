@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-08-26T13:28:57.069Z",
+  "lastUpdated": "2026-08-27T08:56:20.319Z",
   "activeFeatures": [
     "puzzle-sajangnim",
     "login",
@@ -69,7 +69,15 @@
     "survey",
     "survey-upload",
     "crawler",
-    "my-link"
+    "my-link",
+    "terms",
+    "privacy",
+    "kakao-login",
+    "kakao-signup",
+    "consent",
+    "[handle]",
+    "import",
+    "[jobId]"
   ],
   "primaryFeature": "puzzle-sajangnim",
   "features": {
@@ -82,9 +90,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:32:00.677Z",
-        "lastUpdated": "2026-08-26T09:45:20.720Z"
+        "lastUpdated": "2026-08-27T08:53:39.367Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/lib/admin-team-deals.ts"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/lib/link-import-parser.ts"
     },
     "login": {
       "phase": "do",
@@ -95,9 +103,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:38:47.282Z",
-        "lastUpdated": "2026-08-25T18:27:13.138Z"
+        "lastUpdated": "2026-08-27T08:03:32.718Z"
       },
-      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/admin/login/page.tsx"
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/login/page.tsx"
     },
     "(auth)": {
       "phase": "do",
@@ -355,7 +363,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:32:14.723Z",
-        "lastUpdated": "2026-08-26T05:08:06.539Z"
+        "lastUpdated": "2026-08-27T08:05:42.486Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/settings/page.tsx"
     },
@@ -420,7 +428,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T15:51:17.582Z",
-        "lastUpdated": "2026-08-25T17:58:00.297Z"
+        "lastUpdated": "2026-08-27T07:12:40.855Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/referral/stats/route.ts"
     },
@@ -745,7 +753,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-08-25T17:48:49.789Z",
-        "lastUpdated": "2026-08-25T18:12:07.415Z"
+        "lastUpdated": "2026-08-27T08:12:41.191Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/components/auth/KakaoLoginButton.tsx"
     },
@@ -758,7 +766,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-08-25T17:49:06.016Z",
-        "lastUpdated": "2026-08-25T17:49:06.016Z"
+        "lastUpdated": "2026-08-27T08:04:34.132Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/auth/callback/route.ts"
     },
@@ -953,9 +961,113 @@
       "documents": {},
       "timestamps": {
         "started": "2026-08-26T13:18:50.105Z",
-        "lastUpdated": "2026-08-26T13:19:03.858Z"
+        "lastUpdated": "2026-08-27T08:56:20.319Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/(app)/my-link/page.tsx"
+    },
+    "terms": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-27T05:50:42.501Z",
+        "lastUpdated": "2026-08-27T05:50:42.501Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/legal/terms/content.ts"
+    },
+    "privacy": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-27T05:50:44.004Z",
+        "lastUpdated": "2026-08-27T08:05:21.291Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/legal/privacy/content.ts"
+    },
+    "kakao-login": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-27T06:11:16.114Z",
+        "lastUpdated": "2026-08-27T06:11:16.114Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/kakao-login/page.tsx"
+    },
+    "kakao-signup": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-27T06:11:19.332Z",
+        "lastUpdated": "2026-08-27T06:11:19.332Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/kakao-signup/page.tsx"
+    },
+    "consent": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-27T08:02:58.624Z",
+        "lastUpdated": "2026-08-27T08:05:14.279Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/auth/consent/page.tsx"
+    },
+    "[handle]": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-27T08:52:11.469Z",
+        "lastUpdated": "2026-08-27T08:52:39.027Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/l/[handle]/ProfileView.tsx"
+    },
+    "import": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-27T08:53:57.243Z",
+        "lastUpdated": "2026-08-27T08:53:57.243Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/link-page/import/route.ts"
+    },
+    "[jobId]": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-08-27T08:54:15.712Z",
+        "lastUpdated": "2026-08-27T08:54:15.712Z"
+      },
+      "lastFile": "/Users/hokang2father/puzzle-sajangnim/app/api/link-page/import/[jobId]/route.ts"
     }
   },
   "pipeline": {
@@ -966,7 +1078,7 @@
   "session": {
     "startedAt": "2026-06-18T07:25:20.070Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-08-26T13:28:57.069Z"
+    "lastActivity": "2026-08-27T08:56:20.319Z"
   },
   "history": [
     {
@@ -5742,6 +5854,468 @@
     {
       "timestamp": "2026-08-26T13:28:57.069Z",
       "feature": "crawler",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T05:50:42.501Z",
+      "feature": "terms",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T05:50:44.004Z",
+      "feature": "privacy",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T05:50:52.307Z",
+      "feature": "privacy",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:10:24.865Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:10:36.771Z",
+      "feature": "login",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:10:44.270Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:10:54.580Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:11:02.221Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:11:11.120Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:11:16.114Z",
+      "feature": "kakao-login",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:11:19.332Z",
+      "feature": "kakao-signup",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:11:34.265Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:11:37.749Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:11:48.411Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:11:52.007Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:11:57.160Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:12:00.992Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:12:04.290Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:12:09.622Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:12:16.574Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:14:53.935Z",
+      "feature": "login",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:14:57.298Z",
+      "feature": "login",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:28:18.467Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T06:51:22.521Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T07:12:39.798Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T07:12:40.855Z",
+      "feature": "stats",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T07:28:53.845Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:02:25.230Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:02:32.414Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:02:58.624Z",
+      "feature": "consent",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:04.811Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:11.378Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:15.344Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:22.446Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:29.255Z",
+      "feature": "login",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:32.718Z",
+      "feature": "login",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:38.958Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:42.105Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:48.402Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:51.746Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:03:57.008Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:04:00.264Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:04:10.339Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:04:16.666Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:04:26.786Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:04:29.984Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:04:34.132Z",
+      "feature": "callback",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:04:48.616Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:05:14.279Z",
+      "feature": "consent",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:05:21.291Z",
+      "feature": "privacy",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:05:39.538Z",
+      "feature": "settings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:05:42.486Z",
+      "feature": "settings",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:12:37.309Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:12:41.191Z",
+      "feature": "auth",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:16:49.514Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:16:54.342Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:17:00.123Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:17:04.177Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:51:10.612Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:51:16.390Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:51:22.471Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:51:46.850Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:51:53.192Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:52:02.097Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:52:11.469Z",
+      "feature": "[handle]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:52:16.819Z",
+      "feature": "[handle]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:52:27.253Z",
+      "feature": "[handle]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:52:32.816Z",
+      "feature": "[handle]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:52:39.027Z",
+      "feature": "[handle]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:53:39.367Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:53:57.243Z",
+      "feature": "import",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:54:15.713Z",
+      "feature": "[jobId]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:54:30.256Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:54:42.745Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:54:49.558Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:55:55.615Z",
+      "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-27T08:56:20.319Z",
+      "feature": "my-link",
       "phase": "do",
       "action": "updated"
     }

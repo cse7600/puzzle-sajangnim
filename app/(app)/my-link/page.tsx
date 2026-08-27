@@ -51,13 +51,15 @@ type LayoutPreset = 'profile_only' | 'cover_top' | 'cover_profile_overlap'
 type FontPreset = 'pretendard' | 'noto-sans-kr' | 'gowun-dodum' | 'nanum-gothic'
 interface SnsLinkItem { platform: string; url: string }
 interface BackgroundSetting {
-  pageMode?: 'theme' | 'solid' | 'gradient'
+  pageMode?: 'theme' | 'solid' | 'gradient' | 'image'
   color?: string
   gradientKey?: string
   coverImageUrl?: string | null
+  imageUrl?: string | null
+  hex?: string
 }
 interface BlockStyleSetting {
-  shape?: 'round' | 'soft' | 'square'
+  shape?: 'pill' | 'round' | 'soft' | 'square' | 'sharp'
   shadow?: 'none' | 'soft' | 'medium' | 'strong'
   align?: 'left' | 'center'
   fontSize?: 'sm' | 'md' | 'lg'
@@ -406,6 +408,7 @@ function LinkWorkspace({ subTab }: { subTab: SubTab }) {
   const [copied, setCopied] = useState(false)
   const [showHandleModal, setShowHandleModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [editBlock, setEditBlock] = useState<Block | null>(null)
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
   const [savingTheme, setSavingTheme] = useState(false)
@@ -566,6 +569,19 @@ function LinkWorkspace({ subTab }: { subTab: SubTab }) {
         <BarChart3 size={13} /> 블록별 클릭 수는 아래 블록 목록에서 확인하세요.
       </div>
 
+      <button type="button" onClick={() => setShowImportModal(true)} style={{
+        ...cardStyle, padding: '16px 18px', cursor: 'pointer', width: '100%', textAlign: 'left',
+        display: 'flex', alignItems: 'center', gap: 12, background: T.skySoft, border: `1.5px solid ${T.sky}`,
+      }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: T.white, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1px solid ${T.border}` }}>
+          <Inbox size={18} color={T.sky} />
+        </div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: T.ink }}>다른 서비스에서 가져오기</div>
+          <div style={{ fontSize: 12.5, color: T.inkSub, marginTop: 2 }}>인포크링크 등 기존 링크인바이오 페이지를 한 번에 이관합니다</div>
+        </div>
+      </button>
+
       <div data-guide="link-blocks" style={{ ...cardStyle, padding: 0, overflow: 'visible' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px', borderBottom: `1px solid ${T.border}` }}>
           <span style={{ fontSize: 15, fontWeight: 800, color: T.ink }}>블록</span>
@@ -599,6 +615,7 @@ function LinkWorkspace({ subTab }: { subTab: SubTab }) {
       {showHandleModal && <HandleModal current={settings.handle} onClose={() => setShowHandleModal(false)} onSaved={h => { setSettings(s => s ? { ...s, handle: h } : s); setShowHandleModal(false) }} />}
       {showAddModal && <AddBlockModal onClose={() => setShowAddModal(false)} onCreated={() => { setShowAddModal(false); loadAll() }} />}
       {editBlock && <BlockEditModal block={editBlock} onClose={() => setEditBlock(null)} onSaved={() => { setEditBlock(null); loadAll() }} />}
+      {showImportModal && <ImportModal onClose={() => setShowImportModal(false)} onApplied={() => { setShowImportModal(false); loadAll() }} />}
     </div>
   )
 
@@ -679,6 +696,17 @@ function DesignPanel({ settings, patchSettings, selectTheme, savingTheme }: {
       const t = value.trim()
       if (!t) patchBs({ buttonColor: undefined })
       else if (isHexColor(t)) patchBs({ buttonColor: t })
+    }, 400)
+  }
+
+  const [bgHexText, setBgHexText] = useState(bg.hex || bg.color || '')
+  const onBgHexInput = (value: string) => {
+    setBgHexText(value)
+    if (timers.current.bgHex) clearTimeout(timers.current.bgHex)
+    timers.current.bgHex = setTimeout(() => {
+      const t = value.trim()
+      if (!t) patchBg({ hex: undefined, color: undefined })
+      else if (isHexColor(t)) patchBg({ hex: t, color: t })
     }, 400)
   }
 
@@ -863,26 +891,37 @@ function DesignPanel({ settings, patchSettings, selectTheme, savingTheme }: {
 
           <div>
             <label style={designLabel}>배경</label>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              {([['theme', '테마 기본'], ['solid', '단색'], ['gradient', '그라디언트']] as const).map(([val, label]) => (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+              {([['theme', '테마 기본'], ['solid', '단색'], ['gradient', '그라디언트'], ['image', '이미지']] as const).map(([val, label]) => (
                 <button key={val} type="button" onClick={() => patchBg({ pageMode: val })} style={segBtn((bg.pageMode || 'theme') === val)}>{label}</button>
               ))}
             </div>
 
             {bg.pageMode === 'solid' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
-                {SOLID_COLORS.map(c => {
-                  const active = bg.color === c
-                  return (
-                    <button key={c} type="button" onClick={() => patchBg({ color: c })} title={c} style={{
-                      aspectRatio: '1 / 1', borderRadius: 9, cursor: 'pointer', background: c,
-                      border: `2px solid ${active ? T.brand : T.border}`, position: 'relative',
-                    }}>
-                      {active && <Check size={13} color={/^#(F|E|D|C)/i.test(c) ? T.ink : '#fff'} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />}
-                    </button>
-                  )
-                })}
-              </div>
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 10 }}>
+                  {SOLID_COLORS.map(c => {
+                    const active = bg.color === c && !bg.hex
+                    return (
+                      <button key={c} type="button" onClick={() => patchBg({ color: c, hex: undefined })} title={c} style={{
+                        aspectRatio: '1 / 1', borderRadius: 9, cursor: 'pointer', background: c,
+                        border: `2px solid ${active ? T.brand : T.border}`, position: 'relative',
+                      }}>
+                        {active && <Check size={13} color={/^#(F|E|D|C)/i.test(c) ? T.ink : '#fff'} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <label style={{ position: 'relative', width: 42, height: 42, flexShrink: 0, borderRadius: 9, border: `1.5px solid ${T.border}`, cursor: 'pointer', overflow: 'hidden', background: isHexColor(bg.hex) ? bg.hex : (bg.color || T.surface) }}>
+                    <input type="color" value={isHexColor(bg.hex || bg.color) && (bg.hex || bg.color || '').length === 7 ? (bg.hex || bg.color) : '#ffffff'}
+                      onChange={e => patchBg({ hex: e.target.value, color: e.target.value })}
+                      style={{ position: 'absolute', inset: -6, width: '160%', height: '160%', border: 'none', padding: 0, cursor: 'pointer', opacity: 0 }} />
+                  </label>
+                  <input value={bgHexText} onChange={e => onBgHexInput(e.target.value)}
+                    placeholder="직접 입력 (예: #E8D5C4)" maxLength={7} style={{ ...modalInput, flex: 1, minWidth: 0 }} />
+                </div>
+              </>
             )}
 
             {bg.pageMode === 'gradient' && (
@@ -898,6 +937,13 @@ function DesignPanel({ settings, patchSettings, selectTheme, savingTheme }: {
                     </button>
                   )
                 })}
+              </div>
+            )}
+
+            {bg.pageMode === 'image' && (
+              <div>
+                <ImageUploadField value={bg.imageUrl || ''} onChange={url => patchBg({ imageUrl: url || null })} wide />
+                <p style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>페이지 전체 배경에 이미지를 표시합니다.</p>
               </div>
             )}
           </div>
@@ -952,11 +998,11 @@ function DesignPanel({ settings, patchSettings, selectTheme, savingTheme }: {
         <div style={{ ...cardStyle, padding: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
             <label style={designLabel}>모양</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {([['round', '둥글게', 16], ['soft', '약간', 10], ['square', '각지게', 4]] as const).map(([val, label, r]) => {
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {([['pill', '캡슐', 999], ['round', '둥글게', 16], ['soft', '약간', 10], ['square', '각지게', 4], ['sharp', '직각', 0]] as const).map(([val, label, r]) => {
                 const active = (bs.shape || 'round') === val
                 return (
-                  <button key={val} type="button" onClick={() => patchBs({ shape: val })} style={{ ...segBtn(active), flexDirection: 'column', gap: 7, padding: '11px 6px' }}>
+                  <button key={val} type="button" onClick={() => patchBs({ shape: val })} style={{ ...segBtn(active), flexDirection: 'column', gap: 7, padding: '11px 6px', flex: '1 1 0' }}>
                     <span style={{ width: '80%', height: 16, background: active ? T.brand : T.border, borderRadius: r }} />
                     {label}
                   </button>
@@ -1742,3 +1788,272 @@ function BlockEditModal({ block, onClose, onSaved }: { block: Block; onClose: ()
 
 const btnGhost: React.CSSProperties = { padding: '9px 18px', borderRadius: 8, border: `1.5px solid ${T.border}`, background: T.white, fontSize: 13, fontWeight: 500, cursor: 'pointer', color: T.inkSub }
 const btnPrimary: React.CSSProperties = { padding: '9px 20px', borderRadius: 8, border: 'none', background: T.brand, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }
+
+/* ---- Import Modal ---- */
+type ImportStep = 'input' | 'parsing' | 'preview' | 'applying' | 'done' | 'error'
+
+interface ImportJob {
+  id: string
+  status: string
+  parsed_payload?: {
+    profile: { displayName: string; bio: string | null; avatarUrl: string | null; snsLinks: { platform: string; url: string }[] }
+    design: Record<string, unknown>
+    blocks: { type: string; payload: Record<string, unknown>; position: number }[]
+  }
+  error_message?: string
+}
+
+function ImportModal({ onClose, onApplied }: { onClose: () => void; onApplied: () => void }) {
+  const [step, setStep] = useState<ImportStep>('input')
+  const [url, setUrl] = useState('')
+  const [jobId, setJobId] = useState<string | null>(null)
+  const [job, setJob] = useState<ImportJob | null>(null)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [selectedBlocks, setSelectedBlocks] = useState<Set<number>>(new Set())
+  const [applyMode, setApplyMode] = useState<'overwrite' | 'append'>('overwrite')
+  const [ownerConfirmed, setOwnerConfirmed] = useState(false)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [])
+
+  const startImport = async () => {
+    if (!url.trim()) return
+    if (!ownerConfirmed) return
+    setStep('parsing')
+    setErrorMsg('')
+
+    try {
+      const resp = await fetch('/api/link-page/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url.trim() }),
+      })
+      const body = await resp.json()
+      if (!resp.ok) {
+        setErrorMsg(body.error || '이관 요청에 실패했습니다')
+        setStep('error')
+        return
+      }
+      setJobId(body.job.id)
+      startPolling(body.job.id)
+    } catch {
+      setErrorMsg('네트워크 오류가 발생했습니다')
+      setStep('error')
+    }
+  }
+
+  const startPolling = (id: string) => {
+    const poll = async () => {
+      try {
+        const resp = await fetch(`/api/link-page/import/${id}`)
+        const body = await resp.json()
+        if (!resp.ok) return
+        const j = body.job as ImportJob
+        setJob(j)
+        if (j.status === 'preview') {
+          if (pollRef.current) clearInterval(pollRef.current)
+          const blockCount = j.parsed_payload?.blocks.length || 0
+          setSelectedBlocks(new Set(Array.from({ length: blockCount }, (_, i) => i)))
+          setStep('preview')
+        } else if (j.status === 'failed') {
+          if (pollRef.current) clearInterval(pollRef.current)
+          setErrorMsg(j.error_message || '파싱에 실패했습니다')
+          setStep('error')
+        }
+      } catch { /* retry on next poll */ }
+    }
+    pollRef.current = setInterval(poll, 1500)
+    poll()
+  }
+
+  const toggleBlock = (idx: number) => {
+    setSelectedBlocks(prev => {
+      const next = new Set(prev)
+      if (next.has(idx)) next.delete(idx)
+      else next.add(idx)
+      return next
+    })
+  }
+
+  const applyImport = async () => {
+    if (!jobId) return
+    setStep('applying')
+    try {
+      const resp = await fetch(`/api/link-page/import/${jobId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: applyMode,
+          selectedBlocks: Array.from(selectedBlocks),
+        }),
+      })
+      const body = await resp.json()
+      if (!resp.ok) {
+        setErrorMsg(body.error || '적용에 실패했습니다')
+        setStep('error')
+        return
+      }
+      setStep('done')
+      setTimeout(onApplied, 1200)
+    } catch {
+      setErrorMsg('적용 중 네트워크 오류가 발생했습니다')
+      setStep('error')
+    }
+  }
+
+  const parsed = job?.parsed_payload
+
+  return (
+    <ModalShell title="다른 서비스에서 가져오기" onClose={onClose} maxWidth={540}>
+      {step === 'input' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={modalLabel}>이관할 링크 페이지 URL</label>
+            <input
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              placeholder="예: link.inpock.co.kr/myshop"
+              style={modalInput}
+              autoFocus
+            />
+            <p style={{ fontSize: 11.5, color: T.muted, marginTop: 6, lineHeight: 1.5 }}>
+              현재 인포크링크(link.inpock.co.kr)를 지원합니다. 향후 리틀리, 링크트리 등 확장 예정입니다.
+            </p>
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
+            <input type="checkbox" checked={ownerConfirmed} onChange={e => setOwnerConfirmed(e.target.checked)}
+              style={{ marginTop: 3, accentColor: T.brand }} />
+            <span style={{ fontSize: 12.5, color: T.inkSub, lineHeight: 1.6 }}>
+              이 URL은 본인이 소유한 페이지이며, 콘텐츠를 이관할 권리가 있음을 확인합니다.
+              이관된 이미지는 원저작자의 저작권이 유지되며, 제3자 콘텐츠 사용에 대한 책임은 본인에게 있습니다.
+            </span>
+          </label>
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={onClose} style={btnGhost}>취소</button>
+            <button type="button" onClick={startImport} disabled={!url.trim() || !ownerConfirmed}
+              style={{ ...btnPrimary, opacity: (!url.trim() || !ownerConfirmed) ? 0.5 : 1 }}>
+              가져오기 시작
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 'parsing' && (
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <Loader2 size={32} className="rl-spin" color={T.brand} />
+          <p style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginTop: 16 }}>페이지를 분석하고 있습니다</p>
+          <p style={{ fontSize: 12.5, color: T.muted, marginTop: 6 }}>이미지 재호스팅과 링크 해석 중... 최대 30초 소요될 수 있습니다.</p>
+        </div>
+      )}
+
+      {step === 'preview' && parsed && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ padding: '14px 16px', borderRadius: 12, background: T.surface, display: 'flex', alignItems: 'center', gap: 12 }}>
+            {parsed.profile.avatarUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={parsed.profile.avatarUrl} alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+            )}
+            <div>
+              <div style={{ fontSize: 14.5, fontWeight: 800, color: T.ink }}>{parsed.profile.displayName}</div>
+              {parsed.profile.bio && <div style={{ fontSize: 12.5, color: T.inkSub, marginTop: 2 }}>{parsed.profile.bio}</div>}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <label style={{ ...modalLabel, marginBottom: 0 }}>가져올 블록 ({selectedBlocks.size}/{parsed.blocks.length})</label>
+              <button type="button" onClick={() => {
+                if (selectedBlocks.size === parsed.blocks.length) setSelectedBlocks(new Set())
+                else setSelectedBlocks(new Set(parsed.blocks.map((_, i) => i)))
+              }} style={{ fontSize: 12, color: T.brand, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>
+                {selectedBlocks.size === parsed.blocks.length ? '전체 해제' : '전체 선택'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto' }}>
+              {parsed.blocks.map((block, i) => (
+                <label key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10,
+                  border: `1.5px solid ${selectedBlocks.has(i) ? T.brand : T.border}`,
+                  background: selectedBlocks.has(i) ? T.brandSoft : T.white, cursor: 'pointer',
+                }}>
+                  <input type="checkbox" checked={selectedBlocks.has(i)} onChange={() => toggleBlock(i)}
+                    style={{ accentColor: T.brand, flexShrink: 0 }} />
+                  {typeof block.payload.image_url === 'string' && block.payload.image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={block.payload.image_url} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {String(block.payload.title || (block.type === 'divider' ? '구분선' : '블록'))}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: T.muted }}>{block.type}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label style={modalLabel}>적용 방식</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" onClick={() => setApplyMode('overwrite')} style={segBtn(applyMode === 'overwrite')}>
+                기존 내용 교체
+              </button>
+              <button type="button" onClick={() => setApplyMode('append')} style={segBtn(applyMode === 'append')}>
+                기존 내용에 추가
+              </button>
+            </div>
+            {applyMode === 'overwrite' && (
+              <p style={{ fontSize: 11.5, color: T.amber, marginTop: 6, display: 'flex', alignItems: 'center', gap: 4, lineHeight: 1.5 }}>
+                <AlertTriangle size={12} style={{ flexShrink: 0 }} />
+                기존 프로필, 디자인 설정, 블록이 모두 가져온 내용으로 교체됩니다.
+              </p>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={onClose} style={btnGhost}>취소</button>
+            <button type="button" onClick={applyImport} disabled={selectedBlocks.size === 0}
+              style={{ ...btnPrimary, opacity: selectedBlocks.size === 0 ? 0.5 : 1 }}>
+              적용하기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 'applying' && (
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <Loader2 size={32} className="rl-spin" color={T.brand} />
+          <p style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginTop: 16 }}>적용 중입니다</p>
+        </div>
+      )}
+
+      {step === 'done' && (
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: T.greenSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Check size={28} color={T.green} />
+          </div>
+          <p style={{ fontSize: 15, fontWeight: 800, color: T.ink }}>이관 완료</p>
+          <p style={{ fontSize: 13, color: T.inkSub, marginTop: 6 }}>가져온 내용이 나만의 링크에 적용되었습니다.</p>
+        </div>
+      )}
+
+      {step === 'error' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '24px 0' }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: T.redSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AlertTriangle size={26} color={T.red} />
+          </div>
+          <p style={{ fontSize: 14, fontWeight: 700, color: T.ink, textAlign: 'center' }}>{errorMsg}</p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={onClose} style={btnGhost}>닫기</button>
+            <button type="button" onClick={() => { setStep('input'); setErrorMsg('') }} style={btnPrimary}>다시 시도</button>
+          </div>
+        </div>
+      )}
+    </ModalShell>
+  )
+}

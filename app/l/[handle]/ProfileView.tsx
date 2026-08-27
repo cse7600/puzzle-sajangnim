@@ -122,18 +122,21 @@ export default function ProfileView({ data, previewMode = false }: { data: Profi
   const hasCover = layout === 'cover_top' || layout === 'cover_profile_overlap'
   const overlap = layout === 'cover_profile_overlap'
 
-  const pageMode = ((bg.pageMode as string) || 'theme') as 'theme' | 'solid' | 'gradient'
-  const solidColor = (bg.color as string) || ''
+  const pageMode = ((bg.pageMode as string) || 'theme') as 'theme' | 'solid' | 'gradient' | 'image'
+  const solidColor = (bg.hex as string) || (bg.color as string) || ''
+  const bgImageUrl = (bg.imageUrl as string) || ''
   const gradient = pageMode === 'gradient' ? getGradient(bg.gradientKey as string) : null
   const pageBackground =
-    pageMode === 'solid' ? (solidColor || t.pageBg)
-      : pageMode === 'gradient' ? (gradient?.css || t.pageBg)
-        : t.pageBg
+    pageMode === 'image' ? (solidColor || '#F7F7F5')
+      : pageMode === 'solid' ? (solidColor || t.pageBg)
+        : pageMode === 'gradient' ? (gradient?.css || t.pageBg)
+          : t.pageBg
   const isDark = t.key === 'midnight'
   const pageIsDark =
-    pageMode === 'solid' ? isHexDark(solidColor)
-      : pageMode === 'gradient' ? (gradient?.isDark ?? false)
-        : isDark
+    pageMode === 'image' ? isHexDark(solidColor)
+      : pageMode === 'solid' ? isHexDark(solidColor)
+        : pageMode === 'gradient' ? (gradient?.isDark ?? false)
+          : isDark
   const headerText = pageMode === 'theme' ? t.text : (pageIsDark ? '#F8FAFC' : '#1A1A1A')
   const headerSub = pageMode === 'theme' ? t.textSub : (pageIsDark ? 'rgba(248,250,252,0.78)' : '#5B5B5B')
 
@@ -223,7 +226,10 @@ export default function ProfileView({ data, previewMode = false }: { data: Profi
   const tickerDuration = Math.max(18, data.noticeText.length * TICKER_REPEAT * 0.22)
 
   return (
-    <div {...previewGuard} style={{ minHeight: previewMode ? undefined : '100vh', background: pageBackground, color: headerText, fontFamily }}>
+    <div {...previewGuard} style={{
+      minHeight: previewMode ? undefined : '100vh', background: pageBackground, color: headerText, fontFamily,
+      ...(pageMode === 'image' && bgImageUrl ? { backgroundImage: `url(${bgImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' } : {}),
+    }}>
       <style>{`
         .rl-btn { transition: transform 0.16s ease, box-shadow 0.16s ease; will-change: transform; }
         .rl-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,0,0,0.16); }
@@ -361,7 +367,7 @@ export default function ProfileView({ data, previewMode = false }: { data: Profi
                   className={animClass}
                   style={animation === 'wave' ? { animationDelay: `${i * 0.08}s` } : undefined}
                 >
-                  <BlockRenderer block={block} theme={t} cardBase={cardBase} radius={radius} handle={data.handle} isDark={isDark} buttonColor={buttonColor} buttonText={buttonTextColor} />
+                  <BlockRenderer block={block} theme={t} cardBase={cardBase} radius={radius} handle={data.handle} isDark={isDark} buttonColor={buttonColor} buttonText={buttonTextColor} pageAlign={align} />
                 </div>
               )
             })}
@@ -373,7 +379,7 @@ export default function ProfileView({ data, previewMode = false }: { data: Profi
   )
 }
 
-function BlockRenderer({ block, theme: t, cardBase, radius, handle, isDark, buttonColor, buttonText }: {
+function BlockRenderer({ block, theme: t, cardBase, radius, handle, isDark, buttonColor, buttonText, pageAlign }: {
   block: PublicBlock
   theme: ReturnType<typeof getTheme>
   cardBase: React.CSSProperties
@@ -382,14 +388,16 @@ function BlockRenderer({ block, theme: t, cardBase, radius, handle, isDark, butt
   isDark: boolean
   buttonColor: string
   buttonText: string
+  pageAlign: 'left' | 'center'
 }) {
   const p = block.payload
+  const blockAlign = (p.align as string) === 'left' || (p.align as string) === 'center' ? (p.align as 'left' | 'center') : pageAlign
 
   if (block.type === 'text') {
     const content = (p.content as string) || ''
     if (!content.trim()) return null
     return (
-      <div style={{ ...cardBase, padding: '18px 18px' }}>
+      <div style={{ ...cardBase, padding: '18px 18px', textAlign: blockAlign }}>
         <p style={{ fontSize: 14.5, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'keep-all', color: t.text }}>
           {content}
         </p>

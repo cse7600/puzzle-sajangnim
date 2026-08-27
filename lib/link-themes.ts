@@ -109,9 +109,11 @@ export function getTheme(key?: string | null): LinkTheme {
 
 /** 블록 모양(라운드) 프리셋 */
 export const BLOCK_SHAPES: Record<string, number> = {
+  pill: 999,
   round: 16,
   soft: 10,
   square: 4,
+  sharp: 0,
 };
 
 /** 그림자 4단계 */
