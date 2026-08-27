@@ -72,7 +72,7 @@ function FieldInput({ label, value, onChange, placeholder, error, type = 'text' 
         placeholder={placeholder}
         onChange={e => onChange(e.target.value)}
         className={`w-full rounded-[11px] border px-4 py-3 text-[15px] outline-none transition-colors ${
-          error ? 'border-red-400 focus:border-red-500' : 'border-[#e0e0e0] focus:border-[#0066cc]'
+          error ? 'border-red-400 focus:border-red-500' : 'border-[#e0e0e0] focus:border-primary-dark'
         }`}
       />
       {error && <p className="mt-1.5 text-[12px] text-red-500">{error}</p>}
@@ -181,7 +181,7 @@ function OnboardingFormFields({
       <button
         type="submit"
         disabled={submitting || hasBlockingError}
-        className="w-full rounded-[9999px] bg-[#0066cc] py-3 text-[15px] font-medium text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+        className="w-full rounded-[9999px] bg-primary py-3 text-[15px] font-medium text-ink hover:bg-primary-hover disabled:opacity-40 transition-colors"
       >
         {submitting ? '저장 중...' : '다음: 사업자 인증'}
       </button>

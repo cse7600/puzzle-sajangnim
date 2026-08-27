@@ -114,7 +114,7 @@ export default function JoinCampaignPage() {
       <div className="mx-auto max-w-xl">
         {/* 헤더 */}
         <div className="mb-6">
-          <p className="text-sm font-medium text-[#0066cc]">{campaign.store_name}</p>
+          <p className="text-sm font-medium text-primary-dark">{campaign.store_name}</p>
           <h1 className="mt-1 text-2xl font-semibold text-gray-900">{campaign.title}</h1>
           {campaign.description && (
             <p className="mt-2 whitespace-pre-wrap text-sm text-gray-500">{campaign.description}</p>
@@ -122,9 +122,9 @@ export default function JoinCampaignPage() {
         </div>
 
         {/* 지급 조건 — 가장 눈에 띄게 */}
-        <div className="mb-6 rounded-xl border border-[#0066cc]/20 bg-[#0066cc]/5 p-5">
+        <div className="mb-6 rounded-xl border border-primary-dark/20 bg-accent-bg p-5">
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-[#0066cc] px-2.5 py-0.5 text-xs font-medium text-white">
+            <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-ink">
               {MISSION_TYPE_LABEL[campaign.mission_type]}
             </span>
             <span className="text-sm font-medium text-gray-500">지급 조건</span>
@@ -132,7 +132,7 @@ export default function JoinCampaignPage() {
           <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-gray-900">
             {campaign.mission_conditions}
           </p>
-          <p className="mt-4 text-lg font-semibold text-[#0066cc]">
+          <p className="mt-4 text-lg font-semibold text-primary-dark">
             이 조건을 완료하면 {campaign.payback_amount.toLocaleString('ko-KR')}원을 페이백 받아요
           </p>
         </div>
@@ -161,7 +161,7 @@ export default function JoinCampaignPage() {
             </p>
             <a
               href={submitLink}
-              className="mt-4 block break-all rounded-lg border border-[#0066cc]/30 bg-[#0066cc]/5 px-4 py-3 text-sm font-medium text-[#0066cc] hover:bg-[#0066cc]/10"
+              className="mt-4 block break-all rounded-lg border border-primary-dark/30 bg-accent-bg px-4 py-3 text-sm font-medium text-primary-dark hover:bg-primary-hover"
             >
               {submitLink}
             </a>
@@ -233,7 +233,7 @@ export default function JoinCampaignPage() {
             <button
               type="submit"
               disabled={submitting || isFull}
-              className="w-full rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0058b0] disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               {isFull ? '모집이 마감되었습니다' : submitting ? '신청 중...' : '참여 신청하기'}
             </button>
@@ -252,7 +252,7 @@ export default function JoinCampaignPage() {
         }
         .input:focus {
           outline: none;
-          border-color: #0066cc;
+          border-color: #163300;
         }
       `}</style>
     </div>

@@ -95,7 +95,7 @@ export default function FranchiseRegistrationModal({
               <span
                 key={i}
                 className={`h-1.5 flex-1 rounded-full transition ${
-                  i < step ? 'bg-[#0066cc]' : 'bg-gray-200'
+                  i < step ? 'bg-primary' : 'bg-gray-200'
                 }`}
               />
             ))}
@@ -139,7 +139,7 @@ export default function FranchiseRegistrationModal({
               <button
                 onClick={goNext}
                 disabled={step === 1 && !canProceedStep1}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0066cc] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#0058b3] disabled:cursor-not-allowed disabled:bg-gray-300"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-ink transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 다음
                 <ArrowRight className="h-4 w-4" />
@@ -148,7 +148,7 @@ export default function FranchiseRegistrationModal({
               <button
                 onClick={handleSubmit}
                 disabled={!agreed}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0066cc] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#0058b3] disabled:cursor-not-allowed disabled:bg-gray-300"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-ink transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 등록 신청
                 <ArrowRight className="h-4 w-4" />
@@ -162,7 +162,7 @@ export default function FranchiseRegistrationModal({
           <div className="border-t border-gray-100 px-6 py-4">
             <button
               onClick={handleClose}
-              className="w-full rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0058b3]"
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-primary-hover"
             >
               확인
             </button>
@@ -203,7 +203,7 @@ function StepAccount({
           value={accountId}
           onChange={(e) => onAccountIdChange(e.target.value)}
           placeholder="아이디를 입력하세요"
-          className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#0066cc] focus:ring-2 focus:ring-[#0066cc]/10"
+          className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-primary-dark focus:ring-2 focus:ring-primary-dark/10"
         />
       </div>
 
@@ -216,13 +216,13 @@ function StepAccount({
           value={password}
           onChange={(e) => onPasswordChange(e.target.value)}
           placeholder="비밀번호를 입력하세요"
-          className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#0066cc] focus:ring-2 focus:ring-[#0066cc]/10"
+          className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-primary-dark focus:ring-2 focus:ring-primary-dark/10"
         />
       </div>
 
-      <div className="flex items-start gap-2 rounded-lg bg-blue-50 px-3.5 py-3">
-        <Lock className="mt-0.5 h-4 w-4 shrink-0 text-[#0066cc]" />
-        <p className="text-xs leading-relaxed text-[#0066cc]">
+      <div className="flex items-start gap-2 rounded-lg bg-accent-bg px-3.5 py-3">
+        <Lock className="mt-0.5 h-4 w-4 shrink-0 text-primary-dark" />
+        <p className="text-xs leading-relaxed text-primary-dark">
           계정 정보는 암호화되어 안전하게 전달됩니다
         </p>
       </div>
@@ -239,7 +239,7 @@ function StepService() {
       </div>
 
       <div className="flex items-start gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
-        <Clock className="mt-0.5 h-5 w-5 shrink-0 text-[#0066cc]" />
+        <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary-dark" />
         <p className="text-sm leading-relaxed text-gray-700">
           퍼즐 사장님이 귀사의 네이버 광고 영업권을 등록합니다. 이 과정은 1~3
           영업일이 소요되며, 수동으로 처리됩니다.
@@ -248,7 +248,7 @@ function StepService() {
 
       <div className="rounded-xl border border-gray-100 p-4">
         <div className="mb-3 flex items-center gap-1.5">
-          <Gift className="h-4 w-4 text-[#0066cc]" />
+          <Gift className="h-4 w-4 text-primary-dark" />
           <p className="text-sm font-semibold text-gray-900">
             등록 시 받는 혜택
           </p>
@@ -283,12 +283,12 @@ function StepConsent({
         </p>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-4 transition hover:border-[#0066cc]/40">
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-4 transition hover:border-primary-dark/40">
         <input
           type="checkbox"
           checked={agreed}
           onChange={(e) => onAgreedChange(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-[#0066cc] accent-[#0066cc]"
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-primary-dark accent-primary-dark"
         />
         <span className="text-sm leading-relaxed text-gray-700">
           네이버 광고 영업권을 퍼즐 사장님에게 위임하고, 모든 마케팅 툴을
@@ -296,9 +296,9 @@ function StepConsent({
         </span>
       </label>
 
-      <div className="flex items-start gap-2 rounded-lg bg-blue-50 px-3.5 py-3">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#0066cc]" />
-        <p className="text-xs leading-relaxed text-[#0066cc]">
+      <div className="flex items-start gap-2 rounded-lg bg-accent-bg px-3.5 py-3">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary-dark" />
+        <p className="text-xs leading-relaxed text-primary-dark">
           위임은 언제든지 철회할 수 있으며, 계정 정보는 영업권 등록 목적
           외에는 사용되지 않습니다.
         </p>

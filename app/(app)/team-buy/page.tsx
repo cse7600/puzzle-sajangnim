@@ -96,7 +96,7 @@ function DealThumbnail({ deal, discountPct }: { deal: TeamDeal; discountPct: num
           <span className="text-5xl">{emoji}</span>
         </div>
       )}
-      <span className="absolute top-2.5 right-2.5 rounded-[9999px] bg-[#0066cc] px-2 py-0.5 text-[11px] font-semibold text-white">
+      <span className="absolute top-2.5 right-2.5 rounded-[9999px] bg-primary px-2 py-0.5 text-[11px] font-semibold text-ink">
         {discountPct}% 할인
       </span>
       {deal.my_membership?.status === 'joined' && (
@@ -118,7 +118,7 @@ function DealCard({ deal }: { deal: TeamDeal }) {
 
   return (
     <div
-      className="bg-white rounded-[18px] border border-[#e0e0e0] overflow-hidden cursor-pointer hover:border-[#0066cc]/40 hover:shadow-md transition-all"
+      className="bg-white rounded-[18px] border border-[#e0e0e0] overflow-hidden cursor-pointer hover:border-primary-dark/40 hover:shadow-md transition-all"
       onClick={() => router.push(`/team-buy/${deal.id}`)}
     >
       <DealThumbnail deal={deal} discountPct={discountPct} />
@@ -140,7 +140,7 @@ function DealCard({ deal }: { deal: TeamDeal }) {
             <span className="font-mono">{timer}</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-[9999px] bg-[#f5f5f7]">
-            <div className="h-full rounded-[9999px] bg-[#0066cc] transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-[9999px] bg-primary transition-all" style={{ width: `${pct}%` }} />
           </div>
         </div>
 
@@ -149,7 +149,7 @@ function DealCard({ deal }: { deal: TeamDeal }) {
           className={`w-full rounded-[9999px] py-2 text-[13px] font-semibold transition-colors ${
             joined
               ? 'bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e8e8ed]'
-              : 'bg-[#0066cc] text-white hover:bg-[#0058b3]'
+              : 'bg-primary text-ink hover:bg-primary-hover'
           }`}
         >
           {joined ? '참여 완료 · 상세 보기' : remaining <= 0 ? '마감 임박 · 상세 보기' : '자세히 보고 참여하기'}
@@ -187,7 +187,7 @@ function AllDealsTab() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="h-80 rounded-[18px] bg-white border border-[#e0e0e0] animate-pulse" />
         ))}
@@ -201,7 +201,7 @@ function AllDealsTab() {
         <p className="text-[13px] text-[#6e6e73] mb-4">잠시 후 다시 시도해주세요</p>
         <button
           onClick={loadDeals}
-          className="rounded-[9999px] bg-[#0066cc] px-5 py-2 text-[13px] font-semibold text-white hover:bg-[#0058b3] transition-colors"
+          className="rounded-[9999px] bg-primary px-5 py-2 text-[13px] font-semibold text-ink hover:bg-primary-hover transition-colors"
         >
           다시 불러오기
         </button>
@@ -217,7 +217,7 @@ function AllDealsTab() {
     )
   }
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {activeDeals.map(deal => (
         <DealCard key={deal.id} deal={deal} />
       ))}
@@ -254,7 +254,7 @@ function MyTeamBuyCard({ entry }: { entry: MyTeamBuyEntry }) {
 
   return (
     <div
-      className="flex items-center gap-4 bg-white rounded-[18px] border border-[#e0e0e0] p-4 cursor-pointer hover:border-[#0066cc]/40 hover:shadow-md transition-all"
+      className="flex items-center gap-4 bg-white rounded-[18px] border border-[#e0e0e0] p-4 cursor-pointer hover:border-primary-dark/40 hover:shadow-md transition-all"
       onClick={() => router.push(target)}
     >
       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[11px] bg-[#f5f5f7]">
@@ -321,7 +321,7 @@ function MyTeamBuysTab() {
         <p className="text-[13px] text-[#6e6e73] mb-4">잠시 후 다시 시도해주세요</p>
         <button
           onClick={loadEntries}
-          className="rounded-[9999px] bg-[#0066cc] px-5 py-2 text-[13px] font-semibold text-white hover:bg-[#0058b3] transition-colors"
+          className="rounded-[9999px] bg-primary px-5 py-2 text-[13px] font-semibold text-ink hover:bg-primary-hover transition-colors"
         >
           다시 불러오기
         </button>
@@ -369,7 +369,7 @@ export default function TeamBuyPage() {
             onClick={() => setTab(item.key)}
             className={`rounded-[9999px] px-4 py-2 text-[13px] font-semibold transition-colors ${
               tab === item.key
-                ? 'bg-[#0066cc] text-white'
+                ? 'bg-primary text-ink'
                 : 'bg-[#f5f5f7] text-[#6e6e73] hover:bg-[#e8e8ed] hover:text-[#1d1d1f]'
             }`}
           >

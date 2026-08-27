@@ -32,7 +32,7 @@ function ProgressBar({ answered, total }: { answered: number; total: number }) {
   const pct = total === 0 ? 0 : Math.round((answered / total) * 100)
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-[9999px] bg-[#f5f5f7]">
-      <div className="h-full rounded-[9999px] bg-[#0066cc] transition-all duration-300" style={{ width: `${pct}%` }} />
+      <div className="h-full rounded-[9999px] bg-primary transition-all duration-300" style={{ width: `${pct}%` }} />
     </div>
   )
 }
@@ -125,7 +125,7 @@ function QuestionScreen({ question, index, total, dealId, value, readOnly, onCha
     <div>
       <p className="mb-2 text-[12px] font-medium text-[#6e6e73]">
         질문 {index + 1} / {total}
-        {question.required && <span className="ml-2 rounded-[9999px] bg-[#0066cc]/10 px-2 py-0.5 text-[11px] font-semibold text-[#0066cc]">필수</span>}
+        {question.required && <span className="ml-2 rounded-[9999px] bg-accent-bg px-2 py-0.5 text-[11px] font-semibold text-primary-dark">필수</span>}
       </p>
       <h2 className="mb-6 text-[21px] font-semibold leading-snug text-[#1d1d1f]">{question.label}</h2>
 
@@ -137,7 +137,7 @@ function QuestionScreen({ question, index, total, dealId, value, readOnly, onCha
           onChange={e => onChange(e.target.value)}
           rows={5}
           placeholder="자유롭게 입력해주세요"
-          className="w-full rounded-[14px] border border-[#e0e0e0] bg-white p-4 text-[14px] text-[#1d1d1f] placeholder:text-[#6e6e73]/60 focus:border-[#0066cc] focus:outline-none disabled:bg-[#f5f5f7] transition-colors"
+          className="w-full rounded-[14px] border border-[#e0e0e0] bg-white p-4 text-[14px] text-[#1d1d1f] placeholder:text-[#6e6e73]/60 focus:border-primary-dark focus:outline-none disabled:bg-[#f5f5f7] transition-colors"
         />
       )}
 
@@ -149,7 +149,7 @@ function QuestionScreen({ question, index, total, dealId, value, readOnly, onCha
           disabled={readOnly}
           onChange={e => onChange(e.target.value)}
           placeholder="https://example.com"
-          className="w-full rounded-[9999px] border border-[#e0e0e0] bg-white px-5 py-3 text-[14px] text-[#1d1d1f] placeholder:text-[#6e6e73]/60 focus:border-[#0066cc] focus:outline-none disabled:bg-[#f5f5f7] transition-colors"
+          className="w-full rounded-[9999px] border border-[#e0e0e0] bg-white px-5 py-3 text-[14px] text-[#1d1d1f] placeholder:text-[#6e6e73]/60 focus:border-primary-dark focus:outline-none disabled:bg-[#f5f5f7] transition-colors"
         />
       )}
 
@@ -172,7 +172,7 @@ function CompleteScreen({ total, onBack }: { total: number; onBack: () => void }
       </p>
       <button
         onClick={onBack}
-        className="rounded-[9999px] bg-[#0066cc] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-[#0058b3] transition-colors"
+        className="rounded-[9999px] bg-primary px-6 py-2.5 text-[13px] font-semibold text-ink hover:bg-primary-hover transition-colors"
       >
         팀 구매로 돌아가기
       </button>
@@ -317,10 +317,10 @@ export default function TeamBuySurveyPage() {
         <p className="text-[15px] text-[#1d1d1f] mb-1">{loadError ?? '설문 정보를 불러오지 못했습니다'}</p>
         <p className="text-[13px] text-[#6e6e73] mb-4">잠시 후 다시 시도하거나 팀 구매 목록으로 돌아가세요</p>
         <div className="flex items-center justify-center gap-3">
-          <button onClick={loadSurvey} className="rounded-[9999px] bg-[#0066cc] px-5 py-2 text-[13px] font-semibold text-white hover:bg-[#0058b3] transition-colors">
+          <button onClick={loadSurvey} className="rounded-[9999px] bg-primary px-5 py-2 text-[13px] font-semibold text-ink hover:bg-primary-hover transition-colors">
             다시 시도
           </button>
-          <button onClick={() => router.push('/team-buy')} className="text-[13px] text-[#0066cc] hover:underline">
+          <button onClick={() => router.push('/team-buy')} className="text-[13px] text-primary-dark hover:underline">
             팀 구매 목록으로
           </button>
         </div>
@@ -388,7 +388,7 @@ export default function TeamBuySurveyPage() {
                 <button
                   onClick={handleNext}
                   disabled={saving}
-                  className="rounded-[9999px] bg-[#0066cc] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+                  className="rounded-[9999px] bg-primary px-6 py-2.5 text-[13px] font-semibold text-ink hover:bg-primary-hover disabled:opacity-40 transition-colors"
                 >
                   {saving ? '저장 중...' : '다음'}
                 </button>
@@ -397,7 +397,7 @@ export default function TeamBuySurveyPage() {
                   <button
                     onClick={handleSubmit}
                     disabled={saving}
-                    className="rounded-[9999px] bg-[#0066cc] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+                    className="rounded-[9999px] bg-primary px-6 py-2.5 text-[13px] font-semibold text-ink hover:bg-primary-hover disabled:opacity-40 transition-colors"
                   >
                     {saving ? '저장 중...' : '제출하기'}
                   </button>

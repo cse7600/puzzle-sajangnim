@@ -76,7 +76,7 @@ function WithdrawalAction({ payback, onRequested }: { payback: PaybackLineItem; 
         type="button"
         onClick={requestWithdrawal}
         disabled={submitting}
-        className="rounded-[9999px] border border-[#0066cc] px-2.5 py-1 text-[11px] font-medium text-[#0066cc] hover:bg-[#f0f7ff] disabled:opacity-50 transition-colors"
+        className="rounded-[9999px] border border-primary-dark px-2.5 py-1 text-[11px] font-medium text-primary-dark hover:bg-accent-bg disabled:opacity-50 transition-colors"
       >
         {submitting ? '신청 중...' : '출금 신청'}
       </button>
@@ -187,7 +187,7 @@ function LineItemRow({ row, onWithdrawalRequested }: { row: PaybackLineItem; onW
         <span className="ml-1 text-[11px] text-[#a1a1a6]">{COST_BASIS_LABEL[row.cost_basis]}</span>
       </td>
       <td className="px-3 py-3 text-right text-[#6e6e73] whitespace-nowrap">{row.ad_accounts.payback_rate}%</td>
-      <td className="px-3 py-3 text-right font-medium text-[#0066cc] whitespace-nowrap">
+      <td className="px-3 py-3 text-right font-medium text-primary-dark whitespace-nowrap">
         +{row.amount.toLocaleString()}P
       </td>
       <td className="px-5 py-3 text-right whitespace-nowrap">
@@ -228,7 +228,7 @@ function MonthTable({
           <span className={`rounded-[9999px] border px-2.5 py-1 text-[11px] font-medium ${STATUS_BADGE_CLASS[headerLabel]}`}>
             {headerLabel}
           </span>
-          <p className="text-[16px] font-semibold text-[#0066cc]">+{group.totalAmount.toLocaleString()}P</p>
+          <p className="text-[16px] font-semibold text-primary-dark">+{group.totalAmount.toLocaleString()}P</p>
           {showPdfDownload && (
             <button
               onClick={onDownload}
@@ -263,7 +263,7 @@ function MonthTable({
           <tfoot>
             <tr className="border-t border-[#e0e0e0] font-semibold">
               <td className="px-5 py-3" colSpan={4}>소계</td>
-              <td className="px-3 py-3 text-right text-[#0066cc] whitespace-nowrap">
+              <td className="px-3 py-3 text-right text-primary-dark whitespace-nowrap">
                 +{group.totalAmount.toLocaleString()}P
               </td>
               <td className="px-5 py-3" />
@@ -316,7 +316,7 @@ export default function SettlementTable({
           id="settlement-period"
           value={selectedPeriod}
           onChange={e => setSelectedPeriod(e.target.value)}
-          className="rounded-[9999px] border border-[#e0e0e0] px-3 py-1.5 text-[13px] text-[#1d1d1f] outline-none focus:border-[#0066cc] transition-colors"
+          className="rounded-[9999px] border border-[#e0e0e0] px-3 py-1.5 text-[13px] text-[#1d1d1f] outline-none focus:border-primary-dark transition-colors"
         >
           <option value="all">전체</option>
           {periodOptions.map(period => (

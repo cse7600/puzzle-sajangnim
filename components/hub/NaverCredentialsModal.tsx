@@ -54,7 +54,7 @@ export default function NaverCredentialsModal({
               value={customerId}
               onChange={e => setCustomerId(e.target.value)}
               placeholder="예: 1234567"
-              className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+              className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
             />
           </div>
           <div>
@@ -63,7 +63,7 @@ export default function NaverCredentialsModal({
               value={apiKey}
               onChange={e => setApiKey(e.target.value)}
               placeholder="API 키를 붙여넣어주세요"
-              className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+              className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
             />
           </div>
           <div>
@@ -73,7 +73,7 @@ export default function NaverCredentialsModal({
               value={secretKey}
               onChange={e => setSecretKey(e.target.value)}
               placeholder="Secret Key를 붙여넣어주세요"
-              className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+              className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
             />
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function NaverCredentialsModal({
           <button
             onClick={handleSave}
             disabled={saving || !customerId || !apiKey || !secretKey}
-            className="flex-1 rounded-[9999px] bg-[#0066cc] py-3 text-[15px] font-medium text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+            className="flex-1 rounded-[9999px] bg-primary py-3 text-[15px] font-medium text-ink hover:bg-primary-hover disabled:opacity-40 transition-colors"
           >
             {saving ? '저장 중...' : '저장하기'}
           </button>

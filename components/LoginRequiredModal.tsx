@@ -37,7 +37,7 @@ export default function LoginRequiredModal({ onClose, redirectPath }: LoginRequi
         <div className="mt-6 flex flex-col gap-2.5">
           <a
             href={loginHref}
-            className="inline-flex w-full items-center justify-center rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0058b0] transition-colors"
+            className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-ink hover:bg-primary-hover transition-colors"
           >
             로그인
           </a>

@@ -121,7 +121,7 @@ const SUMMARY_CARDS = [
     label: '이번 달 발행',
     value: '8건',
     icon: FileText,
-    accent: 'text-[#0066cc] bg-blue-50',
+    accent: 'text-primary-dark bg-accent-bg',
   },
   {
     label: '평균 키워드 순위',
@@ -174,7 +174,7 @@ export default function AiBlogPage() {
         </div>
         <button
           type="button"
-          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#0066cc] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0058b0]"
+          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-ink shadow-sm transition-colors hover:bg-primary-hover"
         >
           <Plus className="h-4 w-4" />새 포스트 생성
         </button>
@@ -197,7 +197,7 @@ export default function AiBlogPage() {
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   placeholder="예: 을지로 점심 맛집"
-                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:outline-none focus:ring-2 focus:ring-[#0066cc]/20"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
                 />
               </div>
             </div>
@@ -217,7 +217,7 @@ export default function AiBlogPage() {
                       onClick={() => setActiveIndustry(chip)}
                       className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
                         active
-                          ? 'bg-[#0066cc] text-white'
+                          ? 'bg-primary text-ink'
                           : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                       }`}
                     >
@@ -247,12 +247,12 @@ export default function AiBlogPage() {
                       <span
                         className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${
                           active
-                            ? 'border-[#0066cc]'
+                            ? 'border-primary-dark'
                             : 'border-gray-300'
                         }`}
                       >
                         {active && (
-                          <span className="h-2 w-2 rounded-full bg-[#0066cc]" />
+                          <span className="h-2 w-2 rounded-full bg-primary" />
                         )}
                       </span>
                       {opt.label}
@@ -265,7 +265,7 @@ export default function AiBlogPage() {
             {/* Generate button */}
             <button
               type="button"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0066cc] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#0058b0]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-primary-hover"
             >
               <Sparkles className="h-4 w-4" />
               AI 포스트 생성하기
@@ -278,7 +278,7 @@ export default function AiBlogPage() {
           {/* RIGHT: preview / step list */}
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5">
             <div className="mb-4 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[#0066cc]" />
+              <Sparkles className="h-4 w-4 text-primary-dark" />
               <span className="text-sm font-medium text-gray-700">
                 AI 생성 단계
               </span>
@@ -295,8 +295,8 @@ export default function AiBlogPage() {
                     </span>
                   )}
                   {step.status === 'active' && (
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0066cc]" />
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-bg">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary-dark" />
                     </span>
                   )}
                   {step.status === 'pending' && (
@@ -309,7 +309,7 @@ export default function AiBlogPage() {
                       step.status === 'pending'
                         ? 'text-gray-400'
                         : step.status === 'active'
-                          ? 'font-medium text-[#0066cc]'
+                          ? 'font-medium text-primary-dark'
                           : 'text-gray-700'
                     }`}
                   >
@@ -379,7 +379,7 @@ export default function AiBlogPage() {
                     <span
                       className={`text-sm font-semibold ${
                         post.rank <= 3
-                          ? 'text-[#0066cc]'
+                          ? 'text-primary-dark'
                           : 'text-gray-700'
                       }`}
                     >
@@ -410,7 +410,7 @@ export default function AiBlogPage() {
                       </button>
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-[#0066cc] transition-colors hover:bg-blue-50"
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-dark transition-colors hover:bg-accent-bg"
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
                         재발행
@@ -438,7 +438,7 @@ export default function AiBlogPage() {
             </button>
             <button
               type="button"
-              className="inline-flex h-8 min-w-8 items-center justify-center rounded-md bg-[#0066cc] px-2.5 text-sm font-medium text-white"
+              className="inline-flex h-8 min-w-8 items-center justify-center rounded-md bg-primary px-2.5 text-sm font-medium text-ink"
             >
               1
             </button>

@@ -99,7 +99,7 @@ export function ReceiptUploadModal({ isOpen, onClose }: ModalProps) {
               <h3 className="mt-4 text-base font-semibold text-gray-900">
                 영수증이 접수되었습니다!
               </h3>
-              <p className="mt-2 text-sm font-medium text-[#0066cc]">
+              <p className="mt-2 text-sm font-medium text-primary-dark">
                 +250P 적립 예정
               </p>
               {fileName && (
@@ -124,8 +124,8 @@ export function ReceiptUploadModal({ isOpen, onClose }: ModalProps) {
                 onClick={() => fileInputRef.current?.click()}
                 className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed bg-gray-100 px-6 py-10 text-center transition ${
                   isDragging
-                    ? 'border-[#0066cc] bg-blue-50'
-                    : 'border-gray-300 hover:border-[#0066cc]/50'
+                    ? 'border-primary-dark bg-accent-bg'
+                    : 'border-gray-300 hover:border-primary-dark/50'
                 }`}
               >
                 <UploadCloud className="h-9 w-9 text-gray-400" />
@@ -139,7 +139,7 @@ export function ReceiptUploadModal({ isOpen, onClose }: ModalProps) {
                     e.stopPropagation();
                     fileInputRef.current?.click();
                   }}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0066cc] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0058b3]"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-ink transition hover:bg-primary-hover"
                 >
                   파일 선택
                 </button>
@@ -164,7 +164,7 @@ export function ReceiptUploadModal({ isOpen, onClose }: ModalProps) {
           <div className="border-t border-gray-100 px-6 py-4">
             <button
               onClick={handleClose}
-              className="w-full rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0058b3]"
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-primary-hover"
             >
               확인
             </button>
@@ -264,7 +264,7 @@ export function NewPostDrawer({ isOpen, onClose }: ModalProps) {
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   placeholder="예: 을지로 점심 맛집"
-                  className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#0066cc] focus:ring-2 focus:ring-[#0066cc]/10"
+                  className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-primary-dark focus:ring-2 focus:ring-primary-dark/10"
                 />
               </div>
 
@@ -280,8 +280,8 @@ export function NewPostDrawer({ isOpen, onClose }: ModalProps) {
                       onClick={() => setKeyword(kw)}
                       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                         keyword === kw
-                          ? 'border-[#0066cc] bg-blue-50 text-[#0066cc]'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-[#0066cc]/40 hover:bg-gray-50'
+                          ? 'border-primary-dark bg-accent-bg text-primary-dark'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-primary-dark/40 hover:bg-gray-50'
                       }`}
                     >
                       {kw}
@@ -290,9 +290,9 @@ export function NewPostDrawer({ isOpen, onClose }: ModalProps) {
                 </div>
               </div>
 
-              <div className="flex items-start gap-2 rounded-lg bg-blue-50 px-3.5 py-3">
-                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#0066cc]" />
-                <p className="text-xs leading-relaxed text-[#0066cc]">
+              <div className="flex items-start gap-2 rounded-lg bg-accent-bg px-3.5 py-3">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary-dark" />
+                <p className="text-xs leading-relaxed text-primary-dark">
                   AI가 SEO 최적화된 포스트를 자동 생성합니다
                 </p>
               </div>
@@ -305,7 +305,7 @@ export function NewPostDrawer({ isOpen, onClose }: ModalProps) {
           {generated ? (
             <button
               onClick={handleClose}
-              className="w-full rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0058b3]"
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-primary-hover"
             >
               확인
             </button>
@@ -313,7 +313,7 @@ export function NewPostDrawer({ isOpen, onClose }: ModalProps) {
             <button
               onClick={handleGenerate}
               disabled={!canGenerate}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0058b3] disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               {isGenerating ? (
                 <>

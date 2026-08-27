@@ -148,12 +148,12 @@ export default async function OhoraDetailPage({ params }: PageProps) {
               answers.map((a, i) => (
                 <div key={a.id} className="rounded-xl border border-ink/10 bg-canvas-white p-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0066cc]/10 text-[12px] font-semibold text-[#0066cc]">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-bg text-[12px] font-semibold text-primary-dark">
                       {i + 1}
                     </div>
                     <p className="text-[11px] text-muted">{relativeTime(a.created_at)}</p>
                     {a.is_adopted && (
-                      <span className="ml-auto rounded-full bg-[#0066cc] px-2.5 py-0.5 text-[11px] font-medium text-white">
+                      <span className="ml-auto rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-medium text-ink">
                         채택
                       </span>
                     )}
@@ -165,13 +165,13 @@ export default async function OhoraDetailPage({ params }: PageProps) {
           </div>
 
           {/* CTA */}
-          <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-6 text-center">
+          <div className="rounded-xl border border-primary-dark/20 bg-accent-bg/60 p-6 text-center">
             <p className="text-[14px] font-semibold text-ink">답변을 작성하고 1,000P를 받으세요</p>
             <p className="mt-1 text-[13px] text-muted">로그인하면 질문과 답변을 작성할 수 있습니다</p>
             <div className="mt-4 flex justify-center gap-3">
               <a
                 href={`/login?next=/knowledge/${id}`}
-                className="rounded-lg bg-[#0066cc] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#0058b0] transition-colors"
+                className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-ink hover:bg-primary-hover transition-colors"
               >
                 로그인
               </a>

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Bell, Menu, ChevronRight } from 'lucide-react';
+import { Bell, ChevronRight } from 'lucide-react';
+import { useUser } from '@/lib/hooks/useUser';
 
 type AppTopBarProps = {
   title: string;
@@ -32,7 +33,8 @@ async function exitQaMode() {
 }
 
 export default function AppTopBar({ title, qaMode }: AppTopBarProps) {
-  const [, setMobileOpen] = useState(false);
+  const { user } = useUser();
+  const displayName = user?.profile.name?.trim() || '사장님';
   const [summary, setSummary] = useState<PointsSummary | null>(null);
   const [pointsOpen, setPointsOpen] = useState(false);
   const pointsRef = useRef<HTMLDivElement>(null);
@@ -64,26 +66,16 @@ export default function AppTopBar({ title, qaMode }: AppTopBarProps) {
   }, [pointsOpen]);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-100 bg-white px-6">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          aria-label="메뉴"
-          onClick={() => setMobileOpen((v) => !v)}
-          className="flex items-center text-gray-600 transition active:scale-95 lg:hidden"
-        >
-          <Menu size={22} />
-        </button>
-        <div className="flex items-center gap-1.5 text-[14px]">
-          <span className="text-gray-400">퍼즐 사장님</span>
-          <span className="text-gray-300">›</span>
-          <span className="font-semibold text-gray-900">{title}</span>
-        </div>
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-hairline bg-white px-4 sm:px-6">
+      <div className="flex min-w-0 items-center gap-1.5 text-[14px]">
+        <span className="hidden text-gray-400 sm:inline">퍼즐 사장님</span>
+        <span className="hidden text-gray-300 sm:inline">›</span>
+        <span className="truncate font-semibold text-gray-900">{title}</span>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {qaMode && (
-          <div className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[12px] font-semibold text-amber-700">
+          <div className="hidden items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[12px] font-semibold text-amber-700 sm:flex">
             <span>QA 모드 — 관리자</span>
             <button
               type="button"
@@ -114,14 +106,14 @@ export default function AppTopBar({ title, qaMode }: AppTopBarProps) {
               type="button"
               onClick={() => setPointsOpen((v) => !v)}
               aria-expanded={pointsOpen}
-              className="rounded-full bg-[#0066cc]/10 px-3 py-1.5 text-[13px] font-semibold text-[#0066cc] transition hover:bg-[#0066cc]/20"
+              className="rounded-full bg-accent-bg px-3 py-1.5 text-[13px] font-semibold text-accent-text transition hover:bg-primary-hover"
             >
               {formatP(summary.total)}
             </button>
           )}
 
           {pointsOpen && summary && (
-            <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-gray-100 bg-white p-4 shadow-lg">
+            <div className="absolute right-0 top-full mt-2 w-[85vw] max-w-72 rounded-xl border border-gray-100 bg-white p-4 shadow-lg">
               <div className="flex items-center justify-between">
                 <span className="text-[13px] text-gray-500">총 보유 포인트</span>
                 <span className="text-[15px] font-semibold text-gray-900">{formatP(summary.total)}</span>
@@ -160,7 +152,7 @@ export default function AppTopBar({ title, qaMode }: AppTopBarProps) {
               <Link
                 href="/earnings"
                 onClick={() => setPointsOpen(false)}
-                className="mt-3 flex items-center justify-center gap-1 rounded-lg bg-[#0066cc] py-2 text-[13px] font-medium text-white transition hover:bg-[#0058b0]"
+                className="mt-3 flex items-center justify-center gap-1 rounded-lg bg-primary py-2 text-[13px] font-semibold text-ink transition hover:bg-primary-hover"
               >
                 수익 현황 보기
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -169,8 +161,8 @@ export default function AppTopBar({ title, qaMode }: AppTopBarProps) {
           )}
         </div>
 
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0066cc] text-[13px] font-semibold text-white">
-          김
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-semibold text-ink">
+          {displayName[0]}
         </div>
       </div>
     </header>

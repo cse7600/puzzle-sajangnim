@@ -73,7 +73,7 @@ export default async function OhoraPreviewSection() {
         <div className="mt-8 text-center">
           <a
             href="/ohora"
-            className="inline-flex items-center gap-1 text-body font-semibold text-[#0066cc] hover:underline"
+            className="inline-flex items-center gap-1 text-body font-semibold text-primary-dark hover:underline"
           >
             더 많은 Q&A 보기 <ArrowRight size={16} />
           </a>

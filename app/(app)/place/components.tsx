@@ -130,7 +130,7 @@ export function CompetitorHoverCard({
                 {theirs.keyword_list.map((keyword, index) => (
                   <span
                     key={`${keyword}-${index}`}
-                    className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-[#0066cc]"
+                    className="rounded-full bg-accent-bg px-2 py-0.5 text-[11px] font-medium text-primary-dark"
                   >
                     {keyword}
                   </span>
@@ -196,7 +196,7 @@ export function RegisterModal(props: {
             value={url}
             onChange={(event) => setUrl(event.target.value)}
             placeholder="https://m.place.naver.com/restaurant/..."
-            className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:outline-none"
+            className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-dark focus:outline-none"
           />
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
         </div>
@@ -210,7 +210,7 @@ export function RegisterModal(props: {
           <button
             onClick={onSubmit}
             disabled={submitting || !url.trim()}
-            className="rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0055aa] disabled:opacity-50"
+            className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-primary-hover disabled:opacity-50"
           >
             {submitting ? '등록 중...' : '등록'}
           </button>

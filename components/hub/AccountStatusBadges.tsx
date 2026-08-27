@@ -22,11 +22,11 @@ export default function AccountStatusBadges({
   connectionStatus: ConnectionStatus
 }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <span className={`rounded-[9999px] border px-2.5 py-1 text-[11px] font-medium ${TRANSFER_STYLE[transferStatus] ?? TRANSFER_STYLE.waiting}`}>
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className={`whitespace-nowrap rounded-[9999px] border px-2.5 py-1 text-[11px] font-medium ${TRANSFER_STYLE[transferStatus] ?? TRANSFER_STYLE.waiting}`}>
         {TRANSFER_STATUS_LABEL[transferStatus as keyof typeof TRANSFER_STATUS_LABEL] ?? transferStatus}
       </span>
-      <span className={`rounded-[9999px] border px-2.5 py-1 text-[11px] font-medium ${CONNECTION_STYLE[connectionStatus]}`}>
+      <span className={`whitespace-nowrap rounded-[9999px] border px-2.5 py-1 text-[11px] font-medium ${CONNECTION_STYLE[connectionStatus]}`}>
         {CONNECTION_STATUS_LABEL[connectionStatus]}
       </span>
     </div>

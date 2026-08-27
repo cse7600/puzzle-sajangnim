@@ -36,11 +36,13 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
   font-family: var(--font-pretendard);
   font-size: 17px;
   line-height: 1.47;

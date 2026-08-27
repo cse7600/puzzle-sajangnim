@@ -162,7 +162,7 @@ function JoinSheet({ deal, onClose, onJoined, onError }: JoinSheetProps) {
           <button
             onClick={handleConfirm}
             disabled={submitting || balance === null || insufficient}
-            className="flex-[2] rounded-[9999px] bg-[#0066cc] py-3 text-[14px] font-semibold text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+            className="flex-[2] rounded-[9999px] bg-primary py-3 text-[14px] font-semibold text-ink hover:bg-primary-hover disabled:opacity-40 transition-colors"
           >
             {submitting ? '결제 중...' : `${totalPrice.toLocaleString()}P 결제하고 참여 확정`}
           </button>
@@ -251,7 +251,7 @@ export default function TeamDealDetailPage() {
     return (
       <div className="max-w-2xl mx-auto text-center py-20 text-[#6e6e73]">
         <p className="text-[16px] mb-4">딜을 찾을 수 없습니다</p>
-        <button onClick={() => router.push('/team-buy')} className="text-[#0066cc] text-[14px] hover:underline">
+        <button onClick={() => router.push('/team-buy')} className="text-primary-dark text-[14px] hover:underline">
           팀 구매 목록으로
         </button>
       </div>
@@ -268,7 +268,7 @@ export default function TeamDealDetailPage() {
   return (
     <div className="max-w-2xl mx-auto">
       {toast && (
-        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 rounded-[11px] px-5 py-3 text-[14px] font-medium text-white shadow-lg ${toast.success ? 'bg-green-600' : 'bg-red-500'}`}>
+        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-32px)] rounded-[11px] px-5 py-3 text-[14px] font-medium text-white shadow-lg ${toast.success ? 'bg-green-600' : 'bg-red-500'}`}>
           {toast.message}
         </div>
       )}
@@ -289,7 +289,7 @@ export default function TeamDealDetailPage() {
             <span className="text-8xl">{emoji}</span>
           </div>
         )}
-        <span className="absolute top-4 right-4 rounded-[9999px] bg-[#0066cc] px-3 py-1 text-[13px] font-semibold text-white">
+        <span className="absolute top-4 right-4 rounded-[9999px] bg-primary px-3 py-1 text-[13px] font-semibold text-ink">
           {discountPct}% 할인
         </span>
         <span className="absolute top-4 left-4 rounded-[9999px] bg-white/90 px-3 py-1 text-[12px] font-medium text-[#1d1d1f]">
@@ -319,7 +319,7 @@ export default function TeamDealDetailPage() {
             <span className="font-mono text-[#1d1d1f] font-medium">{timer} 남음</span>
           </div>
           <div className="h-2.5 w-full overflow-hidden rounded-[9999px] bg-[#f5f5f7]">
-            <div className="h-full rounded-[9999px] bg-[#0066cc] transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-[9999px] bg-primary transition-all" style={{ width: `${pct}%` }} />
           </div>
           {remaining > 0 && (
             <p className="mt-1.5 text-[12px] text-[#6e6e73]">{remaining}개 더 모이면 딜이 성사됩니다</p>
@@ -328,13 +328,13 @@ export default function TeamDealDetailPage() {
 
         {deal.content_html && (
           <div
-            className="mt-4 pt-4 border-t border-gray-100 text-[14px] leading-relaxed text-gray-700"
+            className="mt-4 pt-4 border-t border-gray-100 text-[14px] leading-relaxed text-gray-700 break-words [&_img]:h-auto [&_img]:max-w-full"
             dangerouslySetInnerHTML={{ __html: deal.content_html }}
           />
         )}
       </div>
 
-      <div className="flex gap-3 sticky bottom-6">
+      <div className="flex gap-3 sticky bottom-20 lg:bottom-6">
         <button
           onClick={handleShare}
           className="flex items-center gap-2 rounded-[9999px] border border-[#e0e0e0] bg-white px-5 py-3.5 text-[14px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition-colors"
@@ -345,7 +345,7 @@ export default function TeamDealDetailPage() {
         <button
           onClick={() => setShowJoinSheet(true)}
           disabled={!joinable}
-          className="flex-1 rounded-[9999px] bg-[#0066cc] py-3.5 text-[14px] font-semibold text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+          className="flex-1 rounded-[9999px] bg-primary py-3.5 text-[14px] font-semibold text-ink hover:bg-primary-hover disabled:opacity-40 transition-colors"
         >
           {joined ? '이미 참여한 팀 구매입니다' : timer === '마감' || deal.status !== 'active' ? '마감된 팀 구매입니다' : remaining <= 0 ? '모집이 마감됐습니다' : `${remaining}개 남음 · 참여하기`}
         </button>

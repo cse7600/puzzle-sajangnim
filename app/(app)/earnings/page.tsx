@@ -87,7 +87,7 @@ function SectionCard({ section }: { section: EarningSection }) {
 
 function PointSummaryStrip({ summary }: { summary: PointSummary | null }) {
   return (
-    <div className="mb-6 rounded-xl bg-[#0066cc] p-6 shadow-sm">
+    <div className="mb-6 rounded-xl bg-primary-dark p-6 shadow-sm">
       <div className="flex items-center gap-3">
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
           <Wallet className="h-5 w-5" />
@@ -142,11 +142,11 @@ function ActionableZone({
   const remaining = actionable.nearestDeadline ? daysUntil(actionable.nearestDeadline) : null;
 
   return (
-    <div className="rounded-xl border-2 border-[#0066cc] bg-[#f0f7ff] p-6 shadow-sm">
+    <div className="rounded-xl border-2 border-primary-dark bg-accent-bg p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-[#0066cc]">출금 신청 가능 · {actionable.totalAmount.toLocaleString('ko-KR')}P</h2>
+        <h2 className="text-base font-semibold text-primary-dark">출금 신청 가능 · {actionable.totalAmount.toLocaleString('ko-KR')}P</h2>
         {remaining !== null && (
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#0066cc] shadow-sm">
+          <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-primary-dark shadow-sm">
             {remaining > 0 ? `D-${remaining} · 기한 내 미신청 시 포인트로 자동 전환됩니다` : '기한 만료 — 곧 포인트로 전환됩니다'}
           </span>
         )}
@@ -169,14 +169,14 @@ function RealizedZone({ realized }: { realized: ConfirmedData['realized'] }) {
   }
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-3">
-        <div className="flex-1 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
           <p className="text-xs text-gray-500">현금으로 받은 금액</p>
           <p className="mt-1 text-xl font-bold text-gray-900">₩{realized.cashTotal.toLocaleString('ko-KR')}</p>
         </div>
-        <div className="flex-1 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
           <p className="text-xs text-gray-500">포인트로 받은 금액</p>
-          <p className="mt-1 text-xl font-bold text-[#0066cc]">{realized.pointTotal.toLocaleString('ko-KR')}P</p>
+          <p className="mt-1 text-xl font-bold text-primary-dark">{realized.pointTotal.toLocaleString('ko-KR')}P</p>
         </div>
       </div>
       {realized.paybacks.length > 0 && (
@@ -251,7 +251,7 @@ export default function EarningsPage() {
   }, [activeTab, load]);
 
   return (
-    <div className="px-8 py-6 max-w-[1280px] mx-auto">
+    <div className="py-2 sm:px-8 sm:py-6 max-w-[1280px] mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">수익·정산</h1>
         <p className="mt-1 text-sm text-gray-500">
@@ -270,7 +270,7 @@ export default function EarningsPage() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`-mb-px inline-flex items-center gap-2 border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
-                active ? 'border-[#0066cc] text-[#0066cc]' : 'border-transparent text-gray-500 hover:text-gray-900'
+                active ? 'border-primary-dark text-primary-dark' : 'border-transparent text-gray-500 hover:text-gray-900'
               }`}
             >
               <Icon className="h-4 w-4" />

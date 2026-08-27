@@ -94,7 +94,7 @@ function CertificateFileInput({ file, onSelect }: { file: File | null; onSelect:
       <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">
         사업자 등록증 <span className="text-red-500">*</span>
       </label>
-      <div className="border-2 border-dashed border-[#e0e0e0] rounded-[11px] p-6 text-center hover:border-[#0066cc]/40 transition-colors">
+      <div className="border-2 border-dashed border-[#e0e0e0] rounded-[11px] p-6 text-center hover:border-primary-dark/40 transition-colors">
         <FileText className="h-8 w-8 text-[#c0c0c0] mx-auto mb-2" />
         <p className="text-[13px] text-[#6e6e73] mb-2">사업자 등록증 이미지 또는 PDF를 첨부해주세요</p>
         <label className="inline-block cursor-pointer rounded-[9999px] border border-[#e0e0e0] px-4 py-1.5 text-[13px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition-colors">
@@ -106,7 +106,7 @@ function CertificateFileInput({ file, onSelect }: { file: File | null; onSelect:
             onChange={e => onSelect(e.target.files?.[0] ?? null)}
           />
         </label>
-        {file && <p className="mt-2 text-[12px] text-[#0066cc]">{file.name}</p>}
+        {file && <p className="mt-2 text-[12px] text-primary-dark">{file.name}</p>}
       </div>
     </div>
   )
@@ -162,7 +162,7 @@ function BusinessVerificationForm({ onSubmitted, submitLabel }: {
           placeholder="000-00-00000"
           value={businessNumber}
           onChange={e => setBusinessNumber(e.target.value)}
-          className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+          className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
         />
       </div>
 
@@ -171,7 +171,7 @@ function BusinessVerificationForm({ onSubmitted, submitLabel }: {
       <button
         type="submit"
         disabled={submitting || !businessNumber || !file}
-        className="w-full rounded-[9999px] bg-[#0066cc] py-3 text-[15px] font-medium text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+        className="w-full rounded-[9999px] bg-primary py-3 text-[15px] font-medium text-ink hover:bg-primary-hover disabled:opacity-40 transition-colors"
       >
         {submitting ? '등록 중...' : submitLabel}
       </button>
@@ -308,7 +308,7 @@ function BusinessInfoSection({ verification }: { verification: VerificationRespo
             placeholder="tax@company.com"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
           />
           {fieldError.tax_invoice_email && (
             <p className="mt-1.5 text-[12px] text-red-600">{fieldError.tax_invoice_email}</p>
@@ -325,7 +325,7 @@ function BusinessInfoSection({ verification }: { verification: VerificationRespo
             placeholder="https://naver.me/xxxxxxx"
             value={naverUrl}
             onChange={e => setNaverUrl(e.target.value)}
-            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
           />
           {fieldError.naver_place_url && (
             <p className="mt-1.5 text-[12px] text-red-600">{fieldError.naver_place_url}</p>
@@ -335,7 +335,7 @@ function BusinessInfoSection({ verification }: { verification: VerificationRespo
             placeholder="사업장 주소"
             value={address}
             onChange={e => setAddress(e.target.value)}
-            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors mt-2"
+            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors mt-2"
           />
           {fieldError.business_address && (
             <p className="mt-1.5 text-[12px] text-red-600">{fieldError.business_address}</p>
@@ -351,14 +351,14 @@ function BusinessInfoSection({ verification }: { verification: VerificationRespo
               placeholder="은행명 (예: 국민은행)"
               value={bankName}
               onChange={e => setBankName(e.target.value)}
-              className="w-1/2 rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+              className="w-1/2 rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
             />
             <input
               type="text"
               placeholder="계좌번호"
               value={accountNumber}
               onChange={e => setAccountNumber(e.target.value)}
-              className="w-1/2 rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+              className="w-1/2 rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
             />
           </div>
           {fieldError.account_number && (
@@ -369,7 +369,7 @@ function BusinessInfoSection({ verification }: { verification: VerificationRespo
             placeholder="예금주"
             value={accountHolder}
             onChange={e => setAccountHolder(e.target.value)}
-            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors mt-2"
+            className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors mt-2"
           />
         </div>
 
@@ -377,7 +377,7 @@ function BusinessInfoSection({ verification }: { verification: VerificationRespo
           <button
             type="submit"
             disabled={saving}
-            className="rounded-[9999px] bg-[#0066cc] px-5 py-2.5 text-[14px] font-medium text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+            className="rounded-[9999px] bg-primary px-5 py-2.5 text-[14px] font-medium text-ink hover:bg-primary-hover disabled:opacity-40 transition-colors"
           >
             {saving ? '저장 중...' : '저장'}
           </button>
@@ -699,8 +699,8 @@ export default function SettingsPage() {
       ) : (
         <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-6">
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-[10px] bg-[#0066cc]/10 flex items-center justify-center">
-              <Building2 className="h-5 w-5 text-[#0066cc]" />
+            <div className="w-10 h-10 rounded-[10px] bg-accent-bg flex items-center justify-center">
+              <Building2 className="h-5 w-5 text-primary-dark" />
             </div>
             <div>
               <p className="text-[15px] font-semibold text-[#1d1d1f]">사업자 정보 등록</p>

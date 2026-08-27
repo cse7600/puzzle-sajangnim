@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
   tableHeaderText: { fontSize: 8, color: '#6e6e73', fontWeight: 'semibold' as never },
   totalRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#1d1d1f' },
   totalLabel: { fontSize: 11, marginRight: 12 },
-  totalAmount: { fontSize: 15, fontWeight: 'bold' as never, color: '#0066cc' },
+  totalAmount: { fontSize: 15, fontWeight: 'bold' as never, color: '#163300' },
   footer: { marginTop: 40, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e0e0e0' },
   footerNote: { fontSize: 8, color: '#6e6e73', lineHeight: 1.6, marginBottom: 4 },
   docFooter: { position: 'absolute', bottom: 30, left: 40, right: 40, textAlign: 'center', fontSize: 7, color: '#a1a1a6' },

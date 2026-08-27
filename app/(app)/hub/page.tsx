@@ -128,18 +128,18 @@ export default function HubPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
         <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-5">
           <p className="text-[13px] text-[#6e6e73] mb-1">연동 광고계정</p>
-          <p className="text-[28px] font-semibold text-[#1d1d1f]">{accounts.length}개</p>
+          <p className="text-[28px] sm:text-[22px] lg:text-[28px] font-semibold text-[#1d1d1f]">{accounts.length}개</p>
         </div>
         <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-5">
           <p className="text-[13px] text-[#6e6e73] mb-1">정산 예정 페이백</p>
-          <p className="text-[28px] font-semibold text-[#0066cc]">{totalPayback.toLocaleString()}P</p>
+          <p className="text-[28px] sm:text-[22px] lg:text-[28px] font-semibold text-primary-dark">{totalPayback.toLocaleString()}P</p>
         </div>
         <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-5">
           <p className="text-[13px] text-[#6e6e73] mb-1">확정 페이백</p>
-          <p className="text-[28px] font-semibold text-green-600">{confirmedPayback.toLocaleString()}P</p>
+          <p className="text-[28px] sm:text-[22px] lg:text-[28px] font-semibold text-green-600">{confirmedPayback.toLocaleString()}P</p>
         </div>
       </div>
 
@@ -152,7 +152,7 @@ export default function HubPage() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`flex-1 py-4 text-[14px] font-medium transition-colors ${tab === key ? 'text-[#0066cc] border-b-2 border-[#0066cc]' : 'text-[#6e6e73]'}`}
+              className={`flex-1 py-4 text-[14px] font-medium transition-colors ${tab === key ? 'text-primary-dark border-b-2 border-primary-dark' : 'text-[#6e6e73]'}`}
             >
               {label}
             </button>
@@ -164,34 +164,34 @@ export default function HubPage() {
             <>
               <Link
                 href="/earnings?tab=confirmed"
-                className="mb-5 flex items-center justify-between gap-3 rounded-[11px] border border-[#0066cc]/20 bg-[#f0f7ff] px-4 py-3 text-[13px] transition-colors hover:bg-[#e5f1ff]"
+                className="mb-5 flex items-center justify-between gap-3 rounded-[11px] border border-primary-dark/20 bg-accent-bg px-4 py-3 text-[13px] transition-colors hover:bg-primary-hover"
               >
                 <span className="text-[#1d1d1f]">
                   {confirmedPayback > 0
-                    ? <>출금 신청 가능한 정산 <strong className="text-[#0066cc]">{confirmedPayback.toLocaleString()}P</strong> 있어요</>
+                    ? <>출금 신청 가능한 정산 <strong className="text-primary-dark">{confirmedPayback.toLocaleString()}P</strong> 있어요</>
                     : '정산 내역과 출금 신청은 수익·정산 탭에서 관리해요'}
                 </span>
-                <span className="whitespace-nowrap font-medium text-[#0066cc]">수익·정산에서 관리하기 →</span>
+                <span className="whitespace-nowrap font-medium text-primary-dark">수익·정산에서 관리하기 →</span>
               </Link>
 
-              <div className="flex items-center justify-between mb-5">
-                <div>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <div className="min-w-0">
                   <h3 className="text-[16px] font-semibold text-[#1d1d1f]">광고계정 등록</h3>
                   <p className="text-[13px] text-[#6e6e73] mt-0.5">네이버·토스·구글·카카오·당근·네이버 GFA 광고계정을 연결하고 페이백 받기</p>
                 </div>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="bg-[#0066cc] text-white rounded-[9999px] px-4 py-2 text-[14px] font-medium hover:bg-[#0058b3] transition-colors"
+                  className="shrink-0 whitespace-nowrap bg-primary text-ink rounded-[9999px] px-4 py-2 text-[14px] font-medium hover:bg-primary-hover transition-colors"
                 >
                   계정 추가
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-3">
                 {(Object.entries(PLATFORM_INFO) as [Platform, typeof PLATFORM_INFO[Platform]][]).map(([key, info]) => (
                   <div key={key} className="rounded-[11px] border border-[#e0e0e0] p-3 text-center">
                     <p className="text-[12px] text-[#6e6e73]">{info.name}</p>
-                    <p className="text-[18px] font-semibold text-[#0066cc] mt-0.5">{info.paybackRate}%</p>
+                    <p className="text-[18px] font-semibold text-primary-dark mt-0.5">{info.paybackRate}%</p>
                     <p className="text-[11px] text-[#6e6e73]">페이백</p>
                   </div>
                 ))}
@@ -213,22 +213,22 @@ export default function HubPage() {
                     const estimatedPayback = Math.round(acc.monthly_spend * acc.payback_rate / 100)
                     return (
                       <div key={acc.id} className="rounded-[11px] border border-[#e0e0e0] p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center justify-between gap-y-2">
+                          <div className="flex min-w-0 items-center gap-3">
                             <div
-                              className="w-10 h-10 rounded-[8px] flex items-center justify-center text-[11px] font-bold text-white"
+                              className="w-10 h-10 shrink-0 rounded-[8px] flex items-center justify-center text-[11px] font-bold text-white"
                               style={{ backgroundColor: info.color }}
                             >
                               {info.name[0]}
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-[14px] font-medium text-[#1d1d1f]">{acc.account_name}</p>
                               <p className="text-[12px] text-[#6e6e73]">ID: {acc.account_id} · 월 {acc.monthly_spend.toLocaleString()}원(제출값)</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <div className="text-right">
-                              <p className="text-[13px] font-semibold text-[#0066cc]">월 {estimatedPayback.toLocaleString()}P</p>
+                              <p className="text-[13px] font-semibold text-primary-dark">월 {estimatedPayback.toLocaleString()}P</p>
                               <p className="text-[11px] text-[#6e6e73]">예상 페이백</p>
                             </div>
                             <AccountStatusBadges transferStatus={acc.transfer_status} connectionStatus={acc.connection_status} />
@@ -246,7 +246,7 @@ export default function HubPage() {
                             <>
                               <button
                                 onClick={() => openGuideFor(acc.platform)}
-                                className="rounded-[9999px] bg-[#0066cc] text-white px-3.5 py-1.5 text-[12px] font-medium hover:bg-[#0058b3] transition-colors"
+                                className="rounded-[9999px] bg-primary text-ink px-3.5 py-1.5 text-[12px] font-medium hover:bg-primary-hover transition-colors"
                               >
                                 이관 진행하기
                               </button>
@@ -274,7 +274,7 @@ export default function HubPage() {
                           {acc.platform === 'naver' && acc.transfer_status === 'completed' && acc.cost_verification_status === 'not_configured' && (
                             <button
                               onClick={() => setCredentialAccountId(acc.id)}
-                              className="rounded-[9999px] border border-[#0066cc] text-[#0066cc] px-3.5 py-1.5 text-[12px] font-medium hover:bg-[#0066cc]/5 transition-colors"
+                              className="rounded-[9999px] border border-primary-dark text-primary-dark px-3.5 py-1.5 text-[12px] font-medium hover:bg-primary-hover transition-colors"
                             >
                               비용 자동 확인용 API 키 등록
                             </button>
@@ -303,7 +303,7 @@ export default function HubPage() {
 
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeAddModal}>
-          <div className="bg-white rounded-[18px] w-full max-w-[520px] mx-4 p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-[18px] w-full max-w-[520px] mx-4 p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             {submitted ? (
               <div className="py-4 text-center">
                 <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
@@ -321,7 +321,7 @@ export default function HubPage() {
                 </p>
                 <button
                   onClick={() => { closeAddModal(); setTab('accounts') }}
-                  className="mt-6 w-full rounded-[9999px] bg-[#0066cc] py-3 text-[15px] font-medium text-white hover:bg-[#0058b3] transition-colors"
+                  className="mt-6 w-full rounded-[9999px] bg-primary py-3 text-[15px] font-medium text-ink hover:bg-primary-hover transition-colors"
                 >
                   확인
                 </button>
@@ -339,10 +339,10 @@ export default function HubPage() {
                         <button
                           key={key}
                           onClick={() => setForm(f => ({ ...f, platform: key }))}
-                          className={`rounded-[11px] border p-2.5 text-center transition-colors ${form.platform === key ? 'border-[#0066cc] bg-[#0066cc]/5' : 'border-[#e0e0e0]'}`}
+                          className={`rounded-[11px] border p-2.5 text-center transition-colors ${form.platform === key ? 'border-primary-dark bg-accent-bg' : 'border-[#e0e0e0]'}`}
                         >
-                          <p className={`text-[12px] font-medium ${form.platform === key ? 'text-[#0066cc]' : 'text-[#1d1d1f]'}`}>{info.name}</p>
-                          <p className="text-[11px] text-[#0066cc]">{info.paybackRate}%</p>
+                          <p className={`text-[12px] font-medium ${form.platform === key ? 'text-primary-dark' : 'text-[#1d1d1f]'}`}>{info.name}</p>
+                          <p className="text-[11px] text-primary-dark">{info.paybackRate}%</p>
                         </button>
                       ))}
                     </div>
@@ -355,7 +355,7 @@ export default function HubPage() {
                       placeholder="광고계정 이름 또는 캠페인명"
                       value={form.account_name}
                       onChange={e => setForm(f => ({ ...f, account_name: e.target.value }))}
-                      className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+                      className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
                     />
                   </div>
 
@@ -366,7 +366,7 @@ export default function HubPage() {
                       placeholder="예: 1234567890"
                       value={form.account_id}
                       onChange={e => setForm(f => ({ ...f, account_id: e.target.value }))}
-                      className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+                      className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
                     />
                   </div>
 
@@ -378,12 +378,12 @@ export default function HubPage() {
                         placeholder="예: 500,000"
                         value={form.monthly_spend}
                         onChange={e => setForm(f => ({ ...f, monthly_spend: e.target.value }))}
-                        className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors pr-8"
+                        className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors pr-8"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] text-[#6e6e73]">원</span>
                     </div>
                     {form.monthly_spend && (
-                      <p className="mt-1.5 text-[12px] text-[#0066cc]">
+                      <p className="mt-1.5 text-[12px] text-primary-dark">
                         예상 월 페이백: +{estimatedModalPayback.toLocaleString()}P (연동 완료 후 실비용 기준으로 재계산돼요)
                       </p>
                     )}
@@ -397,7 +397,7 @@ export default function HubPage() {
                   <button
                     onClick={handleSubmit}
                     disabled={submitting || !form.account_name || !form.account_id || !form.monthly_spend}
-                    className="flex-1 rounded-[9999px] bg-[#0066cc] py-3 text-[15px] font-medium text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+                    className="flex-1 rounded-[9999px] bg-primary py-3 text-[15px] font-medium text-ink hover:bg-primary-hover disabled:opacity-40 transition-colors"
                   >
                     {submitting ? '등록 중...' : '등록하기'}
                   </button>

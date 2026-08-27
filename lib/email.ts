@@ -73,7 +73,7 @@ function buildWelcomeEmailHtml(name: string): string {
         </p>
       </div>
       <a href="https://sajangnim.puzl.co.kr/settings"
-         style="display:inline-block;padding:13px 28px;background:#0066cc;color:#ffffff;text-decoration:none;border-radius:9999px;font-size:14px;font-weight:600;">
+         style="display:inline-block;padding:13px 28px;background:#163300;color:#ffffff;text-decoration:none;border-radius:9999px;font-size:14px;font-weight:600;">
         사업자 인증하러 가기
       </a>
     </div>

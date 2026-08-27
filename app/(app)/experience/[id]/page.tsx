@@ -100,7 +100,7 @@ const STATUS_BADGE: Record<CampaignStatus, string> = {
 
 const PARTICIPANT_BADGE: Record<ParticipantStatus, string> = {
   applied: 'bg-gray-100 text-gray-600',
-  approved: 'bg-blue-50 text-[#0066cc]',
+  approved: 'bg-accent-bg text-primary-dark',
   content_submitted: 'bg-amber-50 text-amber-700',
   verifying: 'bg-purple-50 text-purple-700',
   verified: 'bg-green-50 text-green-700',
@@ -205,7 +205,7 @@ export default function ExperienceCampaignDetailPage() {
         {campaign.creator_types.map((t) => (
           <span
             key={t}
-            className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-[#0066cc]"
+            className="inline-flex items-center rounded-md bg-accent-bg px-2 py-0.5 text-xs font-medium text-primary-dark"
           >
             {CREATOR_TYPE_LABEL[t]}
           </span>
@@ -234,7 +234,7 @@ export default function ExperienceCampaignDetailPage() {
           <button
             type="button"
             onClick={() => setShowEdit(true)}
-            className="mt-3 inline-flex items-center rounded-lg bg-[#0066cc] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0058b0]"
+            className="mt-3 inline-flex items-center rounded-lg bg-primary px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-primary-hover"
           >
             수정하기
           </button>
@@ -256,7 +256,7 @@ export default function ExperienceCampaignDetailPage() {
       {/* 예산 카드 */}
       <section className="mt-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2">
-          <Wallet className="h-4.5 w-4.5 text-[#0066cc]" />
+          <Wallet className="h-4.5 w-4.5 text-primary-dark" />
           <h2 className="text-base font-semibold text-gray-900">예산 현황</h2>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -314,7 +314,7 @@ export default function ExperienceCampaignDetailPage() {
                           href={p.content_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[#0066cc] hover:underline"
+                          className="inline-flex items-center gap-1 text-primary-dark hover:underline"
                         >
                           링크 확인
                           <ExternalLink className="h-3.5 w-3.5" />
@@ -416,7 +416,7 @@ function BudgetStat({
   return (
     <div className="rounded-lg bg-gray-50 p-3">
       <p className="text-xs text-gray-500">{label}</p>
-      <p className={`mt-1 text-sm font-semibold ${highlight ? 'text-[#0066cc]' : 'text-gray-900'}`}>
+      <p className={`mt-1 text-sm font-semibold ${highlight ? 'text-primary-dark' : 'text-gray-900'}`}>
         {value}
       </p>
     </div>
@@ -491,12 +491,12 @@ function CommentThread({
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="문의하거나 요청사항을 남겨주세요"
-          className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+          className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
         />
         <button
           type="submit"
           disabled={sending || !body.trim()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[#0066cc] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0058b0] disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-primary-hover disabled:opacity-60"
         >
           <Send className="h-4 w-4" />
           전송
@@ -600,7 +600,7 @@ function EditCampaignModal({
               type="text"
               value={form.store_name}
               onChange={(e) => setForm((p) => ({ ...p, store_name: e.target.value }))}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
             />
           </div>
 
@@ -610,7 +610,7 @@ function EditCampaignModal({
               type="text"
               value={form.title}
               onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
             />
           </div>
 
@@ -620,26 +620,26 @@ function EditCampaignModal({
               value={form.description}
               onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
               rows={2}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
             />
           </div>
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">미션 유형</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {MISSION_TYPES.map((type) => (
                 <label
                   key={type}
                   className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer ${
                     form.mission_type === type
-                      ? 'border-[#0066cc] bg-blue-50 text-[#0066cc]'
+                      ? 'border-primary-dark bg-accent-bg text-primary-dark'
                       : 'border-gray-200 text-gray-600'
                   }`}
                 >
                   <input
                     type="radio"
                     name="edit_mission_type"
-                    className="accent-[#0066cc]"
+                    className="accent-primary-dark"
                     checked={form.mission_type === type}
                     onChange={() => setForm((p) => ({ ...p, mission_type: type }))}
                   />
@@ -651,19 +651,19 @@ function EditCampaignModal({
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">참여 크리에이터 유형</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {CREATOR_TYPES_ALL.map((type) => (
                 <label
                   key={type}
                   className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer ${
                     form.creator_types.includes(type)
-                      ? 'border-[#0066cc] bg-blue-50 text-[#0066cc]'
+                      ? 'border-primary-dark bg-accent-bg text-primary-dark'
                       : 'border-gray-200 text-gray-600'
                   }`}
                 >
                   <input
                     type="checkbox"
-                    className="accent-[#0066cc]"
+                    className="accent-primary-dark"
                     checked={form.creator_types.includes(type)}
                     onChange={() => toggleCreatorType(type)}
                   />
@@ -679,11 +679,11 @@ function EditCampaignModal({
               value={form.mission_conditions}
               onChange={(e) => setForm((p) => ({ ...p, mission_conditions: e.target.value }))}
               rows={3}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">페이백 금액</label>
               <input
@@ -691,7 +691,7 @@ function EditCampaignModal({
                 min={0}
                 value={form.payback_amount}
                 onChange={(e) => setForm((p) => ({ ...p, payback_amount: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
               />
             </div>
             <div>
@@ -701,7 +701,7 @@ function EditCampaignModal({
                 min={0}
                 value={form.capacity}
                 onChange={(e) => setForm((p) => ({ ...p, capacity: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
               />
             </div>
           </div>
@@ -713,18 +713,18 @@ function EditCampaignModal({
               min={0}
               value={form.budget_total}
               onChange={(e) => setForm((p) => ({ ...p, budget_total: e.target.value }))}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">시작일 (선택)</label>
               <input
                 type="date"
                 value={form.start_date}
                 onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
               />
             </div>
             <div>
@@ -733,7 +733,7 @@ function EditCampaignModal({
                 type="date"
                 value={form.end_date}
                 onChange={(e) => setForm((p) => ({ ...p, end_date: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#0066cc] focus:outline-none focus:ring-1 focus:ring-[#0066cc]"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
               />
             </div>
           </div>
@@ -749,7 +749,7 @@ function EditCampaignModal({
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 rounded-lg bg-[#0066cc] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0058b0] disabled:opacity-60"
+              className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-medium text-ink transition-colors hover:bg-primary-hover disabled:opacity-60"
             >
               {saving ? '저장 중...' : '저장하기'}
             </button>

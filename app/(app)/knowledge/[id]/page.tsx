@@ -120,7 +120,7 @@ export default function KnowledgeDetailPage() {
   return (
     <>
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 rounded-[11px] bg-[#0066cc] px-5 py-3 text-[14px] font-medium text-white shadow-lg">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-32px)] rounded-[11px] bg-primary px-5 py-3 text-[14px] font-medium text-ink shadow-lg">
           {toast}
         </div>
       )}
@@ -143,7 +143,7 @@ export default function KnowledgeDetailPage() {
                 {question.category}
               </span>
               {question.is_adopted && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-[#0066cc]">
+                <span className="inline-flex items-center gap-1 rounded-md bg-accent-bg px-2.5 py-1 text-[12px] font-medium text-primary-dark">
                   <CheckCircle2 className="h-3.5 w-3.5" />채택 완료
                 </span>
               )}
@@ -153,18 +153,18 @@ export default function KnowledgeDetailPage() {
               {question.title}
             </h1>
 
-            <p className="text-[15px] text-gray-700 leading-relaxed whitespace-pre-wrap">
+            <p className="text-[15px] text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
               {question.body}
             </p>
 
             <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
               <span className="text-[12px] text-gray-400">{relativeTime(question.created_at)}</span>
               <div className="flex items-center gap-4">
-                <button className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-[#0066cc] transition-colors">
+                <button className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-primary-dark transition-colors">
                   <ThumbsUp className="h-4 w-4" />
                   <span>도움돼요</span>
                 </button>
-                <button onClick={handleShare} className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-[#0066cc] transition-colors">
+                <button onClick={handleShare} className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-primary-dark transition-colors">
                   {copied ? <Check className="h-4 w-4 text-green-600" /> : <Share2 className="h-4 w-4" />}
                   <span>{copied ? '복사됨' : '공유'}</span>
                 </button>
@@ -185,13 +185,13 @@ export default function KnowledgeDetailPage() {
             {answers.length === 0 ? (
               <div className="rounded-xl border border-dashed border-gray-200 bg-white px-6 py-10 text-center">
                 <p className="text-[14px] text-gray-500">첫 번째 답변을 달아보세요</p>
-                <p className="mt-1 text-[13px] text-[#0066cc]">답변 등록 시 +1,000P 적립</p>
+                <p className="mt-1 text-[13px] text-primary-dark">답변 등록 시 +1,000P 적립</p>
               </div>
             ) : (
               answers.map((a, i) => (
                 <div key={a.id} className="rounded-xl border border-gray-200 bg-white p-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0066cc]/10 text-[12px] font-semibold text-[#0066cc]">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-bg text-[12px] font-semibold text-primary-dark">
                       {i + 1}
                     </div>
                     <div>
@@ -199,12 +199,12 @@ export default function KnowledgeDetailPage() {
                       <p className="text-[11px] text-gray-400">{relativeTime(a.created_at)}</p>
                     </div>
                     {a.is_adopted && (
-                      <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#0066cc] px-2.5 py-0.5 text-[11px] font-medium text-white">
+                      <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-medium text-ink">
                         <CheckCircle2 className="h-3 w-3" />채택
                       </span>
                     )}
                   </div>
-                  <p className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
                     {a.body}
                   </p>
                   <div className="mt-4 flex items-center gap-3 border-t border-gray-50 pt-3">
@@ -224,18 +224,18 @@ export default function KnowledgeDetailPage() {
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h3 className="text-[14px] font-semibold text-gray-900 mb-3">
               답변 작성
-              <span className="ml-2 text-[13px] font-normal text-[#0066cc]">+1,000P</span>
+              <span className="ml-2 text-[13px] font-normal text-primary-dark">+1,000P</span>
             </h3>
             <textarea
               rows={5}
               value={answerBody}
               onChange={e => setAnswerBody(e.target.value)}
               placeholder="사업 노하우를 공유해보세요. 구체적인 경험일수록 더 많은 도움이 됩니다."
-              className="w-full resize-none rounded-lg border border-gray-200 px-4 py-3 text-[14px] leading-relaxed text-gray-900 outline-none focus:border-[#0066cc] transition-colors"
+              className="w-full resize-none rounded-lg border border-gray-200 px-4 py-3 text-[14px] leading-relaxed text-gray-900 outline-none focus:border-primary-dark transition-colors"
             />
             <div className="mt-3 flex items-center justify-between gap-3">
               {answerShortage > 0 ? (
-                <p className="inline-flex rounded-md bg-[#0066cc]/10 px-2.5 py-1 text-[12px] font-medium text-[#0066cc]">
+                <p className="inline-flex rounded-md bg-accent-bg px-2.5 py-1 text-[12px] font-medium text-primary-dark">
                   {answerShortage}글자 더 채워주세요.
                 </p>
               ) : (
@@ -246,7 +246,7 @@ export default function KnowledgeDetailPage() {
                 disabled={submitting || answerShortage > 0}
                 className={`shrink-0 rounded-lg px-6 py-2.5 text-[14px] font-medium transition-colors ${
                   answerShortage === 0 && !submitting
-                    ? 'bg-[#0066cc] text-white hover:bg-[#0058b0]'
+                    ? 'bg-primary text-ink hover:bg-primary-hover'
                     : 'cursor-not-allowed bg-gray-200 text-gray-400'
                 }`}
               >

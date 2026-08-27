@@ -351,7 +351,7 @@ export default function PlacePage() {
         <button
           onClick={handleRefresh}
           disabled={mineCollecting}
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#0055aa] disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-ink shadow-sm transition hover:bg-primary-hover disabled:opacity-60"
         >
           <RefreshCw className={`h-4 w-4 ${mineCollecting ? 'animate-spin' : ''}`} />
           {mineCollecting ? '분석 중...' : updated ? '업데이트 완료' : '정보 새로고침'}
@@ -402,7 +402,7 @@ export default function PlacePage() {
         )}
         <button
           onClick={() => openRegisterModal('mine')}
-          className="ml-auto text-sm font-medium text-[#0066cc] hover:underline"
+          className="ml-auto text-sm font-medium text-primary-dark hover:underline"
         >
           가게 정보 수정
         </button>
@@ -419,12 +419,12 @@ export default function PlacePage() {
               }}
               onKeyDown={(event) => event.key === 'Enter' && addKeyword()}
               placeholder="모니터링할 키워드 추가 (예: 을지로 쌈밥)"
-              className="min-w-[240px] flex-1 rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:outline-none"
+              className="min-w-[240px] flex-1 rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-dark focus:outline-none"
             />
             <button
               onClick={addKeyword}
               disabled={!newKeyword.trim()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0055aa] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-primary-hover disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
               키워드 추가
@@ -495,7 +495,7 @@ export default function PlacePage() {
             <h2 className="text-base font-semibold text-gray-900">개선 진단 체크리스트</h2>
             {checklist && (
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-[#0066cc]">{checklist.score}</span>
+                <span className="text-2xl font-bold text-primary-dark">{checklist.score}</span>
                 <span className="text-sm font-medium text-gray-400">/100</span>
               </div>
             )}
@@ -505,7 +505,7 @@ export default function PlacePage() {
             <>
               <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className="h-full rounded-full bg-[#0066cc]"
+                  className="h-full rounded-full bg-primary"
                   style={{ width: `${checklist.score}%` }}
                 />
               </div>
@@ -592,7 +592,7 @@ export default function PlacePage() {
             <h2 className="text-base font-semibold text-gray-900">내 가게 vs 경쟁자</h2>
             <button
               onClick={() => openRegisterModal('competitor')}
-              className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-[#0066cc] hover:bg-blue-100"
+              className="inline-flex items-center gap-1 rounded-md bg-accent-bg px-2.5 py-1 text-xs font-semibold text-primary-dark hover:bg-primary-hover"
             >
               <Plus className="h-3.5 w-3.5" />
               경쟁자 추가
@@ -607,8 +607,8 @@ export default function PlacePage() {
           ) : (
             <>
               <p className="mt-1 text-xs text-gray-400">리뷰수 기준 정렬 · 가게명에 마우스를 올리면 상세 비교</p>
-              <div className="mt-3">
-                <table className="w-full text-sm">
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full min-w-[640px] text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-400">
                       <th className="pb-2 pl-3 font-medium">#</th>
@@ -630,12 +630,12 @@ export default function PlacePage() {
                         <tr
                           key={row.id}
                           className={`border-b border-gray-50 last:border-0 ${
-                            isMine ? 'bg-blue-50/50' : ''
+                            isMine ? 'bg-accent-bg/50' : ''
                           }`}
                         >
                           <td
                             className={`py-3 pl-3 ${
-                              isMine ? 'border-l-2 border-[#0066cc]' : 'border-l-2 border-transparent'
+                              isMine ? 'border-l-2 border-primary-dark' : 'border-l-2 border-transparent'
                             }`}
                           >
                             <span className="font-semibold text-gray-700">{index + 1}</span>
@@ -645,13 +645,13 @@ export default function PlacePage() {
                               <div className="flex items-center gap-1.5">
                                 <span
                                   className={`truncate ${
-                                    isMine ? 'font-bold text-[#0066cc]' : 'font-medium text-gray-800'
+                                    isMine ? 'font-bold text-primary-dark' : 'font-medium text-gray-800'
                                   }`}
                                 >
                                   {row.name}
                                 </span>
                                 {isMine && (
-                                  <span className="shrink-0 rounded bg-[#0066cc] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                  <span className="shrink-0 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-ink">
                                     내 가게
                                   </span>
                                 )}
@@ -803,7 +803,7 @@ function EmptyState({ onRegister }: { onRegister: () => void }) {
         </div>
         <button
           onClick={onRegister}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#0066cc] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#0055aa]"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-ink shadow-sm transition hover:bg-primary-hover"
         >
           <Plus className="h-4 w-4" />
           플레이스 등록

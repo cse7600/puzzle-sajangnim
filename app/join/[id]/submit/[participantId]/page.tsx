@@ -128,7 +128,7 @@ export default function SubmitContentPage() {
     <div className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="mx-auto max-w-md">
         <div className="mb-6">
-          <p className="text-sm font-medium text-[#0066cc]">{participant.nickname}님</p>
+          <p className="text-sm font-medium text-primary-dark">{participant.nickname}님</p>
           <h1 className="mt-1 text-2xl font-semibold text-gray-900">콘텐츠 · 영수증 제출</h1>
           <p className="mt-2 text-sm text-gray-500">
             방문/구매 후 작성한 게시물 링크와 영수증 사진을 제출해주세요.
@@ -142,7 +142,7 @@ export default function SubmitContentPage() {
               value={contentUrl}
               onChange={(e) => setContentUrl(e.target.value)}
               placeholder="https://blog.naver.com/..."
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-[#0066cc] focus:outline-none"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-primary-dark focus:outline-none"
             />
           </label>
 
@@ -163,7 +163,7 @@ export default function SubmitContentPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-lg bg-[#0066cc] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#0058b0] disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             {submitting ? '제출 중...' : '제출하기'}
           </button>

@@ -78,7 +78,7 @@ export default function TransferGuide({ initialPlatform }: { initialPlatform?: P
             key={key}
             onClick={() => setPlatform(key)}
             className={`rounded-[9999px] border px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
-              platform === key ? 'border-[#0066cc] bg-[#0066cc] text-white' : 'border-[#e0e0e0] text-[#6e6e73] hover:bg-[#f5f5f7]'
+              platform === key ? 'border-primary-dark bg-primary text-ink' : 'border-[#e0e0e0] text-[#6e6e73] hover:bg-[#f5f5f7]'
             }`}
           >
             {info.name}
@@ -94,7 +94,7 @@ export default function TransferGuide({ initialPlatform }: { initialPlatform?: P
       <ol className="space-y-4">
         {guide.steps.map((step, i) => (
           <li key={i} className="flex gap-3">
-            <div className="w-6 h-6 rounded-full bg-[#0066cc] text-white text-[12px] font-semibold flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-6 h-6 rounded-full bg-primary text-ink text-[12px] font-semibold flex items-center justify-center shrink-0 mt-0.5">
               {i + 1}
             </div>
             <div>

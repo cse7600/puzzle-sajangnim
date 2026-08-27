@@ -139,10 +139,10 @@ export default function RewardsPage() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* 포인트 현황 카드 */}
-      <div className="bg-[#0066cc] rounded-[18px] p-6 text-white mb-6">
+      <div className="bg-primary rounded-[18px] p-6 text-ink mb-6">
         <p className="text-[13px] opacity-80 mb-1">보유 포인트</p>
         <p className="text-[40px] font-semibold">{(23400 + totalPoints).toLocaleString()}<span className="text-[20px] ml-1 opacity-80">P</span></p>
-        <div className="flex gap-6 mt-4 pt-4 border-t border-white/20">
+        <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 pt-4 border-t border-ink/15">
           <div>
             <p className="text-[12px] opacity-70">이번 달 적립</p>
             <p className="text-[18px] font-semibold">+{totalPoints.toLocaleString()}P</p>
@@ -174,14 +174,14 @@ export default function RewardsPage() {
           </div>
           <button
             onClick={() => setShowUploadModal(true)}
-            className="bg-[#0066cc] text-white rounded-[9999px] px-4 py-2 text-[14px] font-medium hover:bg-[#0058b3] transition-colors"
+            className="bg-primary text-ink rounded-[9999px] px-4 py-2 text-[14px] font-medium hover:bg-primary-hover transition-colors"
           >
             영수증 추가
           </button>
         </div>
 
         {/* 포인트 안내 */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { range: '~1만원', points: '50P' },
             { range: '1~3만원', points: '100P' },
@@ -190,7 +190,7 @@ export default function RewardsPage() {
           ].map(item => (
             <div key={item.range} className="rounded-[11px] bg-[#f5f5f7] p-3 text-center">
               <p className="text-[11px] text-[#6e6e73]">{item.range}</p>
-              <p className="text-[16px] font-semibold text-[#0066cc]">{item.points}</p>
+              <p className="text-[16px] font-semibold text-primary-dark">{item.points}</p>
             </div>
           ))}
         </div>
@@ -210,17 +210,17 @@ export default function RewardsPage() {
             {receipts.map(r => {
               const s = STATUS_LABEL[r.status]
               return (
-                <div key={r.id} className="flex items-center justify-between rounded-[11px] border border-[#e0e0e0] px-4 py-3">
-                  <div>
-                    <p className="text-[14px] font-medium text-[#1d1d1f]">{r.store_name || '영수증'}</p>
+                <div key={r.id} className="flex items-center justify-between gap-3 rounded-[11px] border border-[#e0e0e0] px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] font-medium text-[#1d1d1f]">{r.store_name || '영수증'}</p>
                     <p className="text-[12px] text-[#6e6e73]">
                       {r.amount ? `${r.amount.toLocaleString()}원 · ` : ''}
                       {new Date(r.created_at).toLocaleDateString('ko-KR')}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-[15px] font-semibold text-[#0066cc]">+{r.points_earned}P</p>
-                    <span className={`rounded-[9999px] px-2.5 py-1 text-[11px] font-medium ${s.class}`}>{s.text}</span>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <p className="text-[15px] font-semibold text-primary-dark">+{r.points_earned}P</p>
+                    <span className={`whitespace-nowrap rounded-[9999px] px-2.5 py-1 text-[11px] font-medium ${s.class}`}>{s.text}</span>
                   </div>
                 </div>
               )
@@ -232,7 +232,7 @@ export default function RewardsPage() {
       {/* 영수증 업로드 모달 */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setShowUploadModal(false); resetModal() }}>
-          <div className="bg-white rounded-[18px] w-full max-w-[420px] mx-4 p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-[18px] w-full max-w-[420px] mx-4 p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             {uploadSuccess ? (
               <div className="text-center py-6">
                 <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -248,7 +248,7 @@ export default function RewardsPage() {
                 <h3 className="text-[18px] font-semibold text-[#1d1d1f] mb-5">영수증 등록</h3>
                 <div className="space-y-4">
                   <div
-                    className="border-2 border-dashed border-[#e0e0e0] rounded-[11px] p-4 text-center cursor-pointer hover:border-[#0066cc] transition-colors"
+                    className="border-2 border-dashed border-[#e0e0e0] rounded-[11px] p-4 text-center cursor-pointer hover:border-primary-dark transition-colors"
                     onClick={() => fileRef.current?.click()}
                   >
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
@@ -274,7 +274,7 @@ export default function RewardsPage() {
                     type="button"
                     onClick={handleAnalyze}
                     disabled={analyzing || !fileName}
-                    className="flex w-full items-center justify-center gap-2 rounded-[11px] border border-[#0066cc] py-2.5 text-[14px] font-medium text-[#0066cc] hover:bg-[#0066cc]/5 disabled:opacity-40 transition-colors"
+                    className="flex w-full items-center justify-center gap-2 rounded-[11px] border border-primary-dark py-2.5 text-[14px] font-medium text-primary-dark hover:bg-primary-hover disabled:opacity-40 transition-colors"
                   >
                     <Sparkles size={16} strokeWidth={2} />
                     {analyzing ? '분석 중...' : '자동 분석으로 채우기'}
@@ -308,7 +308,7 @@ export default function RewardsPage() {
                       placeholder="예: 강남 청과"
                       value={form.store_name}
                       onChange={e => setForm(f => ({ ...f, store_name: e.target.value }))}
-                      className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors"
+                      className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors"
                     />
                   </div>
                   <div>
@@ -319,12 +319,12 @@ export default function RewardsPage() {
                         placeholder="예: 45,000"
                         value={form.amount}
                         onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                        className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-[#0066cc] transition-colors pr-8"
+                        className="w-full rounded-[11px] border border-[#e0e0e0] px-4 py-3 text-[15px] outline-none focus:border-primary-dark transition-colors pr-8"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] text-[#6e6e73]">원</span>
                     </div>
                     {form.amount && (
-                      <p className="mt-1 text-[12px] text-[#0066cc]">
+                      <p className="mt-1 text-[12px] text-primary-dark">
                         예상 적립: +{Number(form.amount.replace(/,/g, '')) >= 100000 ? 500 : Number(form.amount.replace(/,/g, '')) >= 30000 ? 200 : Number(form.amount.replace(/,/g, '')) >= 10000 ? 100 : 50}P
                       </p>
                     )}
@@ -341,7 +341,7 @@ export default function RewardsPage() {
                   <button
                     onClick={handleUpload}
                     disabled={uploading || !form.store_name || !fileName}
-                    className="flex-1 rounded-[9999px] bg-[#0066cc] py-3 text-[14px] font-medium text-white hover:bg-[#0058b3] disabled:opacity-40 transition-colors"
+                    className="flex-1 rounded-[9999px] bg-primary py-3 text-[14px] font-medium text-ink hover:bg-primary-hover disabled:opacity-40 transition-colors"
                   >
                     {uploading ? '등록 중...' : '등록하기'}
                   </button>

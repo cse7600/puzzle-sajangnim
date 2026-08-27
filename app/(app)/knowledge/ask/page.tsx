@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertCircle } from 'lucide-react'
-import AppTopBar from '@/components/AppTopBar'
 
 const CATEGORIES = ['네이버SEO', '광고', 'SNS', '체험단', '블로그', '플레이스'] as const
 
@@ -55,23 +54,20 @@ export default function KnowledgeAskPage() {
   }
 
   return (
-    <>
-      <AppTopBar title="질문하기" />
-      <div className="min-h-screen bg-gray-50">
-        <div className="mx-auto max-w-5xl px-6 py-10">
-          <div className="mb-8">
-            <h1 className="text-[28px] font-bold text-gray-900">무엇이든 물어보세요</h1>
-            <p className="mt-1 text-[15px] text-gray-500">답변은 언제나 무료예요.</p>
-          </div>
+    <div className="mx-auto max-w-5xl">
+      <div className="mb-8">
+        <h1 className="text-[28px] font-bold text-gray-900">무엇이든 물어보세요</h1>
+        <p className="mt-1 text-[15px] text-gray-500">답변은 언제나 무료예요.</p>
+      </div>
 
-          <div className="flex gap-8 items-start">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
             {/* 좌측 입력 영역 */}
             <div className="flex-1 space-y-6">
               {/* 제목 */}
               <div className="rounded-xl border border-gray-200 bg-white p-5">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-[14px] font-semibold text-gray-900">제목</label>
-                  <span className={`text-[12px] ${titleShortage > 0 ? 'text-gray-400' : 'text-[#0066cc]'}`}>
+                  <span className={`text-[12px] ${titleShortage > 0 ? 'text-gray-400' : 'text-primary-dark'}`}>
                     {titleLength} / {TITLE_MAX}자 (최소 {TITLE_MIN}자)
                   </span>
                 </div>
@@ -81,10 +77,10 @@ export default function KnowledgeAskPage() {
                   placeholder="제목을 작성해 주세요."
                   value={title}
                   onChange={e => { setTitle(e.target.value); setErrors(v => ({ ...v, title: undefined })) }}
-                  className={`w-full rounded-lg border px-4 py-3 text-[15px] outline-none transition-colors ${errors.title ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-[#0066cc]'}`}
+                  className={`w-full rounded-lg border px-4 py-3 text-[15px] outline-none transition-colors ${errors.title ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-primary-dark'}`}
                 />
                 {titleShortage > 0 && (
-                  <p className="mt-2 inline-flex rounded-md bg-[#0066cc]/10 px-2.5 py-1 text-[12px] font-medium text-[#0066cc]">
+                  <p className="mt-2 inline-flex rounded-md bg-accent-bg px-2.5 py-1 text-[12px] font-medium text-primary-dark">
                     {titleShortage}글자 더 채워주세요.
                   </p>
                 )}
@@ -99,7 +95,7 @@ export default function KnowledgeAskPage() {
               <div className="rounded-xl border border-gray-200 bg-white p-5">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-[14px] font-semibold text-gray-900">내용</label>
-                  <span className={`text-[12px] ${bodyShortage > 0 ? 'text-gray-400' : 'text-[#0066cc]'}`}>
+                  <span className={`text-[12px] ${bodyShortage > 0 ? 'text-gray-400' : 'text-primary-dark'}`}>
                     {bodyLength} / {BODY_MAX.toLocaleString()}자 (최소 {BODY_MIN}자)
                   </span>
                 </div>
@@ -123,10 +119,10 @@ export default function KnowledgeAskPage() {
                   placeholder="질문의 내용을 구체적으로 적어주세요. 전문가 및 답변자들에게 더 좋은 답변을 받을 수 있어요."
                   value={body}
                   onChange={e => { setBody(e.target.value); setErrors(v => ({ ...v, body: undefined })) }}
-                  className={`w-full resize-none rounded-lg border px-4 py-3 text-[15px] leading-relaxed outline-none transition-colors ${errors.body ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-[#0066cc]'}`}
+                  className={`w-full resize-none rounded-lg border px-4 py-3 text-[15px] leading-relaxed outline-none transition-colors ${errors.body ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-primary-dark'}`}
                 />
                 {bodyShortage > 0 && (
-                  <p className="mt-2 inline-flex rounded-md bg-[#0066cc]/10 px-2.5 py-1 text-[12px] font-medium text-[#0066cc]">
+                  <p className="mt-2 inline-flex rounded-md bg-accent-bg px-2.5 py-1 text-[12px] font-medium text-primary-dark">
                     {bodyShortage}글자 더 채워주세요.
                   </p>
                 )}
@@ -149,7 +145,7 @@ export default function KnowledgeAskPage() {
                       onClick={() => { setCategory(cat); setErrors(v => ({ ...v, category: undefined })) }}
                       className={`rounded-lg border-2 py-2.5 text-[13px] font-medium transition-colors ${
                         category === cat
-                          ? 'border-[#0066cc] bg-[#0066cc]/5 text-[#0066cc]'
+                          ? 'border-primary-dark bg-accent-bg text-primary-dark'
                           : 'border-gray-200 text-gray-700 hover:border-gray-300'
                       }`}
                     >
@@ -166,13 +162,13 @@ export default function KnowledgeAskPage() {
             </div>
 
             {/* 우측 사이드 */}
-            <div className="w-[240px] shrink-0 space-y-4 sticky top-6">
+            <div className="w-full space-y-4 lg:sticky lg:top-6 lg:w-[240px] lg:shrink-0">
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !canSubmit}
                 className={`w-full rounded-xl py-4 text-[15px] font-semibold transition-colors ${
                   canSubmit && !submitting
-                    ? 'bg-[#0066cc] text-white hover:bg-[#0058b0]'
+                    ? 'bg-primary text-ink hover:bg-primary-hover'
                     : 'cursor-not-allowed bg-gray-200 text-gray-400'
                 }`}
               >
@@ -210,10 +206,8 @@ export default function KnowledgeAskPage() {
               >
                 취소
               </button>
-            </div>
-          </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
