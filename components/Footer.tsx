@@ -6,36 +6,14 @@ const FOOTER_COLUMNS: { header: string; links: FooterLink[] }[] = [
   {
     header: '서비스',
     links: [
-      { label: 'AI 블로그 자동화' },
-      { label: '네이버 플레이스 최적화' },
-      { label: '미니 체험단' },
-      { label: '통합 연동 허브' },
-      { label: '앱테크 리워드' },
-      { label: '팀 구매' },
-      { label: '추천인 시스템' },
-      { label: '오호라! 사업 Q&A' },
-    ],
-  },
-  {
-    header: '고객지원',
-    links: [
-      { label: '도움말 센터' },
-      { label: '이용 가이드' },
-      { label: '1:1 문의' },
-      { label: '자주 묻는 질문' },
-      { label: '공지사항' },
-      { label: '서비스 상태' },
-    ],
-  },
-  {
-    header: '회사',
-    links: [
-      { label: '회사 소개' },
-      { label: '팀 블로그' },
-      { label: '채용' },
-      { label: '보도자료' },
-      { label: '브랜드 리소스' },
-      { label: '제휴 문의' },
+      { label: 'AI 블로그 자동화', href: '/ai-blog' },
+      { label: '네이버 플레이스 최적화', href: '/place' },
+      { label: '한끼 체험단', href: '/experience' },
+      { label: '통합 연동 허브', href: '/hub' },
+      { label: '영수증 환급', href: '/rewards' },
+      { label: '팀 구매', href: '/team-buy' },
+      { label: '추천인 시스템', href: '/referral' },
+      { label: '오호라! 사업 Q&A', href: '/ohora' },
     ],
   },
   {
@@ -43,21 +21,6 @@ const FOOTER_COLUMNS: { header: string; links: FooterLink[] }[] = [
     links: [
       { label: '이용약관', href: '/legal/terms' },
       { label: '개인정보처리방침', href: '/legal/privacy' },
-      { label: '위치기반서비스 약관' },
-      { label: '마케팅 정보 수신' },
-      { label: '청소년 보호정책' },
-      { label: '환불 정책' },
-    ],
-  },
-  {
-    header: '파트너',
-    links: [
-      { label: '크리에이터 지원' },
-      { label: '마케터 등록' },
-      { label: '대행사 제휴' },
-      { label: '식자재 파트너' },
-      { label: 'API 문서' },
-      { label: '추천인 센터' },
     ],
   },
 ];
@@ -66,7 +29,7 @@ export default function Footer() {
   return (
     <footer className="bg-parchment text-ink">
       <div className="mx-auto max-w-wide px-6 py-16">
-        <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:max-w-sm">
           {FOOTER_COLUMNS.map((col) => (
             <div key={col.header}>
               <h3 className="mb-2 text-[13px] font-semibold text-ink">
