@@ -96,14 +96,14 @@ export default function Footer() {
             서비스 이용 시 약관 및 정책에 동의한 것으로 간주됩니다.
           </p>
           <p className="mt-3 text-[12px] leading-[1.6] text-muted">
-            (주)퍼즐코프 · 대표 김퍼즐 · 사업자등록번호 123-45-67890 · 통신판매업신고
-            2026-서울강남-01234
-            <br />
-            서울특별시 강남구 테헤란로 152, 강남파이낸스센터 10층 · 고객센터
-            1670-0000 (평일 10:00–18:00)
+            상호: 주식회사 퍼즐코퍼레이션 | 대표: 안태언, 최영록, 최영민 | 사업자등록번호:
+            703-81-02391 | 주소: 서울특별시 마포구 양화로 81, 엘1층 104호 | 문의:{' '}
+            <a href="mailto:ceo-biz@puzl.co.kr" className="hover:text-ink">
+              ceo-biz@puzl.co.kr
+            </a>
           </p>
           <p className="mt-4 text-[12px] text-muted">
-            Copyright © 2026 PUZZLE CORP. All rights reserved.
+            © 2026 주식회사 퍼즐코퍼레이션. All rights reserved.
           </p>
         </div>
       </div>
