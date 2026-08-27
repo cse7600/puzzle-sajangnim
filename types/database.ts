@@ -204,6 +204,12 @@ export interface Database {
           apply_method: string | null
           contact: string | null
           source: string | null
+          max_support_krw: number | null
+          eligibility_max_revenue_krw: number | null
+          eligibility_industry_keywords: string[]
+          eligibility_notes: string | null
+          puzzle_services: string[]
+          application_steps: string[]
         }
         Insert: {
           pblanc_id: string
@@ -220,6 +226,12 @@ export interface Database {
           apply_method?: string | null
           contact?: string | null
           source?: string | null
+          max_support_krw?: number | null
+          eligibility_max_revenue_krw?: number | null
+          eligibility_industry_keywords?: string[]
+          eligibility_notes?: string | null
+          puzzle_services?: string[]
+          application_steps?: string[]
         }
         Update: {
           pblanc_id?: string
@@ -236,6 +248,12 @@ export interface Database {
           apply_method?: string | null
           contact?: string | null
           source?: string | null
+          max_support_krw?: number | null
+          eligibility_max_revenue_krw?: number | null
+          eligibility_industry_keywords?: string[]
+          eligibility_notes?: string | null
+          puzzle_services?: string[]
+          application_steps?: string[]
         }
         Relationships: []
       }

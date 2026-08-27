@@ -12,11 +12,27 @@ interface GovSupportListing {
   is_puzzle_transactable: boolean
   puzzle_note: string | null
   source: string
+  max_support_krw: number | null
+  eligibility_max_revenue_krw: number | null
+  eligibility_industry_keywords: string[]
+  eligibility_notes: string | null
+  puzzle_services: string[]
+  application_steps: string[]
+}
+
+interface CurationPayload {
+  max_support_krw?: number | null
+  eligibility_max_revenue_krw?: number | null
+  eligibility_industry_keywords?: string[]
+  eligibility_notes?: string | null
+  puzzle_services?: string[]
+  application_steps?: string[]
 }
 
 type PatchPayload = Partial<
   Pick<GovSupportListing, 'is_puzzle_transactable' | 'puzzle_note' | 'title' | 'jrsdinsttnm' | 'trgetnm' | 'reqst_end_de'>
->
+> &
+  CurationPayload
 
 interface NewListingForm {
   title: string
@@ -81,7 +97,7 @@ function useGovSupportAdmin() {
 
   useEffect(load, [page, query])
 
-  async function patchItem(id: string, payload: PatchPayload) {
+  async function patchItem(id: string, payload: PatchPayload): Promise<boolean> {
     setSavingId(id)
     try {
       const res = await fetch(`/api/admin/gov-support/${encodeURIComponent(id)}`, {
@@ -92,11 +108,13 @@ function useGovSupportAdmin() {
       const body = await res.json().catch(() => null)
       if (!res.ok) {
         showToast(body?.error ?? '저장에 실패했습니다', true)
-        return
+        return false
       }
       setItems(prev => prev.map(item => (item.pblanc_id === id ? { ...item, ...body } : item)))
+      return true
     } catch {
       showToast('네트워크 오류로 저장하지 못했습니다', true)
+      return false
     } finally {
       setSavingId(null)
     }
@@ -386,10 +404,12 @@ function GovSupportPanel({
   loading: boolean
   savingId: string | null
   editAttempts: Record<string, number>
-  onPatch: (id: string, payload: PatchPayload) => void
+  onPatch: (id: string, payload: PatchPayload) => Promise<boolean>
   onSaveIfChanged: (item: GovSupportListing, field: 'puzzle_note' | 'title' | 'jrsdinsttnm' | 'trgetnm' | 'reqst_end_de', value: string) => void
   onDelete: (id: string) => void
 }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
   if (loading) {
     return (
       <div className="p-8 space-y-3">
@@ -402,7 +422,7 @@ function GovSupportPanel({
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[13px] min-w-[1180px]">
+      <table className="w-full text-[13px] min-w-[1280px]">
         <thead className="bg-[#f5f5f7] border-b border-[#e0e0e0]">
           <tr>
             <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">사업명</th>
@@ -413,6 +433,7 @@ function GovSupportPanel({
             <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">출처</th>
             <th className="text-center px-4 py-3 font-medium text-[#6e6e73]">거래가능</th>
             <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">메모</th>
+            <th className="text-center px-4 py-3 font-medium text-[#6e6e73]">큐레이션</th>
             <th className="text-center px-4 py-3 font-medium text-[#6e6e73]">삭제</th>
           </tr>
         </thead>
@@ -422,10 +443,14 @@ function GovSupportPanel({
               key={item.pblanc_id}
               item={item}
               saving={savingId === item.pblanc_id}
+              expanded={expandedId === item.pblanc_id}
               editAttempts={editAttempts}
               onPatch={onPatch}
               onSaveIfChanged={onSaveIfChanged}
               onDelete={onDelete}
+              onToggleExpand={() =>
+                setExpandedId(prev => (prev === item.pblanc_id ? null : item.pblanc_id))
+              }
             />
           ))}
         </tbody>
@@ -437,21 +462,26 @@ function GovSupportPanel({
 function GovSupportRow({
   item,
   saving,
+  expanded,
   editAttempts,
   onPatch,
   onSaveIfChanged,
   onDelete,
+  onToggleExpand,
 }: {
   item: GovSupportListing
   saving: boolean
+  expanded: boolean
   editAttempts: Record<string, number>
-  onPatch: (id: string, payload: PatchPayload) => void
+  onPatch: (id: string, payload: PatchPayload) => Promise<boolean>
   onSaveIfChanged: (item: GovSupportListing, field: 'puzzle_note' | 'title' | 'jrsdinsttnm' | 'trgetnm' | 'reqst_end_de', value: string) => void
   onDelete: (id: string) => void
+  onToggleExpand: () => void
 }) {
   const isManual = item.source === 'manual'
   const attemptFor = (field: string) => editAttempts[`${item.pblanc_id}:${field}`] ?? 0
   return (
+    <>
     <tr className="hover:bg-[#f5f5f7] transition-colors">
       <ManualEditableCell item={item} field="title" isManual={isManual} saving={saving} attempt={attemptFor('title')} onSaveIfChanged={onSaveIfChanged} width="w-[220px]" />
       <ManualEditableCell item={item} field="jrsdinsttnm" isManual={isManual} saving={saving} attempt={attemptFor('jrsdinsttnm')} onSaveIfChanged={onSaveIfChanged} width="w-[140px]" />
@@ -488,6 +518,15 @@ function GovSupportRow({
         />
       </td>
       <td className="px-4 py-3 text-center">
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          className="text-[12px] text-[#0066cc] hover:text-[#0052a3]"
+        >
+          {expanded ? '닫기' : '편집'}
+        </button>
+      </td>
+      <td className="px-4 py-3 text-center">
         {isManual ? (
           <button
             type="button"
@@ -504,6 +543,174 @@ function GovSupportRow({
         )}
       </td>
     </tr>
+    {expanded && (
+      <tr className="bg-[#fafafa]">
+        <td colSpan={10} className="px-4 py-4">
+          <CurationEditPanel item={item} saving={saving} onPatch={onPatch} onClose={onToggleExpand} />
+        </td>
+      </tr>
+    )}
+    </>
+  )
+}
+
+interface CurationFormState {
+  maxSupportKrw: string
+  eligibilityMaxRevenueKrw: string
+  eligibilityIndustryKeywords: string
+  eligibilityNotes: string
+  puzzleServices: string
+  applicationSteps: string
+}
+
+function curationFormFromItem(item: GovSupportListing): CurationFormState {
+  return {
+    maxSupportKrw: item.max_support_krw?.toString() ?? '',
+    eligibilityMaxRevenueKrw: item.eligibility_max_revenue_krw?.toString() ?? '',
+    eligibilityIndustryKeywords: item.eligibility_industry_keywords.join('\n'),
+    eligibilityNotes: item.eligibility_notes ?? '',
+    puzzleServices: item.puzzle_services.join('\n'),
+    applicationSteps: item.application_steps.join('\n'),
+  }
+}
+
+function parseWonInput(raw: string): number | null | 'invalid' {
+  const trimmed = raw.trim().replace(/,/g, '')
+  if (trimmed === '') return null
+  if (!/^\d+$/.test(trimmed)) return 'invalid'
+  return Number(trimmed)
+}
+
+function linesToArray(raw: string): string[] {
+  return raw.split('\n').map(line => line.trim()).filter(line => line !== '')
+}
+
+function CurationEditPanel({
+  item,
+  saving,
+  onPatch,
+  onClose,
+}: {
+  item: GovSupportListing
+  saving: boolean
+  onPatch: (id: string, payload: PatchPayload) => Promise<boolean>
+  onClose: () => void
+}) {
+  const [form, setForm] = useState<CurationFormState>(() => curationFormFromItem(item))
+  const [fieldError, setFieldError] = useState('')
+
+  function setField(field: keyof CurationFormState, value: string) {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  async function handleSave() {
+    const maxSupport = parseWonInput(form.maxSupportKrw)
+    const maxRevenue = parseWonInput(form.eligibilityMaxRevenueKrw)
+    if (maxSupport === 'invalid' || maxRevenue === 'invalid') {
+      setFieldError('금액은 숫자만(원 단위) 입력해주세요')
+      return
+    }
+    setFieldError('')
+    const saved = await onPatch(item.pblanc_id, {
+      max_support_krw: maxSupport,
+      eligibility_max_revenue_krw: maxRevenue,
+      eligibility_industry_keywords: linesToArray(form.eligibilityIndustryKeywords),
+      eligibility_notes: form.eligibilityNotes.trim() || null,
+      puzzle_services: linesToArray(form.puzzleServices),
+      application_steps: linesToArray(form.applicationSteps),
+    })
+    if (saved) onClose()
+  }
+
+  const inputClass =
+    'w-full rounded-[8px] border border-[#e0e0e0] px-3 py-2 text-[13px] outline-none focus:border-[#0066cc] transition-colors'
+  const labelClass = 'block mb-1 text-[12px] font-medium text-[#6e6e73]'
+
+  return (
+    <div className="rounded-[11px] border border-[#e0e0e0] bg-white p-4">
+      <p className="mb-3 text-[13px] font-semibold text-[#1d1d1f]">
+        큐레이션 정보 — {item.title}
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>최대 지원금액 (원)</label>
+          <input
+            value={form.maxSupportKrw}
+            onChange={e => setField('maxSupportKrw', e.target.value)}
+            placeholder="예: 100000000 (1억). 비우면 미정"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>자격: 매출 상한 (원)</label>
+          <input
+            value={form.eligibilityMaxRevenueKrw}
+            onChange={e => setField('eligibilityMaxRevenueKrw', e.target.value)}
+            placeholder="예: 14000000000 (140억). 비우면 제한 없음"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>자격: 업종 키워드 (줄바꿈으로 구분)</label>
+          <textarea
+            value={form.eligibilityIndustryKeywords}
+            onChange={e => setField('eligibilityIndustryKeywords', e.target.value)}
+            placeholder={'제조업'}
+            rows={3}
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>자격 보충 설명 (자연어)</label>
+          <textarea
+            value={form.eligibilityNotes}
+            onChange={e => setField('eligibilityNotes', e.target.value)}
+            placeholder="예: 관광사업체 등록 필요"
+            rows={3}
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>퍼즐 서비스 목록 (줄바꿈으로 구분)</label>
+          <textarea
+            value={form.puzzleServices}
+            onChange={e => setField('puzzleServices', e.target.value)}
+            placeholder={'디지털 마케팅 전략 수립\n홍보영상 제작'}
+            rows={4}
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>신청 절차 단계 (줄바꿈으로 구분, 순서대로)</label>
+          <textarea
+            value={form.applicationSteps}
+            onChange={e => setField('applicationSteps', e.target.value)}
+            placeholder={'공식 사이트에서 신청\n선정 후 퍼즐 선택'}
+            rows={4}
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+      </div>
+      {fieldError && <p className="mt-2 text-[12px] text-red-600">{fieldError}</p>}
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="rounded-[8px] bg-[#0066cc] px-4 py-2 text-[13px] font-medium text-white disabled:opacity-50"
+        >
+          {saving ? '저장 중...' : '저장'}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={saving}
+          className="rounded-[8px] border border-[#e0e0e0] px-4 py-2 text-[13px] text-[#1d1d1f] disabled:opacity-50"
+        >
+          취소
+        </button>
+      </div>
+    </div>
   )
 }
 

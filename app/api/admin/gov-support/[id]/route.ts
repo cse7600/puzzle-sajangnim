@@ -7,11 +7,46 @@ import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/a
 const db = supabaseAdmin as any
 
 const LISTING_COLUMNS =
-  'pblanc_id, title, jrsdinsttnm, trgetnm, reqst_end_de, is_marketing, region_sido, is_puzzle_transactable, puzzle_note, source'
+  'pblanc_id, title, jrsdinsttnm, trgetnm, reqst_end_de, is_marketing, region_sido, is_puzzle_transactable, puzzle_note, source, max_support_krw, eligibility_max_revenue_krw, eligibility_industry_keywords, eligibility_notes, puzzle_services, application_steps'
 
 // bizinfo 원본 필드(title/jrsdinsttnm/trgetnm/reqst_end_de)는 매일 배치가 API 응답으로
 // 덮어쓰기 때문에 어드민이 고쳐봐야 다음날 리셋된다. 원본 필드 수정은 manual 행에서만 허용.
 const MANUAL_ONLY_FIELDS = ['title', 'jrsdinsttnm', 'trgetnm', 'reqst_end_de'] as const
+
+// 큐레이션 필드는 bizinfo 배치가 건드리지 않으므로 소스와 무관하게 항상 편집 가능.
+const CURATION_NUMBER_FIELDS = ['max_support_krw', 'eligibility_max_revenue_krw'] as const
+const CURATION_ARRAY_FIELDS = ['eligibility_industry_keywords', 'puzzle_services', 'application_steps'] as const
+
+function applyCurationFields(
+  body: Record<string, unknown>,
+  updates: Record<string, unknown>
+): { error: string } | null {
+  for (const field of CURATION_NUMBER_FIELDS) {
+    if (!(field in body)) continue
+    const value = body[field]
+    if (value !== null && (typeof value !== 'number' || !Number.isInteger(value) || value < 0)) {
+      return { error: `${field}는 0 이상의 정수(원 단위) 또는 null이어야 합니다` }
+    }
+    updates[field] = value
+  }
+  for (const field of CURATION_ARRAY_FIELDS) {
+    if (!(field in body)) continue
+    const value = body[field]
+    if (!Array.isArray(value) || value.some(entry => typeof entry !== 'string')) {
+      return { error: `${field}는 문자열 배열이어야 합니다` }
+    }
+    updates[field] = value.map(entry => entry.trim()).filter(entry => entry !== '')
+  }
+  if ('eligibility_notes' in body) {
+    const value = body.eligibility_notes
+    if (value !== null && typeof value !== 'string') {
+      return { error: 'eligibility_notes는 문자열 또는 null이어야 합니다' }
+    }
+    const trimmed = typeof value === 'string' ? value.trim() : null
+    updates.eligibility_notes = trimmed || null
+  }
+  return null
+}
 
 interface ListingRow {
   pblanc_id: string
@@ -44,6 +79,9 @@ function buildPatchUpdates(body: Record<string, unknown>, isManual: boolean): Re
     const trimmed = typeof body.puzzle_note === 'string' ? body.puzzle_note.trim() : null
     updates.puzzle_note = trimmed || null
   }
+
+  const curationError = applyCurationFields(body, updates)
+  if (curationError) return curationError
 
   for (const field of MANUAL_ONLY_FIELDS) {
     if (!(field in body)) continue

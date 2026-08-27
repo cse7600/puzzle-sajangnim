@@ -7,7 +7,7 @@ import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/a
 const db = supabaseAdmin as any
 
 const LISTING_COLUMNS =
-  'pblanc_id, title, jrsdinsttnm, trgetnm, reqst_end_de, is_marketing, region_sido, is_puzzle_transactable, puzzle_note, source'
+  'pblanc_id, title, jrsdinsttnm, trgetnm, reqst_end_de, is_marketing, region_sido, is_puzzle_transactable, puzzle_note, source, max_support_krw, eligibility_max_revenue_krw, eligibility_industry_keywords, eligibility_notes, puzzle_services, application_steps'
 
 const DEFAULT_PAGE_SIZE = 30
 const MAX_PAGE_SIZE = 100
