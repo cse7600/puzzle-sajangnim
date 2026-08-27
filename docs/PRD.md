@@ -482,7 +482,7 @@ BEP 이관자 수 = 월 운영비 ÷ (평균 광고비 × 순마진)
 **운영 환경**
 - Supabase Project: perma-studio (`nbfoifegbamvtwffbuxv`)
 - AI: Claude API (영수증 OCR 동작 중)
-- 프로덕션: https://puzzle-sajangnim.vercel.app / 로컬: http://localhost:3000
+- 프로덕션: https://ceo.puzl.co.kr / 로컬: http://localhost:3000
 - 키워드 순위 크롤러: `crawler/`(Python+Playwright) — GitHub Actions(`cse7600/puzzle-sajangnim`, public repo) 매일 03:00 KST 크론, Next.js 앱과 별도 배포 단위
 - 정부지원사업 수집·추출: `scripts/collect-gov-support.mjs`(기업마당 API) + `scripts/enrich-gov-support.mjs`(Claude Haiku 자격조건 추출) — GitHub Actions `gov-support-collector.yml` 매일 04:00 KST, `collect`→`enrich` 순차 job
 - 어드민: `/admin/login` (공유 비밀번호 게이트, 카카오 세션 admin role과 병행)

@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getSessionUser, unauthorizedResponse } from '@/lib/auth-server'
 
 const db = supabaseAdmin as any
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://puzzle.kr'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://ceo.puzl.co.kr'
 
 type ProfileData = {
   name?: string

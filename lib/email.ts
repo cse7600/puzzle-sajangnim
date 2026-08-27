@@ -72,7 +72,7 @@ function buildWelcomeEmailHtml(name: string): string {
           설정 페이지에서 사업자 번호와 등록증을 등록해주세요.
         </p>
       </div>
-      <a href="https://sajangnim.puzl.co.kr/settings"
+      <a href="https://ceo.puzl.co.kr/settings"
          style="display:inline-block;padding:13px 28px;background:#163300;color:#ffffff;text-decoration:none;border-radius:9999px;font-size:14px;font-weight:600;">
         사업자 인증하러 가기
       </a>

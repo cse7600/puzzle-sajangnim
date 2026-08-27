@@ -11,14 +11,14 @@
 
 ## 0. 끝나면 손에 쥐고 있어야 할 것 (체크리스트)
 
-- [ ] 카카오 앱 REST API 키 (`<카카오_REST_API_키>`)
-- [ ] 카카오 로그인 Client Secret 코드 (`<카카오_Client_Secret>`) — 활성화 상태 "사용함"
-- [ ] Redirect URI에 `https://nbfoifegbamvtwffbuxv.supabase.co/auth/v1/callback` 등록 완료
-- [ ] Web 플랫폼에 `http://localhost:3000`, `https://puzzle-sajangnim.vercel.app` 도메인 등록 완료
-- [ ] 동의항목: 닉네임(profile_nickname) 설정 완료, 이메일(account_email) 설정(어느 단계든) 완료
-- [ ] Supabase 대시보드에 REST API 키 → Client ID, Client Secret 코드 → Client Secret 입력 완료
-- [ ] Supabase URL Configuration에 로컬/프로덕션 리다이렉트 URL 등록 완료
-- [ ] 이 저장소 `.env.local`과 Vercel 프로젝트 설정에 `NEXT_PUBLIC_KAKAO_ENABLED=true` 반영 완료
+- [x] 카카오 앱 REST API 키 (앱 ID 1558622, 2026-08-27 발급)
+- [x] 카카오 로그인 Client Secret 코드 — 활성화 상태 "사용함" (ON 확인)
+- [ ] **Redirect URI에 `https://nbfoifegbamvtwffbuxv.supabase.co/auth/v1/callback` 등록** — 콘솔 확인 결과 아직 빈 칸, 유일하게 남은 수동 단계
+- [x] Web 플랫폼에 `http://localhost:3000`, `https://ceo.puzl.co.kr` 도메인 등록 완료
+- [ ] 동의항목: 닉네임(profile_nickname) 설정, 이메일(account_email) 설정 — 미확인, Redirect URI 등록 후 점검
+- [x] Supabase 대시보드에 REST API 키 → Client ID, Client Secret 코드 → Client Secret 입력 완료 (Management API로 반영, 2026-08-27)
+- [x] Supabase URL Configuration에 로컬/프로덕션 리다이렉트 URL 등록 완료 (Site URL은 공유 자원이라 미변경)
+- [ ] 이 저장소 `.env.local`과 Vercel 프로젝트 설정에 `NEXT_PUBLIC_KAKAO_ENABLED=true` 반영 — **Redirect URI 등록 전까지는 일부러 보류** (지금 켜면 클릭 시 카카오 쪽에서 즉시 에러)
 
 ---
 
@@ -29,7 +29,7 @@
 | URL | 어디에 등록하나 | 값 |
 |---|---|---|
 | ① 카카오 로그인 Redirect URI | **카카오 개발자 콘솔** | `https://nbfoifegbamvtwffbuxv.supabase.co/auth/v1/callback` (고정, Supabase 프로젝트 콜백) |
-| ② Supabase Redirect URLs (허용 목록) | **Supabase 대시보드** > Authentication > URL Configuration | `http://localhost:3000/**`, `https://puzzle-sajangnim.vercel.app/**` |
+| ② Supabase Redirect URLs (허용 목록) | **Supabase 대시보드** > Authentication > URL Configuration | `http://localhost:3000/**`, `https://ceo.puzl.co.kr/**` |
 | ③ 앱 자체 콜백 라우트 | 코드에 이미 있음 (수정 불필요) | `/auth/callback` — 로그인 버튼이 `redirectTo`로 자동 전달함 |
 
 즉 **카카오는 Supabase의 콜백 주소만 알면 되고**, Supabase가 그 뒤에 우리 앱의 `/auth/callback`으로 다시 보내주는 구조다. 카카오 콘솔에 `localhost`나 `vercel.app` 주소를 직접 넣는 게 아니다.
@@ -53,7 +53,7 @@
 2. **플랫폼** 항목에서 **Web 플랫폼 등록** 클릭.
 3. **사이트 도메인**에 다음 두 개를 각각 등록 (여러 개면 줄바꿈으로 구분):
    - `http://localhost:3000`
-   - `https://puzzle-sajangnim.vercel.app`
+   - `https://ceo.puzl.co.kr`
 4. 저장.
 
 > 등록하지 않은 도메인에서 로그인을 시도하면 카카오 쪽에서 막는다. 로컬 테스트를 하려면 `localhost:3000`도 반드시 넣어야 한다.
@@ -127,30 +127,31 @@
 
 여기서부터는 https://supabase.com/dashboard 의 `nbfoifegbamvtwffbuxv` 프로젝트에서 진행한다.
 
-### 7-1. Kakao Provider 활성화
+### ⚠️ 이 Supabase 프로젝트(`nbfoifegbamvtwffbuxv`)는 공유 자원이다
 
-1. 좌측 메뉴 **Authentication** > **Providers** (또는 **Sign In / Providers**).
-2. 목록에서 **Kakao** 항목을 펼친다.
-3. **Enable Sign in with Kakao**(또는 Kakao Enabled) 토글을 ON.
-4. **Client ID** 칸에 Phase 6에서 복사한 **REST API 키** 입력.
-5. **Client Secret** 칸에 Phase 6에서 복사한 **Client Secret 코드** 입력. (REST API 키와 Client Secret을 서로 바꿔 넣는 실수가 잦으니 라벨을 확인할 것.)
-6. Phase 5에서 이메일 동의항목을 아직 안 붙였다면(선택 동의 안 함/비즈 앱 전환 전이라면), **Allow users without an email** 옵션을 켠다. 이걸 꺼둔 채로 이메일 없이 로그인하는 유저가 오면 로그인이 실패한다.
-7. **Save**.
+`html.to` / `htmlto.puzl.co.kr` / `weapon-c.puzl.co.kr` 등 다른 제품이 **같은 프로젝트를 같이 쓴다**. Site URL, JWT/보안 설정, SMTP는 전 제품 공통이라 함부로 바꾸면 다른 서비스가 깨진다. 아래 7-1, 7-2는 전부 **기존 값에 추가만 하고, 기존 값은 절대 지우거나 덮어쓰지 마라.** Management API로 작업할 때도 PATCH 바디에 바꿀 필드만 넣어라(부분 병합이라 안전하지만, 필드에 다른 제품의 값을 실수로 덮어쓰면 그건 그대로 반영된다).
 
-이 화면에 표시되는 Callback URL이 Phase 4에서 카카오 콘솔에 등록한 값(`https://nbfoifegbamvtwffbuxv.supabase.co/auth/v1/callback`)과 일치하는지 다시 한번 확인한다.
+### 7-1. Kakao Provider 활성화 — 완료 (2026-08-27)
 
-### 7-2. URL Configuration (리다이렉트 허용 목록)
+퍼즐사장님 앱(카카오 콘솔 ID 1558622)의 REST API 키/Client Secret으로 이미 등록 끝남 (Management API PATCH, 대시보드 UI로도 동일하게 확인 가능):
+- **Authentication > Providers > Kakao**: Enabled ON, Client ID/Secret 설정됨, **Allow users without an email: ON** (비즈 앱 전환 전이라 이메일 동의항목이 없을 수 있어 켜둠)
+- Callback URL은 `https://nbfoifegbamvtwffbuxv.supabase.co/auth/v1/callback`로 고정 — 카카오 콘솔의 "카카오 로그인 리다이렉트 URI"에 **이 값을 그대로 등록해야 한다** (콘솔 화면엔 이 칸이 비어있던 것을 확인함, 등록 전까지는 카카오 쪽에서 리다이렉트를 거부한다).
 
-1. **Authentication** > **URL Configuration**으로 이동.
-2. **Site URL**을 프로덕션 주소로 설정: `https://puzzle-sajangnim.vercel.app`
-3. **Redirect URLs**(허용 목록)에 아래 두 개를 추가:
-   ```
-   http://localhost:3000/**
-   https://puzzle-sajangnim.vercel.app/**
-   ```
-4. 저장.
+키를 새로 발급하거나 교체할 때만 이 단계를 다시 밟으면 된다.
 
-이 목록에 없는 주소로 `redirectTo`를 보내면 Supabase가 로그인 완료 후 리다이렉트를 거부한다. 로그인 버튼 코드(`components/auth/KakaoLoginButton.tsx`)는 `redirectTo`로 `{origin}/auth/callback`을 보내므로, 위 와일드카드 두 개면 로컬/프로덕션 모두 커버된다.
+### 7-2. URL Configuration (리다이렉트 허용 목록) — 완료 (2026-08-27)
+
+**Site URL은 건드리지 않았다** (`https://htmlto.puzl.co.kr`로 그대로 둠 — 다른 제품 소유). **Redirect URLs(허용 목록)에 아래 3개만 추가**했다(기존 4개: `html.to`, `weapon-c.puzl.co.kr`, `localhost:5173`, `htmlto.puzl.co.kr`는 보존):
+```
+https://ceo.puzl.co.kr/**
+https://puzzle-sajangnim.vercel.app/**   (구 도메인, 당분간 유지)
+http://localhost:3000/**
+```
+이 목록에 없는 주소로 `redirectTo`를 보내면 Supabase가 로그인 완료 후 리다이렉트를 거부한다. 로그인 버튼 코드(`components/auth/KakaoLoginButton.tsx`)는 `redirectTo`로 `{origin}/auth/callback`을 보내므로, 위 와일드카드면 로컬/프로덕션 모두 커버된다.
+
+### 공유 프로젝트 부작용: cashpick 유령 계정
+
+`auth.users`에 `on_auth_user_created` 트리거(cashpick 소유, 조건 없이 무조건 발동)가 있어서, **퍼즐사장님에서 카카오로 가입하는 모든 유저가 `cashpick.users`에도 자동으로 행이 생긴다**(초대코드 자동발급 포함, `on conflict do nothing`이라 에러는 안 남). 캐시픽을 현재 안 쓰고 있어 문제 없음으로 판단하고 진행함(2026-08-27) — 나중에 캐시픽을 다시 쓰게 되면 이 트리거에 origin 구분 조건을 추가하거나 무시할지 재검토 필요.
 
 ---
 
@@ -187,7 +188,7 @@ NEXT_PUBLIC_KAKAO_ENABLED=true
 ### 프로덕션에서 확인
 
 1. Vercel에 `NEXT_PUBLIC_KAKAO_ENABLED=true` 반영 후 재배포 완료 대기.
-2. `https://puzzle-sajangnim.vercel.app/login` 접속 → 동일하게 로그인 → 온보딩/사업자 인증 → 허브 도달까지 끝까지 눌러본다.
+2. `https://ceo.puzl.co.kr/login` 접속 → 동일하게 로그인 → 온보딩/사업자 인증 → 허브 도달까지 끝까지 눌러본다.
 3. 로컬 테스트 때 만든 계정과 별개로, 실제 카카오 계정(가능하면 테스트용 별도 계정)으로 한 번 더 시도해서 신규 가입 플로우가 깨지지 않았는지 확인.
 
 ---
