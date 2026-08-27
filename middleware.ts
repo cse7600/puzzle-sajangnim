@@ -4,6 +4,7 @@ import { updateSession } from '@/lib/supabase/middleware'
 import { usersAdmin } from '@/lib/supabase/users-admin'
 import { isAdminEmail } from '@/lib/is-admin-email'
 import { isOnboardingComplete, type UserProfileData } from '@/lib/profile'
+import { parseStoredConsent } from '@/lib/consent'
 import {
   ADMIN_ENTRY_COOKIE,
   QA_MODE_COOKIE,
@@ -56,6 +57,12 @@ async function fetchOnboardingComplete(userId: string): Promise<boolean> {
   return isOnboardingComplete((data?.profile_data ?? null) as UserProfileData | null)
 }
 
+async function fetchConsentComplete(userId: string): Promise<boolean> {
+  const { data } = await usersAdmin.from('users').select('profile_data').eq('id', userId).maybeSingle()
+  const profileData = (data?.profile_data ?? null) as UserProfileData | null
+  return parseStoredConsent(profileData?.consent) !== null
+}
+
 async function fetchBusinessApproved(userId: string): Promise<boolean> {
   const { data } = await usersAdmin
     .from('business_verifications')
@@ -104,6 +111,25 @@ async function handleOnboardingGate(
   const onboarded = await fetchOnboardingComplete(userId)
   if (onboarded) return null
   return isProtectedApi ? jsonError('온보딩을 완료해주세요', 403) : redirectTo(request, '/onboarding')
+}
+
+async function handleConsentGate(
+  request: NextRequest,
+  userId: string,
+  isProtectedPage: boolean,
+  isProtectedApi: boolean,
+  pathname: string
+): Promise<NextResponse | null> {
+  const exempt =
+    pathname === '/auth/consent' ||
+    pathname === '/login' ||
+    pathname.startsWith('/auth/') ||
+    pathname === '/api/auth/consent'
+  if (exempt || (!isProtectedPage && !isProtectedApi)) return null
+
+  const consented = await fetchConsentComplete(userId)
+  if (consented) return null
+  return isProtectedApi ? jsonError('약관 동의가 필요합니다', 403) : redirectTo(request, '/auth/consent')
 }
 
 async function handleVerificationGate(
@@ -207,6 +233,11 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/login') return redirectTo(request, '/hub')
 
   const admin = isUserAdmin(user)
+
+  const consentGateResult = await handleConsentGate(
+    request, user.id, isProtectedPage, isProtectedApi, pathname
+  )
+  if (consentGateResult) return consentGateResult
 
   const onboardingGateResult = await handleOnboardingGate(
     request, user.id, isProtectedPage, isProtectedApi, pathname
