@@ -18,6 +18,11 @@ const PROTECTED_PAGES = [
   '/my-link', '/onboarding', '/admin', '/gov-support',
 ]
 
+// 카카오 개발자 콘솔 심사 담당자가 세션 없이 접근해야 하는 화면.
+// /login과 달리 로그인 상태에서도 /hub로 튕기지 않는다 — 이미 세션이 있는
+// 담당자도 심사 대상 화면을 그대로 볼 수 있어야 한다.
+const KAKAO_REVIEW_PAGES = ['/kakao-login', '/kakao-signup']
+
 const PROTECTED_API_PREFIXES = [
   '/api/receipts', '/api/business-verification', '/api/team-deals', '/api/earnings',
   '/api/ad-accounts', '/api/paybacks', '/api/referral', '/api/knowledge', '/api/points',
@@ -148,6 +153,11 @@ export async function middleware(request: NextRequest) {
   // /api/admin/login은 관리자 증명이 아직 없는 사용자가 증명을 발급받는 경로이므로
   // admin 게이트 대상에서 제외한다. 제외하지 않으면 로그인 자체가 불가능해진다.
   if (pathname === '/api/admin/login') return supabaseResponse
+
+  // 심사용 화면은 인증/온보딩/사업자인증 게이트를 모두 건너뛴다. 지금은
+  // PROTECTED_PAGES에 없어 우연히 통과하지만, 향후 보호 경로가 늘어나도
+  // 깨지지 않도록 여기서 의도를 명시적으로 고정한다.
+  if (KAKAO_REVIEW_PAGES.includes(pathname)) return supabaseResponse
 
   const adminProof = await resolveAdminProof(request, user)
 

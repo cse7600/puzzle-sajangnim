@@ -1,10 +1,15 @@
 import LoginConsentGate from '@/components/auth/LoginConsentGate'
+import { sanitizeRedirectPath } from '@/lib/safe-next'
 
 const KAKAO_ENABLED = process.env.NEXT_PUBLIC_KAKAO_ENABLED === 'true'
 
-function sanitizeNext(next?: string): string | undefined {
-  if (!next) return undefined
-  return next.startsWith('/') && !next.startsWith('//') ? next : undefined
+function KakaoPendingNotice() {
+  return (
+    <div className="rounded-[11px] border border-dashed border-hairline bg-canvas-subtle px-4 py-6 text-center">
+      <p className="text-[14px] font-medium text-ink">카카오 로그인 준비 중입니다</p>
+      <p className="mt-1 text-[13px] text-muted-light">서비스 오픈 후 다시 안내드릴게요</p>
+    </div>
+  )
 }
 
 export default function LoginPage({
@@ -13,7 +18,7 @@ export default function LoginPage({
   searchParams: { error?: string; next?: string }
 }) {
   const errorMessage = searchParams.error
-  const next = sanitizeNext(searchParams.next)
+  const next = sanitizeRedirectPath(searchParams.next) ?? undefined
 
   return (
     <div className="min-h-[100dvh] bg-canvas-subtle flex items-center justify-center p-4 sm:p-6">
@@ -33,14 +38,10 @@ export default function LoginPage({
             </p>
           )}
 
-          <LoginConsentGate next={next} kakaoEnabled={KAKAO_ENABLED} />
-
-          {!KAKAO_ENABLED && (
-            <div className="mt-6 rounded-[11px] border border-dashed border-hairline bg-canvas-subtle px-4 py-6 text-center">
-              <p className="text-[14px] font-medium text-ink">카카오 로그인 준비 중입니다</p>
-              <p className="mt-1 text-[13px] text-muted-light">서비스 오픈 후 다시 안내드릴게요</p>
-            </div>
-          )}
+          {/* 카카오 활성 여부에 따른 화면 표현은 이 분기 한 곳에서만 결정한다.
+              하위 컴포넌트가 같은 판단을 중복하면 "활성 버튼 + 준비중 안내"가
+              동시에 그려지는 모순이 다시 생긴다. */}
+          {KAKAO_ENABLED ? <LoginConsentGate next={next} /> : <KakaoPendingNotice />}
         </div>
 
         <p className="mt-6 text-center text-[13px] text-muted-light">

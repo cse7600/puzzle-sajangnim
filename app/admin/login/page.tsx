@@ -1,9 +1,5 @@
 import AdminLoginForm from './AdminLoginForm'
-
-function sanitizeNext(next?: string): string {
-  if (next && next.startsWith('/') && !next.startsWith('//')) return next
-  return '/admin'
-}
+import { sanitizeRedirectPath } from '@/lib/safe-next'
 
 // 이 페이지는 middleware.ts의 admin 게이트에서 명시적으로 제외되어 있다.
 // 제외하지 않으면 관리자 증명이 없는 사용자가 /admin/login 자체에서 다시
@@ -13,7 +9,7 @@ export default function AdminLoginPage({
 }: {
   searchParams: { next?: string }
 }) {
-  const next = sanitizeNext(searchParams.next)
+  const next = sanitizeRedirectPath(searchParams.next) ?? '/admin'
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-6">
