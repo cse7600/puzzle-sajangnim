@@ -210,6 +210,8 @@ export interface Database {
           eligibility_notes: string | null
           puzzle_services: string[]
           application_steps: string[]
+          curation_status: 'pending' | 'ai_suggested' | 'admin_reviewed'
+          curated_at: string | null
         }
         Insert: {
           pblanc_id: string
@@ -232,6 +234,8 @@ export interface Database {
           eligibility_notes?: string | null
           puzzle_services?: string[]
           application_steps?: string[]
+          curation_status?: 'pending' | 'ai_suggested' | 'admin_reviewed'
+          curated_at?: string | null
         }
         Update: {
           pblanc_id?: string
@@ -254,6 +258,8 @@ export interface Database {
           eligibility_notes?: string | null
           puzzle_services?: string[]
           application_steps?: string[]
+          curation_status?: 'pending' | 'ai_suggested' | 'admin_reviewed'
+          curated_at?: string | null
         }
         Relationships: []
       }

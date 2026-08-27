@@ -7,7 +7,9 @@ import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/a
 const db = supabaseAdmin as any
 
 const LISTING_COLUMNS =
-  'pblanc_id, title, jrsdinsttnm, trgetnm, reqst_end_de, is_marketing, region_sido, is_puzzle_transactable, puzzle_note, source, max_support_krw, eligibility_max_revenue_krw, eligibility_industry_keywords, eligibility_notes, puzzle_services, application_steps'
+  'pblanc_id, title, jrsdinsttnm, trgetnm, reqst_end_de, is_marketing, region_sido, is_puzzle_transactable, puzzle_note, source, max_support_krw, eligibility_max_revenue_krw, eligibility_industry_keywords, eligibility_notes, puzzle_services, application_steps, curation_status, curated_at'
+
+const CURATION_STATUSES = ['pending', 'ai_suggested', 'admin_reviewed'] as const
 
 const DEFAULT_PAGE_SIZE = 30
 const MAX_PAGE_SIZE = 100
@@ -34,6 +36,10 @@ export async function GET(req: NextRequest) {
   const page = parsePositiveInt(searchParams.get('page'), 1)
   const pageSize = Math.min(parsePositiveInt(searchParams.get('pageSize'), DEFAULT_PAGE_SIZE), MAX_PAGE_SIZE)
   const onlyTransactable = searchParams.get('onlyTransactable') === 'true'
+  const curationStatusParam = searchParams.get('curationStatus')
+  const curationStatus = (CURATION_STATUSES as readonly string[]).includes(curationStatusParam ?? '')
+    ? curationStatusParam
+    : null
 
   let query = db
     .from('gov_support_listings')
@@ -44,6 +50,9 @@ export async function GET(req: NextRequest) {
   }
   if (onlyTransactable) {
     query = query.eq('is_puzzle_transactable', true)
+  }
+  if (curationStatus) {
+    query = query.eq('curation_status', curationStatus)
   }
 
   const from = (page - 1) * pageSize

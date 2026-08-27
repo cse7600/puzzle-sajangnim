@@ -7,7 +7,7 @@ import { getSessionUser, unauthorizedResponse, forbiddenResponse } from '@/lib/a
 const db = supabaseAdmin as any
 
 const LISTING_COLUMNS =
-  'pblanc_id, title, jrsdinsttnm, trgetnm, reqst_end_de, is_marketing, region_sido, is_puzzle_transactable, puzzle_note, source, max_support_krw, eligibility_max_revenue_krw, eligibility_industry_keywords, eligibility_notes, puzzle_services, application_steps'
+  'pblanc_id, title, jrsdinsttnm, trgetnm, reqst_end_de, is_marketing, region_sido, is_puzzle_transactable, puzzle_note, source, max_support_krw, eligibility_max_revenue_krw, eligibility_industry_keywords, eligibility_notes, puzzle_services, application_steps, curation_status, curated_at'
 
 // bizinfo 원본 필드(title/jrsdinsttnm/trgetnm/reqst_end_de)는 매일 배치가 API 응답으로
 // 덮어쓰기 때문에 어드민이 고쳐봐야 다음날 리셋된다. 원본 필드 수정은 manual 행에서만 허용.
@@ -16,6 +16,11 @@ const MANUAL_ONLY_FIELDS = ['title', 'jrsdinsttnm', 'trgetnm', 'reqst_end_de'] a
 // 큐레이션 필드는 bizinfo 배치가 건드리지 않으므로 소스와 무관하게 항상 편집 가능.
 const CURATION_NUMBER_FIELDS = ['max_support_krw', 'eligibility_max_revenue_krw'] as const
 const CURATION_ARRAY_FIELDS = ['eligibility_industry_keywords', 'puzzle_services', 'application_steps'] as const
+const ALL_CURATION_FIELDS: readonly string[] = [
+  ...CURATION_NUMBER_FIELDS,
+  ...CURATION_ARRAY_FIELDS,
+  'eligibility_notes',
+]
 
 function applyCurationFields(
   body: Record<string, unknown>,
@@ -134,13 +139,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if ('error' in updates && typeof updates.error === 'string') {
     return NextResponse.json({ error: updates.error }, { status: 400 })
   }
-  if (Object.keys(updates).length === 0) {
+  // 위의 'error' in 가드가 union을 못 좁히므로(Record도 error 키를 가질 수 있음) 여기서 단언
+  const patchUpdates = updates as Record<string, unknown>
+  if (Object.keys(patchUpdates).length === 0) {
     return NextResponse.json({ error: '수정할 내용이 없습니다' }, { status: 400 })
+  }
+
+  // 큐레이션 필드를 사람이 직접 저장하면 검수 완료로 승격 — 클라이언트가 명시하지 않아도 서버가 처리
+  if (ALL_CURATION_FIELDS.some(field => field in patchUpdates)) {
+    patchUpdates.curation_status = 'admin_reviewed'
+    patchUpdates.curated_at = new Date().toISOString()
   }
 
   const { data, error } = await db
     .from('gov_support_listings')
-    .update(updates)
+    .update(patchUpdates)
     .eq('pblanc_id', listing.pblanc_id)
     .select(LISTING_COLUMNS)
     .single()

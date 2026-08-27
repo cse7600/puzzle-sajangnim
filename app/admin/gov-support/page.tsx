@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 
+type CurationStatus = 'pending' | 'ai_suggested' | 'admin_reviewed'
+
 interface GovSupportListing {
   pblanc_id: string
   title: string
@@ -18,6 +20,8 @@ interface GovSupportListing {
   eligibility_notes: string | null
   puzzle_services: string[]
   application_steps: string[]
+  curation_status: CurationStatus
+  curated_at: string | null
 }
 
 interface CurationPayload {
@@ -74,6 +78,7 @@ function useGovSupportAdmin() {
   const [savingId, setSavingId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<CurationStatus | ''>('')
   const [page, setPage] = useState(1)
   // uncontrolled input(defaultValue)이 실패 시 화면에 남는 걸 막기 위한 리마운트 트리거.
   // 값이 안 바뀌어도(=서버 값 그대로 롤백해야 할 때도) 이 카운터를 올려서 key를 바꾸면
@@ -85,6 +90,7 @@ function useGovSupportAdmin() {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) })
     if (query.trim()) params.set('q', query.trim())
+    if (statusFilter) params.set('curationStatus', statusFilter)
     fetch(`/api/admin/gov-support?${params.toString()}`)
       .then(r => r.json())
       .then((body: { items?: GovSupportListing[]; totalCount?: number }) => {
@@ -95,7 +101,7 @@ function useGovSupportAdmin() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(load, [page, query])
+  useEffect(load, [page, query, statusFilter])
 
   async function patchItem(id: string, payload: PatchPayload): Promise<boolean> {
     setSavingId(id)
@@ -191,6 +197,8 @@ function useGovSupportAdmin() {
     creating,
     query,
     setQuery,
+    statusFilter,
+    setStatusFilter,
     page,
     setPage,
     toast,
@@ -211,6 +219,8 @@ export default function AdminGovSupportPage() {
     creating,
     query,
     setQuery,
+    statusFilter,
+    setStatusFilter,
     page,
     setPage,
     toast,
@@ -230,7 +240,12 @@ export default function AdminGovSupportPage() {
       </p>
       <NewListingFormPanel onCreate={createItem} creating={creating} />
       <div className="bg-white rounded-[18px] border border-[#e0e0e0] overflow-hidden">
-        <SearchBar query={query} onChange={value => { setPage(1); setQuery(value) }} />
+        <SearchBar
+          query={query}
+          onChange={value => { setPage(1); setQuery(value) }}
+          statusFilter={statusFilter}
+          onStatusChange={value => { setPage(1); setStatusFilter(value) }}
+        />
         <GovSupportPanel
           items={items}
           loading={loading}
@@ -254,15 +269,50 @@ function AdminToast({ toast }: { toast: ToastState }) {
   )
 }
 
-function SearchBar({ query, onChange }: { query: string; onChange: (value: string) => void }) {
+const CURATION_BADGES: Record<CurationStatus, { label: string; className: string }> = {
+  pending: { label: '미분석', className: 'bg-[#f5f5f7] text-[#6e6e73]' },
+  ai_suggested: { label: 'AI 추출·미검수', className: 'bg-blue-50 text-blue-600' },
+  admin_reviewed: { label: '검토완료', className: 'bg-green-50 text-green-700' },
+}
+
+function CurationStatusBadge({ status }: { status: CurationStatus }) {
+  const badge = CURATION_BADGES[status] ?? CURATION_BADGES.pending
   return (
-    <div className="p-4 border-b border-[#e0e0e0]">
+    <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${badge.className}`}>
+      {badge.label}
+    </span>
+  )
+}
+
+function SearchBar({
+  query,
+  onChange,
+  statusFilter,
+  onStatusChange,
+}: {
+  query: string
+  onChange: (value: string) => void
+  statusFilter: CurationStatus | ''
+  onStatusChange: (value: CurationStatus | '') => void
+}) {
+  return (
+    <div className="p-4 border-b border-[#e0e0e0] flex items-center gap-3">
       <input
         value={query}
         onChange={e => onChange(e.target.value)}
         placeholder="사업명으로 검색"
         className="w-full max-w-[320px] rounded-[8px] border border-[#e0e0e0] px-3 py-2 text-[13px] outline-none focus:border-[#0066cc] transition-colors"
       />
+      <select
+        value={statusFilter}
+        onChange={e => onStatusChange(e.target.value as CurationStatus | '')}
+        className="rounded-[8px] border border-[#e0e0e0] px-3 py-2 text-[13px] outline-none focus:border-[#0066cc] transition-colors bg-white"
+      >
+        <option value="">상태 전체</option>
+        <option value="pending">미분석</option>
+        <option value="ai_suggested">AI 추출·미검수</option>
+        <option value="admin_reviewed">검토완료</option>
+      </select>
     </div>
   )
 }
@@ -431,6 +481,7 @@ function GovSupportPanel({
             <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">마감일</th>
             <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">지역</th>
             <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">출처</th>
+            <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">상태</th>
             <th className="text-center px-4 py-3 font-medium text-[#6e6e73]">거래가능</th>
             <th className="text-left px-4 py-3 font-medium text-[#6e6e73]">메모</th>
             <th className="text-center px-4 py-3 font-medium text-[#6e6e73]">큐레이션</th>
@@ -502,6 +553,9 @@ function GovSupportRow({
       </td>
       <td className="px-4 py-3 text-[#6e6e73] whitespace-nowrap">{item.region_sido ?? '-'}</td>
       <td className="px-4 py-3 text-[#6e6e73] whitespace-nowrap">{isManual ? '직접등록' : 'bizinfo'}</td>
+      <td className="px-4 py-3">
+        <CurationStatusBadge status={item.curation_status} />
+      </td>
       <TransactableCell
         checked={item.is_puzzle_transactable}
         saving={saving}
@@ -545,7 +599,7 @@ function GovSupportRow({
     </tr>
     {expanded && (
       <tr className="bg-[#fafafa]">
-        <td colSpan={10} className="px-4 py-4">
+        <td colSpan={11} className="px-4 py-4">
           <CurationEditPanel item={item} saving={saving} onPatch={onPatch} onClose={onToggleExpand} />
         </td>
       </tr>
