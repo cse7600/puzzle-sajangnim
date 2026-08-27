@@ -1,4 +1,5 @@
-import LoginConsentGate from '@/components/auth/LoginConsentGate'
+import KakaoLoginButton from '@/components/auth/KakaoLoginButton'
+import LegalNotice from '@/components/auth/LegalNotice'
 import { sanitizeRedirectPath } from '@/lib/safe-next'
 
 const KAKAO_ENABLED = process.env.NEXT_PUBLIC_KAKAO_ENABLED === 'true'
@@ -41,7 +42,14 @@ export default function LoginPage({
           {/* 카카오 활성 여부에 따른 화면 표현은 이 분기 한 곳에서만 결정한다.
               하위 컴포넌트가 같은 판단을 중복하면 "활성 버튼 + 준비중 안내"가
               동시에 그려지는 모순이 다시 생긴다. */}
-          {KAKAO_ENABLED ? <LoginConsentGate next={next} /> : <KakaoPendingNotice />}
+          {KAKAO_ENABLED ? (
+            <>
+              <KakaoLoginButton next={next} />
+              <LegalNotice />
+            </>
+          ) : (
+            <KakaoPendingNotice />
+          )}
         </div>
 
         <p className="mt-6 text-center text-[13px] text-muted-light">

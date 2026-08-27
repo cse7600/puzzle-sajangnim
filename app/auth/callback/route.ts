@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import type { User } from '@supabase/supabase-js'
 import { createServerSupabase } from '@/lib/supabase/server'
 import { usersAdmin, type UsersRow } from '@/lib/supabase/users-admin'
 import { generateReferralCode, isOnboardingComplete, type UserProfileData } from '@/lib/profile'
 import { sendWelcomeEmail } from '@/lib/email'
-import { CONSENT_COOKIE, parseConsentCookie, type UserConsent } from '@/lib/consent'
+import { parseStoredConsent } from '@/lib/consent'
 import { sanitizeRedirectPath } from '@/lib/safe-next'
 import type { Json } from '@/types/database'
 
@@ -44,10 +43,7 @@ function isBannedAccountError(message: string | undefined): boolean {
   return typeof message === 'string' && /banned/i.test(message)
 }
 
-async function insertNewUser(
-  authUser: User,
-  consent: UserConsent | null
-): Promise<{ row: UsersRow; usedFallbackEmail: boolean }> {
+async function insertNewUser(authUser: User): Promise<{ row: UsersRow; usedFallbackEmail: boolean }> {
   const metadata = (authUser.user_metadata ?? {}) as Record<string, unknown>
   const kakaoId = readMetadataString(metadata, 'provider_id', 'sub')
   const usedFallbackEmail = !authUser.email
@@ -59,7 +55,8 @@ async function insertNewUser(
   if (kakaoId) profileData.kakao_id = kakaoId
   if (name) profileData.name = name
   if (avatarUrl) profileData.avatar_url = avatarUrl
-  if (consent) profileData.consent = consent
+  // consent는 여기서 넣지 않는다. auth.users는 카카오 인증 순간 이미 생성되므로
+  // 프로필만 먼저 만들고, 동의는 로그인 완료 후 /auth/consent에서 받아 저장한다.
 
   const { data, error } = await usersAdmin
     .from('users')
@@ -71,11 +68,7 @@ async function insertNewUser(
   return { row: data, usedFallbackEmail }
 }
 
-async function backfillExistingUser(
-  existing: UsersRow,
-  authUser: User,
-  consent: UserConsent | null
-): Promise<UsersRow> {
+async function backfillExistingUser(existing: UsersRow, authUser: User): Promise<UsersRow> {
   const metadata = (authUser.user_metadata ?? {}) as Record<string, unknown>
   const profile = (existing.profile_data ?? {}) as Record<string, Json>
   const kakaoId = readMetadataString(metadata, 'provider_id', 'sub')
@@ -88,15 +81,14 @@ async function backfillExistingUser(
   // 있다. 재로그인 시 정상 값으로 교정한다.
   const storedName = typeof profile.name === 'string' ? profile.name : ''
   const needsName = (!storedName || storedName === 'NaN') && name
-  if (!needsKakaoId && !needsAvatar && !needsName && !consent) return existing
+  if (!needsKakaoId && !needsAvatar && !needsName) return existing
 
-  // 기존 profile_data는 비어 있던 필드만 채우고 덮어쓰지 않는다. 단 consent는 예외로,
-  // 재로그인 때마다 최신 동의 선택값으로 항상 갱신한다(FR-09) — 다른 키는 그대로 보존한다.
+  // 기존 profile_data는 비어 있던 필드만 채우고 덮어쓰지 않는다. consent도 예외가 아니다 —
+  // 최초 동의 1회만 기록하고 재로그인 때는 손대지 않는다(마케팅 수신 변경은 /settings에서만).
   const merged: Record<string, Json> = { ...profile }
   if (needsKakaoId) merged.kakao_id = kakaoId as string
   if (needsAvatar) merged.avatar_url = avatarUrl as string
   if (needsName) merged.name = name as string
-  if (consent) merged.consent = consent
 
   const { data, error } = await usersAdmin
     .from('users')
@@ -113,8 +105,7 @@ async function backfillExistingUser(
 }
 
 async function syncUserRow(
-  authUser: User,
-  consent: UserConsent | null
+  authUser: User
 ): Promise<{ userRow: UsersRow; isNewUser: boolean; usedFallbackEmail: boolean }> {
   const { data: existingRow } = await usersAdmin
     .from('users')
@@ -123,11 +114,11 @@ async function syncUserRow(
     .maybeSingle()
 
   if (existingRow) {
-    const userRow = await backfillExistingUser(existingRow, authUser, consent)
+    const userRow = await backfillExistingUser(existingRow, authUser)
     return { userRow, isNewUser: false, usedFallbackEmail: false }
   }
 
-  const { row, usedFallbackEmail } = await insertNewUser(authUser, consent)
+  const { row, usedFallbackEmail } = await insertNewUser(authUser)
   return { userRow: row, isNewUser: true, usedFallbackEmail }
 }
 
@@ -136,17 +127,11 @@ function extractWelcomeName(row: UsersRow): string {
   return profile?.name?.trim() || '사장님'
 }
 
-// 공유 브라우저에서 다음 사람에게 동의 쿠키가 승계되지 않도록, 파싱 성공 여부와
-// 무관하게 콜백을 떠나는 모든 리다이렉트 응답에서 쿠키를 삭제한다.
-function clearConsentCookie(response: NextResponse): NextResponse {
-  response.cookies.set(CONSENT_COOKIE, '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 0,
-  })
-  return response
+// 동의를 아직 남기지 않은 유저의 착지점. 신규 가입자와, 과거 쿠키 유실로 consent 없이
+// 만들어진 기존 유저 모두 여기로 보낸다 — 판단 기준은 가입 시점이 아니라 기록의 유무다.
+function consentDestination(next: string | null): string {
+  const params = next ? `?next=${encodeURIComponent(next)}` : ''
+  return `/auth/consent${params}`
 }
 
 export async function GET(request: Request) {
@@ -154,13 +139,9 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const next = sanitizeRedirectPath(searchParams.get('next'))
   const loginErrorRedirect = (message: string = LOGIN_ERROR_MESSAGE) =>
-    clearConsentCookie(
-      NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(message)}`)
-    )
+    NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(message)}`)
 
   if (!code) return loginErrorRedirect()
-
-  const consent = parseConsentCookie(cookies().get(CONSENT_COOKIE)?.value)
 
   try {
     const supabase = createServerSupabase()
@@ -170,7 +151,7 @@ export async function GET(request: Request) {
     }
     if (error || !data.user) return loginErrorRedirect()
 
-    const { userRow, isNewUser, usedFallbackEmail } = await syncUserRow(data.user, consent)
+    const { userRow, isNewUser, usedFallbackEmail } = await syncUserRow(data.user)
 
     // 신규 유저 & 실제(비폴백) 이메일 보유 시에만 환영 메일 발송. 카카오가 이메일 스코프를
     // 못 준 유저의 폴백 이메일(no-email.puzl.local)은 수신 불가 주소이므로 여기서는 건너뛰고,
@@ -182,9 +163,14 @@ export async function GET(request: Request) {
       })
     }
 
-    const onboarded = isOnboardingComplete(userRow.profile_data as UserProfileData | null)
+    const profile = userRow.profile_data as UserProfileData | null
+    if (!parseStoredConsent(profile?.consent)) {
+      return NextResponse.redirect(`${origin}${consentDestination(next)}`)
+    }
+
+    const onboarded = isOnboardingComplete(profile)
     const destination = onboarded ? next ?? '/hub' : '/onboarding'
-    return clearConsentCookie(NextResponse.redirect(`${origin}${destination}`))
+    return NextResponse.redirect(`${origin}${destination}`)
   } catch (callbackError) {
     console.error('[auth/callback] 처리 실패:', callbackError)
     return loginErrorRedirect()

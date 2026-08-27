@@ -1,10 +1,3 @@
-export const CONSENT_COOKIE = 'puzl_consent'
-
-// 동의부터 콜백 착지까지는 정상 흐름에서 수십 초. 5분은 카카오 화면에서
-// 지체되는 경우를 흡수하면서, 브라우저를 공유하는 다음 사람에게 앞사람의
-// 동의가 승계될 창을 최소화한다.
-export const CONSENT_COOKIE_MAX_AGE_SECONDS = 300
-
 export type ConsentSelection = {
   terms: boolean
   privacy: boolean
@@ -39,18 +32,10 @@ function hasValidAgreedAt(candidate: Record<string, unknown>): boolean {
   return typeof candidate.agreed_at === 'string' && !Number.isNaN(Date.parse(candidate.agreed_at))
 }
 
-// 쿠키/요청 바디를 신뢰하지 않고 형태를 검증한다. 필수 동의(terms/privacy)가
-// false인 페이로드는 저장할 수 없는 값이므로 여기서 null로 폐기한다.
-export function parseConsentCookie(raw: string | undefined): UserConsent | null {
-  if (!raw) return null
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    return null
-  }
-
+// profile_data.consent는 jsonb라 어떤 형태든 들어올 수 있다(수기 수정, 과거 스키마 등).
+// 필수 동의(terms/privacy)가 false인 값은 "동의함"으로 취급할 수 없으므로 null로 폐기한다.
+// null을 받은 호출처는 해당 유저를 동의 미완으로 보고 인터스티셜로 보낸다.
+export function parseStoredConsent(parsed: unknown): UserConsent | null {
   if (!isPlainObject(parsed)) return null
   if (!hasValidBooleanFields(parsed)) return null
   if (!hasValidAgreedAt(parsed)) return null

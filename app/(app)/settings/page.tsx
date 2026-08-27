@@ -671,6 +671,109 @@ function BusinessProfileSection({ verification }: { verification: VerificationRe
   )
 }
 
+type MarketingConsentState = { marketing: boolean; agreedAt: string } | null
+
+async function fetchMarketingConsent(): Promise<MarketingConsentState> {
+  const res = await fetch('/api/auth/consent')
+  if (!res.ok) throw new Error('수신 설정을 불러오지 못했습니다')
+  const body = await res.json()
+  if (!body?.consent) return null
+  return { marketing: body.consent.marketing === true, agreedAt: body.consent.agreed_at }
+}
+
+async function patchMarketingConsent(marketing: boolean): Promise<{ error?: string }> {
+  const res = await fetch('/api/auth/consent', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ marketing }),
+  })
+  if (res.ok) return {}
+  const body = await res.json().catch(() => null)
+  return { error: typeof body?.error === 'string' ? body.error : '수신 설정을 저장하지 못했습니다' }
+}
+
+// 필수 동의(이용약관·개인정보처리방침)는 가입 시 1회 기록 후 불변이라 여기서 노출하지 않는다.
+// 사후에 바꿀 수 있는 항목은 선택 동의인 마케팅 수신뿐이다.
+function MarketingConsentSection() {
+  const [consent, setConsent] = useState<MarketingConsentState>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchMarketingConsent()
+      .then(value => !cancelled && setConsent(value))
+      .catch((err: Error) => !cancelled && setError(err.message))
+      .finally(() => !cancelled && setLoading(false))
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  async function handleToggle() {
+    if (!consent || saving) return
+    const nextValue = !consent.marketing
+    setSaving(true)
+    setError(null)
+    try {
+      const result = await patchMarketingConsent(nextValue)
+      if (result.error) setError(result.error)
+      else setConsent({ marketing: nextValue, agreedAt: new Date().toISOString() })
+    } catch {
+      setError('네트워크 오류로 수신 설정을 저장하지 못했습니다')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-6 mt-4">
+      <p className="text-[15px] font-semibold text-[#1d1d1f] mb-1">알림 수신 설정</p>
+      <p className="text-[12px] text-[#6e6e73] mb-5">
+        혜택·이벤트·신규 기능 소식 수신 여부예요. 서비스 이용에 꼭 필요한 안내는 설정과 무관하게 발송됩니다.
+      </p>
+
+      {loading ? (
+        <div className="h-11 w-full animate-pulse rounded-[11px] bg-[#e5e5ea]" />
+      ) : !consent ? (
+        <p className="text-[13px] text-[#6e6e73]">
+          동의 기록이 확인되지 않아요. 다시 로그인하면 동의 항목을 확인할 수 있습니다.
+        </p>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[14px] text-[#1d1d1f]">마케팅 정보 수신</p>
+              <p className="mt-0.5 text-[12px] text-[#6e6e73]">
+                최종 변경: {new Date(consent.agreedAt).toLocaleDateString('ko-KR')}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={consent.marketing}
+              aria-label="마케팅 정보 수신 동의"
+              onClick={handleToggle}
+              disabled={saving}
+              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                consent.marketing ? 'bg-primary-dark' : 'bg-[#d1d1d6]'
+              }`}
+            >
+              <span
+                className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
+                  consent.marketing ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          {error && <p className="mt-3 text-[12px] text-red-600">{error}</p>}
+        </>
+      )}
+    </div>
+  )
+}
+
 function BusinessInfoUnavailableNote() {
   return (
     <div className="bg-white rounded-[18px] border border-[#e0e0e0] p-6 mt-4">
@@ -721,6 +824,8 @@ export default function SettingsPage() {
             </>
           )
       )}
+
+      <MarketingConsentSection />
     </div>
   )
 }

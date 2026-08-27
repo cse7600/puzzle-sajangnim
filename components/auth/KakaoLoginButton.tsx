@@ -2,11 +2,8 @@
 
 import { useState } from 'react'
 import { createBrowserSupabase } from '@/lib/supabase/client'
-import { hasRequiredConsent, type ConsentSelection } from '@/lib/consent'
 
 const START_ERROR_MESSAGE = '카카오 로그인을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.'
-const CONSENT_REQUIRED_MESSAGE = '필수 항목에 동의해야 카카오 로그인을 시작할 수 있어요.'
-const CONSENT_RECORD_ERROR_MESSAGE = '동의 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'
 
 // #FEE500 / #191919는 카카오 로그인 버튼 브랜드 가이드가 지정한 고정값이라
 // 디자인 토큰으로 대체할 수 없다. 비활성 상태에서는 브랜드 옐로를 유지하면
@@ -16,26 +13,13 @@ const ACTIVE_BUTTON_CLASS = 'bg-[#FEE500] text-[#191919] hover:bg-[#e6cf00]'
 const INACTIVE_BUTTON_CLASS =
   'bg-canvas-subtle text-muted-light border border-hairline cursor-not-allowed'
 
-async function recordConsent(consent: ConsentSelection): Promise<boolean> {
-  try {
-    const response = await fetch('/api/auth/consent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(consent),
-    })
-    return response.ok
-  } catch {
-    return false
-  }
-}
-
+// 약관 동의는 이 버튼의 관심사가 아니다. 신규 가입자는 카카오 인증을 마친 뒤
+// 콜백이 /auth/consent 인터스티셜로 보낸다(기존 유저는 그대로 통과).
 type KakaoLoginButtonProps = {
   next?: string
-  consent: ConsentSelection
-  disabled?: boolean
 }
 
-export default function KakaoLoginButton({ next, consent, disabled }: KakaoLoginButtonProps) {
+export default function KakaoLoginButton({ next }: KakaoLoginButtonProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -52,19 +36,8 @@ export default function KakaoLoginButton({ next, consent, disabled }: KakaoLogin
   }
 
   async function handleClick() {
-    if (!hasRequiredConsent(consent)) {
-      setError(CONSENT_REQUIRED_MESSAGE)
-      return
-    }
-
     setLoading(true)
     setError(null)
-
-    if (!(await recordConsent(consent))) {
-      setError(CONSENT_RECORD_ERROR_MESSAGE)
-      setLoading(false)
-      return
-    }
 
     const supabase = createBrowserSupabase()
     const callbackUrl = new URL('/auth/callback', window.location.origin)
@@ -87,7 +60,8 @@ export default function KakaoLoginButton({ next, consent, disabled }: KakaoLogin
     window.location.assign(data.url)
   }
 
-  const inactive = loading || disabled
+  // 동의 가드가 사라져 비활성 상태는 OAuth 이동 중(loading)뿐이다.
+  const inactive = loading
 
   return (
     <div>
