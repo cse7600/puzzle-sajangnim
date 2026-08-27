@@ -12,6 +12,7 @@ import {
   Coins,
   Banknote,
   UtensilsCrossed,
+  Landmark,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
@@ -26,6 +27,7 @@ const NAV = [
   { label: '팀 구매', href: '/admin/team-deals', icon: ShoppingBag },
   { label: '한끼 체험단', href: '/admin/experience-campaigns', icon: UtensilsCrossed },
   { label: '포인트', href: '/admin/points', icon: Coins },
+  { label: '지원사업 관리', href: '/admin/gov-support', icon: Landmark },
 ]
 
 const COLLAPSE_STORAGE_KEY = 'puzzle-admin-sidebar-collapsed'
