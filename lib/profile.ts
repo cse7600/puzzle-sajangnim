@@ -1,3 +1,5 @@
+import type { UserConsent } from '@/lib/consent'
+
 // public.users.profile_data(jsonb) 스키마. 컬럼 추가 금지(다른 puzl 제품과 공유 테이블).
 export type UserProfileData = {
   name?: string
@@ -10,6 +12,7 @@ export type UserProfileData = {
   kakao_id?: string
   avatar_url?: string
   onboarded_at?: string
+  consent?: UserConsent
 }
 
 export const KOREAN_PHONE_PATTERN = /^01[0-9]-\d{3,4}-\d{4}$/

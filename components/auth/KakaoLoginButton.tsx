@@ -2,14 +2,18 @@
 
 import { useState } from 'react'
 import { createBrowserSupabase } from '@/lib/supabase/client'
+import { hasRequiredConsent, type ConsentSelection } from '@/lib/consent'
 
 const START_ERROR_MESSAGE = '카카오 로그인을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+const CONSENT_REQUIRED_MESSAGE = '필수 항목에 동의해야 카카오 로그인을 시작할 수 있어요.'
 
 type KakaoLoginButtonProps = {
   next?: string
+  consent: ConsentSelection
+  disabled?: boolean
 }
 
-export default function KakaoLoginButton({ next }: KakaoLoginButtonProps) {
+export default function KakaoLoginButton({ next, consent, disabled }: KakaoLoginButtonProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,6 +30,11 @@ export default function KakaoLoginButton({ next }: KakaoLoginButtonProps) {
   }
 
   async function handleClick() {
+    if (!hasRequiredConsent(consent)) {
+      setError(CONSENT_REQUIRED_MESSAGE)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -56,7 +65,7 @@ export default function KakaoLoginButton({ next }: KakaoLoginButtonProps) {
       <button
         type="button"
         onClick={handleClick}
-        disabled={loading}
+        disabled={loading || disabled}
         className="w-full flex items-center justify-center gap-3 bg-[#FEE500] rounded-[11px] py-4 px-6 text-[16px] font-semibold text-[#191919] hover:bg-[#e6cf00] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
       >
         <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
