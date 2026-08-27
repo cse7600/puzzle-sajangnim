@@ -1,46 +1,64 @@
-const FOOTER_COLUMNS: { header: string; links: string[] }[] = [
+import Link from 'next/link';
+
+type FooterLink = { label: string; href?: string };
+
+const FOOTER_COLUMNS: { header: string; links: FooterLink[] }[] = [
   {
     header: '서비스',
     links: [
-      'AI 블로그 자동화',
-      '네이버 플레이스 최적화',
-      '미니 체험단',
-      '통합 연동 허브',
-      '앱테크 리워드',
-      '팀 구매',
-      '추천인 시스템',
-      '오호라! 사업 Q&A',
+      { label: 'AI 블로그 자동화' },
+      { label: '네이버 플레이스 최적화' },
+      { label: '미니 체험단' },
+      { label: '통합 연동 허브' },
+      { label: '앱테크 리워드' },
+      { label: '팀 구매' },
+      { label: '추천인 시스템' },
+      { label: '오호라! 사업 Q&A' },
     ],
   },
   {
     header: '고객지원',
     links: [
-      '도움말 센터',
-      '이용 가이드',
-      '1:1 문의',
-      '자주 묻는 질문',
-      '공지사항',
-      '서비스 상태',
+      { label: '도움말 센터' },
+      { label: '이용 가이드' },
+      { label: '1:1 문의' },
+      { label: '자주 묻는 질문' },
+      { label: '공지사항' },
+      { label: '서비스 상태' },
     ],
   },
   {
     header: '회사',
-    links: ['회사 소개', '팀 블로그', '채용', '보도자료', '브랜드 리소스', '제휴 문의'],
+    links: [
+      { label: '회사 소개' },
+      { label: '팀 블로그' },
+      { label: '채용' },
+      { label: '보도자료' },
+      { label: '브랜드 리소스' },
+      { label: '제휴 문의' },
+    ],
   },
   {
     header: '법적고지',
     links: [
-      '이용약관',
-      '개인정보처리방침',
-      '위치기반서비스 약관',
-      '마케팅 정보 수신',
-      '청소년 보호정책',
-      '환불 정책',
+      { label: '이용약관', href: '/legal/terms' },
+      { label: '개인정보처리방침', href: '/legal/privacy' },
+      { label: '위치기반서비스 약관' },
+      { label: '마케팅 정보 수신' },
+      { label: '청소년 보호정책' },
+      { label: '환불 정책' },
     ],
   },
   {
     header: '파트너',
-    links: ['크리에이터 지원', '마케터 등록', '대행사 제휴', '식자재 파트너', 'API 문서', '추천인 센터'],
+    links: [
+      { label: '크리에이터 지원' },
+      { label: '마케터 등록' },
+      { label: '대행사 제휴' },
+      { label: '식자재 파트너' },
+      { label: 'API 문서' },
+      { label: '추천인 센터' },
+    ],
   },
 ];
 
@@ -57,10 +75,14 @@ export default function Footer() {
               <ul>
                 {col.links.map((link) => (
                   <li
-                    key={link}
+                    key={link.label}
                     className="text-[13px] leading-[2.41] text-muted transition hover:text-ink"
                   >
-                    <a href="#">{link}</a>
+                    {link.href ? (
+                      <Link href={link.href}>{link.label}</Link>
+                    ) : (
+                      <a href="#">{link.label}</a>
+                    )}
                   </li>
                 ))}
               </ul>
