@@ -6,6 +6,20 @@ import { hasRequiredConsent, type ConsentSelection } from '@/lib/consent'
 
 const START_ERROR_MESSAGE = '카카오 로그인을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.'
 const CONSENT_REQUIRED_MESSAGE = '필수 항목에 동의해야 카카오 로그인을 시작할 수 있어요.'
+const CONSENT_RECORD_ERROR_MESSAGE = '동의 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+
+async function recordConsent(consent: ConsentSelection): Promise<boolean> {
+  try {
+    const response = await fetch('/api/auth/consent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(consent),
+    })
+    return response.ok
+  } catch {
+    return false
+  }
+}
 
 type KakaoLoginButtonProps = {
   next?: string
@@ -37,6 +51,12 @@ export default function KakaoLoginButton({ next, consent, disabled }: KakaoLogin
 
     setLoading(true)
     setError(null)
+
+    if (!(await recordConsent(consent))) {
+      setError(CONSENT_RECORD_ERROR_MESSAGE)
+      setLoading(false)
+      return
+    }
 
     const supabase = createBrowserSupabase()
     const callbackUrl = new URL('/auth/callback', window.location.origin)
