@@ -74,7 +74,6 @@ export default function KakaoLoginButton({ next, consent, disabled }: KakaoLogin
       provider: 'kakao',
       options: {
         redirectTo: callbackUrl.toString(),
-        scopes: 'profile_nickname account_email',
         skipBrowserRedirect: true,
       },
     })
