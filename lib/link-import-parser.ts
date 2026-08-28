@@ -4,6 +4,58 @@ import { BLOCK_SHAPES, BLOCK_SHADOWS, FONT_PRESETS, GRADIENT_PRESETS } from '@/l
 const INPOCK_CDN = 'https://d13k46lqgoj3d6.cloudfront.net'
 const IMPORT_BUCKET = 'link-import-assets'
 
+const REHOST_ALLOWED_HOSTS = new Set(['d13k46lqgoj3d6.cloudfront.net', 'link.inpock.co.kr'])
+const MAX_REHOST_BYTES = 10 * 1024 * 1024
+const IMAGE_EXT_BY_TYPE: Record<string, string> = {
+  'image/webp': 'webp',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+}
+
+function isPrivateHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, '')
+  if (host === 'localhost' || host.endsWith('.localhost')) return true
+
+  if (host.includes(':')) {
+    if (host === '::' || host === '::1') return true
+    if (host.startsWith('::ffff:')) return true
+    if (/^f[cd][0-9a-f]{2}:/.test(host)) return true
+    if (/^fe[89ab][0-9a-f]:/.test(host)) return true
+    return false
+  }
+
+  const octets = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (!octets) return false
+  const first = Number(octets[1])
+  const second = Number(octets[2])
+  if (first === 0 || first === 10 || first === 127 || first >= 224) return true
+  if (first === 172 && second >= 16 && second <= 31) return true
+  if (first === 192 && second === 168) return true
+  if (first === 169 && second === 254) return true
+  if (first === 100 && second >= 64 && second <= 127) return true
+  return false
+}
+
+// SSRF 방어: DNS 해석 전에 스킴과 호스트 문자열 자체를 검사한다.
+function parsePublicHttpUrl(rawUrl: string): URL | null {
+  let parsed: URL
+  try {
+    parsed = new URL(rawUrl)
+  } catch {
+    return null
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+  if (isPrivateHostname(parsed.hostname)) return null
+  return parsed
+}
+
+function isRehostableImageUrl(rawUrl: string): boolean {
+  const parsed = parsePublicHttpUrl(rawUrl)
+  if (!parsed) return false
+  return REHOST_ALLOWED_HOSTS.has(parsed.hostname.toLowerCase())
+}
+
 export interface ParsedProfile {
   displayName: string
   bio: string | null
@@ -257,19 +309,54 @@ export async function resolveTrackingRedirects(parsed: ParsedImport): Promise<Pa
   return { ...parsed, blocks: updatedBlocks }
 }
 
-async function followRedirects(url: string, maxHops = 10): Promise<string> {
-  let current = url
+async function followRedirects(startUrl: string, maxHops = 10): Promise<string> {
+  if (!parsePublicHttpUrl(startUrl)) return startUrl
+
+  let current = startUrl
   for (let i = 0; i < maxHops; i++) {
     const resp = await fetch(current, { redirect: 'manual' })
     const location = resp.headers.get('location')
     if (!location || resp.status < 300 || resp.status >= 400) {
       return current
     }
-    current = location.startsWith('http')
-      ? location
-      : new URL(location, current).toString()
+
+    let next: string
+    try {
+      next = new URL(location, current).toString()
+    } catch {
+      return current
+    }
+    // 내부망/비HTTP로 리다이렉트되면 추적을 멈추고 마지막 안전한 URL을 쓴다.
+    if (!parsePublicHttpUrl(next)) return current
+    current = next
   }
   return current
+}
+
+type DownloadedImage =
+  | { status: 'ok'; buffer: Buffer; contentType: string; ext: string }
+  | { status: 'too-large' }
+  | { status: 'unavailable' }
+
+async function downloadImageForRehost(imageUrl: string): Promise<DownloadedImage> {
+  const resp = await fetch(imageUrl, { redirect: 'manual' })
+  if (!resp.ok) return { status: 'unavailable' }
+
+  const declaredBytes = Number(resp.headers.get('content-length'))
+  if (Number.isFinite(declaredBytes) && declaredBytes > MAX_REHOST_BYTES) return { status: 'too-large' }
+
+  const buffer = Buffer.from(await resp.arrayBuffer())
+  if (buffer.length > MAX_REHOST_BYTES) return { status: 'too-large' }
+
+  // public 버킷에 저장되므로 content-type을 알려진 이미지 타입으로 고정한다.
+  const rawType = (resp.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()
+  const knownExt = IMAGE_EXT_BY_TYPE[rawType]
+  return {
+    status: 'ok',
+    buffer,
+    contentType: knownExt ? rawType : 'image/jpeg',
+    ext: knownExt || 'jpg',
+  }
 }
 
 export async function rehostImages(
@@ -278,18 +365,16 @@ export async function rehostImages(
 ): Promise<ParsedImport> {
   const rehostOne = async (imageUrl: string | null | undefined): Promise<string | null> => {
     if (!imageUrl) return null
+    // 허용 호스트가 아니면 재호스팅도 핫링크도 하지 않는다.
+    if (!isRehostableImageUrl(imageUrl)) return null
     try {
-      const resp = await fetch(imageUrl)
-      if (!resp.ok) return imageUrl
-      const contentType = resp.headers.get('content-type') || 'image/jpeg'
-      const buffer = Buffer.from(await resp.arrayBuffer())
+      const image = await downloadImageForRehost(imageUrl)
+      if (image.status === 'too-large') return null
+      if (image.status === 'unavailable') return imageUrl
 
-      const extMap: Record<string, string> = { 'image/webp': 'webp', 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif' }
-      const ext = extMap[contentType] || 'jpg'
-      const fileName = `import/${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-
-      const { error } = await supabaseAdmin.storage.from(IMPORT_BUCKET).upload(fileName, buffer, {
-        contentType,
+      const fileName = `import/${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${image.ext}`
+      const { error } = await supabaseAdmin.storage.from(IMPORT_BUCKET).upload(fileName, image.buffer, {
+        contentType: image.contentType,
         upsert: false,
       })
       if (error) return imageUrl

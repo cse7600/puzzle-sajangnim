@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-08-27T08:56:20.319Z",
+  "lastUpdated": "2026-08-28T01:19:45.137Z",
   "activeFeatures": [
     "puzzle-sajangnim",
     "login",
@@ -90,7 +90,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-18T14:32:00.677Z",
-        "lastUpdated": "2026-08-27T08:53:39.367Z"
+        "lastUpdated": "2026-08-28T01:19:45.137Z"
       },
       "lastFile": "/Users/hokang2father/puzzle-sajangnim/lib/link-import-parser.ts"
     },
@@ -1078,7 +1078,7 @@
   "session": {
     "startedAt": "2026-06-18T07:25:20.070Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-08-27T08:56:20.319Z"
+    "lastActivity": "2026-08-28T01:19:45.137Z"
   },
   "history": [
     {
@@ -6316,6 +6316,54 @@
     {
       "timestamp": "2026-08-27T08:56:20.319Z",
       "feature": "my-link",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-28T01:18:38.195Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-28T01:18:44.856Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-28T01:18:52.350Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-28T01:19:06.187Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-28T01:19:25.335Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-28T01:19:37.591Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-28T01:19:40.994Z",
+      "feature": "puzzle-sajangnim",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-08-28T01:19:45.137Z",
+      "feature": "puzzle-sajangnim",
       "phase": "do",
       "action": "updated"
     }
